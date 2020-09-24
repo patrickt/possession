@@ -30,12 +30,12 @@ initial = State InMenu MainMenu.initial
 
 send :: Input -> State -> State
 send i s = case (i, mode s) of
-  (Up, InMenu) -> over adjuster (MainMenu.adjust Up) s
-  (Down, _) -> over adjuster (MainMenu.adjust Down) s
+  (Up, InMenu) -> go Up
+  (Down, _) -> go Down
   _ -> s
   where
-    adjuster :: Lens' State (Maybe MainMenu.Choice)
-    adjuster = field @"mainMenu" % field @"selected"
+    go x = over selection (MainMenu.adjust x) s
+    selection = field @"mainMenu" % field @"selected" % _Just
 
 sendMaybe :: State -> Input -> Maybe State
 sendMaybe _ Quit = Nothing

@@ -18,7 +18,7 @@ import Brick.Widgets.Border qualified as Brick
 import Data.Generics.Product.Typed as Optics
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
-import Optics.VL qualified as Optics
+import Optics
 import UI.Resource
 import UI.Input qualified as Input
 
@@ -26,14 +26,12 @@ data State = State {selected :: Maybe Choice}
   deriving (Generic)
 
 initial :: State
-initial = State Nothing
+initial = State (Just NewGame)
 
-adjust :: Input.Input -> Maybe Choice -> Maybe Choice
-adjust i s = case (i, s) of
-  (Input.Up, Nothing) -> Just NewGame
-  (Input.Down, Nothing) -> Just Quit
-  (Input.Up, _) -> fmap moveUp s
-  (Input.Down, _) -> fmap moveDown s
+adjust :: Input.Input -> Choice -> Choice
+adjust i s = case i of
+  Input.Up -> moveUp s
+  Input.Down -> moveDown s
   _ -> s
 
 data Choice
