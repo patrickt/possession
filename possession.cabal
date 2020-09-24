@@ -20,12 +20,18 @@ library
     import: haskell
     hs-source-dirs: src
     build-depends:
-      base ^>=4.14.1.0
-      , brick
-      , vty
+        brick,
+        generic-optics,
+        optics,
+        optics-vl,
+        vector,
+        vty,
+        base ^>=4.14.1.0
     exposed-modules:
       Possession
       UI.App
+      UI.MainMenu
+      UI.Resource
       UI.State
 
 executable possession

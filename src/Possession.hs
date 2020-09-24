@@ -5,9 +5,11 @@ import Brick qualified
 import Brick.BChan
 import Graphics.Vty qualified as Vty
 import UI.App qualified as App
+import UI.State qualified
+import Control.Monad
 
 main :: IO ()
 main = do
   brickEvLoop <- newBChan 1
   vty <- Vty.standardIOConfig >>= Vty.mkVty
-  Brick.customMain vty (pure vty) (Just brickEvLoop) App.app ()
+  void $ Brick.customMain vty (pure vty) (Just brickEvLoop) App.app UI.State.initial
