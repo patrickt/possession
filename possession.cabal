@@ -25,6 +25,7 @@ library
       , vty
     exposed-modules:
       Possession
+      UI.App
 
 executable possession
     import: haskell
