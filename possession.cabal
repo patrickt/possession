@@ -20,7 +20,9 @@ library
     import: haskell
     hs-source-dirs: src
     build-depends:
+        apecs,
         brick,
+        linear,
         generic-optics,
         optics,
         optics-vl,
@@ -29,6 +31,7 @@ library
         base ^>=4.14.1.0
     exposed-modules:
       Possession
+      Game.World
       UI.App
       UI.Input
       UI.MainMenu
