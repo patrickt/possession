@@ -30,6 +30,7 @@ library
     exposed-modules:
       Possession
       UI.App
+      UI.Input
       UI.MainMenu
       UI.Resource
       UI.State
