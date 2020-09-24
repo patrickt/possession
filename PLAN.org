@@ -4,3 +4,15 @@
   - Accurately (to a new level), or inaccurately (to a nearby space)
   - Gameplay loop involves room-jumping until you find something that can help you
   - Or an enemy you can kill for XP, and then possess
+
+Brick event loop (EventM)
+  Reads from keyboard
+  Can read from BChan
+  Can write to WChan
+
+Apecs event loop
+  - Can write to BChan (redraw, trigger UI)
+  - Can read from WChan (tick)
+  - Runs in IO
+
+* TODO figure out what to do about this Resource type
