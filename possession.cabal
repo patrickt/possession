@@ -26,6 +26,7 @@ library
     exposed-modules:
       Possession
       UI.App
+      UI.State
 
 executable possession
     import: haskell
