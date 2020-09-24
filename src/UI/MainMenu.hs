@@ -38,6 +38,7 @@ adjust i s = case (i, s) of
 
 data Choice
   = NewGame
+  | About
   | Quit
   deriving (Eq, Ord, Show, Enum)
 
@@ -54,10 +55,10 @@ moveDown = \case
 renderChoice :: Choice -> String
 renderChoice = \case
   NewGame -> "New Game"
-  Quit -> "Quit"
+  x -> show x
 
 choices :: Vector Choice
-choices = [NewGame, Quit]
+choices = [NewGame, About, Quit]
 
 render :: Bool -> Choice -> Brick.Widget n
 render isOn =
