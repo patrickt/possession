@@ -1,15 +1,21 @@
 {-# LANGUAGE ImportQualifiedPost #-}
+
 module Possession (main) where
 
 import Brick qualified
 import Brick.BChan
+import Control.Concurrent.MVar
+import Control.Monad
+import Game.Run qualified as Game
 import Graphics.Vty qualified as Vty
 import UI.App qualified as App
 import UI.State qualified
-import Control.Monad
 
 main :: IO ()
 main = do
   brickEvLoop <- newBChan 1
+  actionBox <- newEmptyMVar
   vty <- Vty.standardIOConfig >>= Vty.mkVty
-  void $ Brick.customMain vty (pure vty) (Just brickEvLoop) App.app UI.State.initial
+  Game.start brickEvLoop actionBox
+  let ui = UI.State.initial actionBox
+  void $ Brick.customMain vty (pure vty) (Just brickEvLoop) App.app ui

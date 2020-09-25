@@ -15,4 +15,18 @@ Apecs event loop
   - Can read from WChan (tick)
   - Runs in IO
 
-* TODO figure out what to do about this Resource type
+We can't blit vty images directly, there's no superimpose operation
+I don't want to write the various gyrations required to figure that out
+So we could make an Array of Vty images, and each Located thing writes
+into the array. We can do that iteratively or foldmapily. Then we can
+build scanlines with horizJoin and join the scanlines with vertJoin.
+
+Monster locations:
+- from [[https://github.com/sil-quirk/sil-q/blob/master/lib/edit/monster.txt][silq]]
+- from [[https://nikheizen.github.io/pages/compostband/mon-desc.html][poschengband]]
+
+So how are we gonna do messages, too? Presumably there should be a status bar on the bottom, that we'll lay out with brick
+
+* DONE figure out what to do about this Resource type
+can it be the World in question? that would enable hand-definition of widgets which I know I will need
+or an IORef to it?

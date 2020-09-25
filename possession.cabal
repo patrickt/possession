@@ -22,6 +22,7 @@ library
     build-depends:
         apecs,
         brick,
+        fused-effects,
         linear,
         generic-optics,
         optics,
@@ -31,6 +32,8 @@ library
         base ^>=4.14.1.0
     exposed-modules:
       Possession
+      Game.Action
+      Game.Run
       Game.World
       UI.App
       UI.Input

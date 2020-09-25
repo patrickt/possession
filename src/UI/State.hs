@@ -1,7 +1,7 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DataKinds #-}
 
 module UI.State
   ( State (..),
@@ -12,20 +12,26 @@ module UI.State
   )
 where
 
-import UI.MainMenu qualified as MainMenu
-import UI.Input
-import Optics
+import Control.Concurrent.MVar
 import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
+import Game.Action qualified as Game
+import Optics
+import UI.Input
+import UI.MainMenu qualified as MainMenu
 
-data Mode = InMenu
+data Mode
+  = InMenu
+  | InGame
 
 data State = State
   { mode :: Mode,
-    mainMenu :: MainMenu.State
-  } deriving Generic
+    mainMenu :: MainMenu.State,
+    gamePort :: MVar Game.Action
+  }
+  deriving (Generic)
 
-initial :: State
+initial :: MVar Game.Action -> State
 initial = State InMenu MainMenu.initial
 
 send :: Input -> State -> State
