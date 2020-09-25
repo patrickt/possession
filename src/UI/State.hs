@@ -43,9 +43,10 @@ broadcast :: MonadIO m => State -> Game.Action -> m ()
 broadcast s act = liftIO . flip putMVar act . gamePort $ s
 
 send :: Input -> State -> State
-send i s = case (i, mode s) of
-  (Up, InMenu) -> go Up
-  (Down, _) -> go Down
+send i s = case (i, mode s, MainMenu.selected (mainMenu s)) of
+  (Up, InMenu, _) -> go Up
+  (Down, _, _) -> go Down
+  (Accept, InMenu, Just MainMenu.NewGame) -> s & field @"mode" .~ InGame
   _ -> s
   where
     go x = over selection (MainMenu.adjust x) s

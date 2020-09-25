@@ -15,13 +15,14 @@ import UI.MainMenu qualified as MainMenu
 import UI.Resource qualified as UI (Resource)
 import UI.State qualified as State
 import UI.State qualified as UI (State)
+import UI.Render qualified as Render
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case State.mode s of
   State.InMenu -> [ Brick.padAll 15 . Form.renderForm . MainMenu.form . State.mainMenu $ s
                   ]
 
--- State.InGame -> [renderCanvas (State.canvas s)]
+  State.InGame -> [Brick.raw (Render.render (State.canvas s))]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of

@@ -22,7 +22,6 @@ colorToVty = \case
   World.Grey -> Attr.rgbColor 221 221 (221 :: Int)
   World.White -> Attr.white
 
-
 scanline :: Int -> Game.Canvas -> Vty.Image
 scanline idx canv = do
   let scanlines = do

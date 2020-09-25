@@ -13,7 +13,7 @@ import Graphics.Vty qualified as Vty
 import Linear
 import Prelude hiding (Either (..))
 
-data Input = Up | Down | Left | Right | Quit | None
+data Input = Up | Down | Left | Right | Accept | Quit | None
 
 fromChar :: Char -> Maybe Input
 fromChar = \case
@@ -25,6 +25,7 @@ fromVty = \case
   Vty.KChar c -> fromChar c
   Vty.KUp -> Just Up
   Vty.KDown -> Just Down
+  Vty.KEnter -> Just Accept
   _ -> Nothing
 
 toAction :: Input -> Maybe Game.Action
