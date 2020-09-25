@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -12,8 +13,8 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Game.Action
 import Game.World qualified as Game (World)
-
-type Command = ()
+import Game.World qualified as World
+import Linear
 
 loop ::
   ( MonadIO m,
@@ -21,8 +22,18 @@ loop ::
   ) =>
   Apecs.SystemT Game.World m ()
 loop = do
-  _next <- ask >>= liftIO . takeMVar @Action
+  next <- ask >>= liftIO . takeMVar @Action
+
+  case next of
+    Move dir -> movePlayer dir
+
   pure ()
+
+movePlayer :: MonadIO m => V2 Int -> Apecs.SystemT Game.World m ()
+movePlayer dx = Apecs.cmap \(World.Position p, World.Player) -> World.Position (dx + p)
+
+setup :: MonadIO m => Apecs.SystemT Game.World m ()
+setup = void $ Apecs.newEntity (World.Position 3, World.Player)
 
 start :: BChan Command -> MVar Action -> Game.World -> IO ()
 start cmds acts world =
@@ -30,6 +41,5 @@ start cmds acts world =
     . forkIO
     . runReader cmds
     . runReader acts
-    . flip Apecs.runSystem world
-    . forever
-    $ loop
+    . Apecs.runWith world
+    $ setup *> forever loop

@@ -20,12 +20,14 @@ draw s = case State.mode s of
 
 event :: UI.State -> Brick.BrickEvent UI.Resource evt -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
-  Brick.VtyEvent (Vty.EvKey key _) ->
+  Brick.VtyEvent (Vty.EvKey key _) -> do
+    let given = Input.fromVty key
+    maybe (pure ()) (State.broadcast s) (given >>= Input.toAction)
+
     transition
       . State.sendMaybe s
       . fromMaybe Input.None
-      . Input.fromVty
-      $ key
+      $ given
   _ -> Brick.continue s
   where
     transition = maybe (Brick.halt s) Brick.continue

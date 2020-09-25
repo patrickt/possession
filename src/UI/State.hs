@@ -9,10 +9,12 @@ module UI.State
     initial,
     send,
     sendMaybe,
+    broadcast,
   )
 where
 
 import Control.Concurrent.MVar
+import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
 import Game.Action qualified as Game
@@ -33,6 +35,9 @@ data State = State
 
 initial :: MVar Game.Action -> State
 initial = State InMenu MainMenu.initial
+
+broadcast :: MonadIO m => State -> Game.Action -> m ()
+broadcast s act = liftIO . flip putMVar act . gamePort $ s
 
 send :: Input -> State -> State
 send i s = case (i, mode s) of

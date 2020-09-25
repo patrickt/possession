@@ -1,3 +1,12 @@
-module Game.Action where
+module Game.Action
+  ( Action (..),
+    Command (..),
+  )
+where
 
-data Action = Action
+import Linear
+
+data Action
+  = Move (V2 Int)
+
+data Command = Redraw
