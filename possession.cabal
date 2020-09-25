@@ -41,6 +41,7 @@ library
       UI.Input
       UI.MainMenu
       UI.Resource
+      UI.Render
       UI.State
 
 executable possession
