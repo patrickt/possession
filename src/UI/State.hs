@@ -18,6 +18,8 @@ import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
 import Game.Action qualified as Game
+import Game.Canvas qualified as Game (Canvas)
+import Game.Canvas qualified as Canvas
 import Optics
 import UI.Input
 import UI.MainMenu qualified as MainMenu
@@ -29,12 +31,13 @@ data Mode
 data State = State
   { mode :: Mode,
     mainMenu :: MainMenu.State,
+    canvas :: Game.Canvas,
     gamePort :: MVar Game.Action
   }
   deriving (Generic)
 
 initial :: MVar Game.Action -> State
-initial = State InMenu MainMenu.initial
+initial = State InMenu MainMenu.initial Canvas.empty
 
 broadcast :: MonadIO m => State -> Game.Action -> m ()
 broadcast s act = liftIO . flip putMVar act . gamePort $ s

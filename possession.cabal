@@ -21,6 +21,7 @@ library
     hs-source-dirs: src
     build-depends:
         apecs,
+        array,
         brick,
         fused-effects,
         linear,
@@ -33,6 +34,7 @@ library
     exposed-modules:
       Possession
       Game.Action
+      Game.Canvas
       Game.Run
       Game.World
       UI.App

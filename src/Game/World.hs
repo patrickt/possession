@@ -15,8 +15,11 @@ import Apecs
 import Control.Algebra qualified as Eff
 import Control.Carrier.Reader qualified as Eff
 import Linear (V2 (..))
+import Data.Ix
 
-newtype Position = Position (V2 Int) deriving stock (Show)
+newtype Position = Position (V2 Int)
+  deriving stock (Eq, Ord, Show)
+  deriving newtype (Ix, Num)
 
 newtype Glyph = Glyph Char deriving newtype (Show)
 

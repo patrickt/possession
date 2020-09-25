@@ -6,19 +6,22 @@ module UI.App (app) where
 import Brick qualified
 import Brick.AttrMap qualified as Brick.AttrMap
 import Brick.Forms qualified as Form
+import Brick.Widgets.Center qualified as Brick
+import Data.Maybe
+import Game.Action qualified as Game (Command)
 import Graphics.Vty qualified as Vty
 import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
 import UI.Resource qualified as UI (Resource)
 import UI.State qualified as State
 import UI.State qualified as UI (State)
-import Game.Action qualified as Game (Command)
-import Data.Maybe
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case State.mode s of
-  State.InMenu -> [Form.renderForm (MainMenu.form (State.mainMenu s))]
-  -- State.InGame -> [renderCanvas (State.canvas s)]
+  State.InMenu -> [ Brick.padAll 15 . Form.renderForm . MainMenu.form . State.mainMenu $ s
+                  ]
+
+-- State.InGame -> [renderCanvas (State.canvas s)]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of

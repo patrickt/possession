@@ -15,10 +15,21 @@ import Game.Action
 import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear
+import Game.Canvas qualified as Game (Canvas)
+import Game.Canvas qualified as Canvas
+
+draw :: MonadIO m => Apecs.SystemT Game.World m Game.Canvas
+draw = do
+  new <- Apecs.cfold go []
+  pure (Canvas.empty `Canvas.update` new)
+  where
+    go :: [(World.Position, Canvas.Sprite)] -> (World.Position, World.Glyph, World.Color) -> [(World.Position, Canvas.Sprite)]
+    go acc (pos, chr, color) = (pos, Canvas.Sprite chr color) : acc
 
 loop ::
   ( MonadIO m,
-    Eff.Has (Reader (MVar Action)) sig m
+    Eff.Has (Reader (MVar Action)) sig m,
+    Eff.Has (Reader (BChan Command)) sig m
   ) =>
   Apecs.SystemT Game.World m ()
 loop = do
@@ -26,6 +37,11 @@ loop = do
 
   case next of
     Move dir -> movePlayer dir
+
+
+  canv <- draw
+  pipe <- ask
+  liftIO (writeBChan pipe (Redraw canv))
 
   pure ()
 
