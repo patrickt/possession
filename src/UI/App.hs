@@ -12,13 +12,15 @@ import UI.MainMenu qualified as MainMenu
 import UI.Resource qualified as UI (Resource)
 import UI.State qualified as State
 import UI.State qualified as UI (State)
+import Game.Action qualified as Game (Command)
 import Data.Maybe
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case State.mode s of
   State.InMenu -> [Form.renderForm (MainMenu.form (State.mainMenu s))]
+  -- State.InGame -> [renderCanvas (State.canvas s)]
 
-event :: UI.State -> Brick.BrickEvent UI.Resource evt -> Brick.EventM UI.Resource (Brick.Next UI.State)
+event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
   Brick.VtyEvent (Vty.EvKey key _) -> do
     let given = Input.fromVty key
@@ -32,7 +34,7 @@ event s evt = case evt of
   where
     transition = maybe (Brick.halt s) Brick.continue
 
-app :: Brick.App UI.State e UI.Resource
+app :: Brick.App UI.State Game.Command UI.Resource
 app =
   Brick.App
     { Brick.appDraw = draw,

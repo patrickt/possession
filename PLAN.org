@@ -27,6 +27,4 @@ Monster locations:
 
 So how are we gonna do messages, too? Presumably there should be a status bar on the bottom, that we'll lay out with brick
 
-* DONE figure out what to do about this Resource type
-can it be the World in question? that would enable hand-definition of widgets which I know I will need
-or an IORef to it?
+sidebar, status bar, and body

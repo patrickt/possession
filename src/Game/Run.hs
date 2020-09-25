@@ -33,7 +33,9 @@ movePlayer :: MonadIO m => V2 Int -> Apecs.SystemT Game.World m ()
 movePlayer dx = Apecs.cmap \(World.Position p, World.Player) -> World.Position (dx + p)
 
 setup :: MonadIO m => Apecs.SystemT Game.World m ()
-setup = void $ Apecs.newEntity (World.Position 3, World.Player)
+setup = do
+  void $ Apecs.newEntity (World.Position 3, World.Player, World.Glyph '@')
+  void $ Apecs.newEntity (World.Position 1, World.Wall, World.Glyph '#')
 
 start :: BChan Command -> MVar Action -> Game.World -> IO ()
 start cmds acts world =
