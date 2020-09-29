@@ -8,10 +8,11 @@ module UI.App (app) where
 import Brick qualified
 import Brick.AttrMap qualified as Brick.AttrMap
 import Brick.Forms qualified as Form
+import Brick.Widgets.Border qualified as Brick
+import Data.Generics.Product.Fields
 import Data.Generics.Product.Typed
 import Data.Maybe
 import Debug.Trace
-import Brick.Widgets.Border qualified as Brick
 import Game.Action qualified as Action
 import Game.Action qualified as Game (Command)
 import Graphics.Vty qualified as Vty
@@ -20,8 +21,10 @@ import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
 import UI.Render qualified as Render
 import UI.Resource qualified as UI (Resource)
+import UI.Resource qualified as Resource
 import UI.State qualified as State
 import UI.State qualified as UI (State)
+import UI.Widgets.Modeline qualified as Modeline
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case State.mode s of
@@ -30,9 +33,10 @@ draw s = case State.mode s of
     ]
   State.InGame ->
     pure . Brick.vBox $
-         [ Brick.border . Brick.raw . Render.render . State.canvas $ s
-         , Brick.hBorder
-         ]
+      [ Brick.border . Brick.viewport Resource.Canvas Brick.Both . Brick.raw . Render.render . State.canvas $ s,
+        Brick.hBorder,
+        Brick.viewport Resource.Modeline Brick.Vertical $ Modeline.render (s ^. field @"modeline")
+      ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of

@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -17,6 +18,8 @@ import Control.Concurrent.MVar
 import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
+import UI.Widgets.Modeline (Modeline)
+import UI.Widgets.Modeline qualified as Modeline
 import Game.Action qualified as Game
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
@@ -32,12 +35,13 @@ data State = State
   { mode :: Mode,
     mainMenu :: MainMenu.State,
     canvas :: Game.Canvas,
+    modeline :: Modeline,
     gamePort :: MVar Game.Action
   }
   deriving (Generic)
 
 initial :: MVar Game.Action -> State
-initial = State InMenu MainMenu.initial Canvas.empty
+initial = State InMenu MainMenu.initial Canvas.empty Modeline.modeline
 
 broadcast :: MonadIO m => State -> Game.Action -> m ()
 broadcast s act = liftIO . flip putMVar act . gamePort $ s

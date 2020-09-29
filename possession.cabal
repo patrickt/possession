@@ -46,6 +46,7 @@ library
       UI.Resource
       UI.Render
       UI.State
+      UI.Widgets.Modeline
 
 executable possession
     import: haskell

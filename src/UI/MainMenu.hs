@@ -20,7 +20,7 @@ import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import Optics
 import UI.Input qualified as Input
-import UI.Resource
+import UI.Resource qualified as Resource
 
 data State = State {selected :: Maybe Choice}
   deriving (Generic)
@@ -64,7 +64,7 @@ render isOn =
     . Brick.str
     . renderChoice
 
-form :: State -> Form.Form State e Resource
+form :: State -> Form.Form State e Resource.Resource
 form = Form.newForm [theList]
   where
     theList =
@@ -73,4 +73,4 @@ form = Form.newForm [theList]
         (Optics.toLensVL Optics.typed)
         render
         8
-        Resource
+        Resource.MainMenu

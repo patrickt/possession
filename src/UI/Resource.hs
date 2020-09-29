@@ -3,5 +3,9 @@ module UI.Resource
   )
 where
 
-data Resource = Resource
+data Resource
+  = Modeline
+  | Canvas
+  | MainMenu
+  | Unspecified
   deriving (Eq, Show, Ord)
