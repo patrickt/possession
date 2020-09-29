@@ -35,7 +35,8 @@ library
       Possession
       Game.Action
       Game.Canvas
-      Game.Run
+      Game.Command
+      Game.Ecs
       Game.World
       UI.App
       UI.Input

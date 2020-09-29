@@ -1,0 +1,6 @@
+cradle:
+  cabal:
+    - path: "./app"
+      component: "lib:possession"
+    - path: "./src"
+      component: "lib:possession"

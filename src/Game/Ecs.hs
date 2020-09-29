@@ -2,7 +2,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Game.Run (start) where
+module Game.Ecs (start) where
 
 import Apecs qualified
 import Brick.BChan

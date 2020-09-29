@@ -8,7 +8,7 @@ module UI.App (app) where
 import Brick qualified
 import Brick.AttrMap qualified as Brick.AttrMap
 import Brick.Forms qualified as Form
-import Data.Generics.Product.Fields
+import Data.Generics.Product.Typed
 import Data.Maybe
 import Debug.Trace
 import Game.Action qualified as Action
@@ -27,7 +27,9 @@ draw s = case State.mode s of
   State.InMenu ->
     [ Brick.padAll 15 . Form.renderForm . MainMenu.form . State.mainMenu $ s
     ]
-  State.InGame -> [Brick.raw (Render.render (State.canvas s))]
+  State.InGame ->
+    [ Brick.raw . Render.render . State.canvas $ s
+    ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
@@ -40,7 +42,7 @@ event s evt = case evt of
       . fromMaybe Input.None
       $ given
   Brick.AppEvent (Action.Redraw canv) -> do
-    Brick.continue (s & field @"canvas" .~ canv)
+    Brick.continue (s & typed .~ canv)
   _ -> Brick.continue s
   where
     transition = maybe (Brick.halt s) Brick.continue
