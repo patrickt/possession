@@ -33,8 +33,8 @@ draw s = case State.mode s of
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
-  Brick.VtyEvent (Vty.EvKey key _) -> do
-    let given = Input.fromVty key
+  Brick.VtyEvent (Vty.EvKey key mods) -> do
+    let given = Input.fromVty key mods
     State.broadcast s (fromMaybe Action.NoOp (given >>= Input.toAction))
 
     transition

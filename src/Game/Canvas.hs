@@ -19,13 +19,16 @@ blankSprite :: Sprite
 blankSprite = Sprite (Glyph '.') White
 
 size :: Int
-size = 4
+size = 16
+
+bounds :: (Position, Position)
+bounds = (0 :: Position, Position (V2 size size))
 
 newtype Canvas = Canvas {unCanvas :: Array Position (Maybe Sprite)}
   deriving newtype (Show)
 
 empty :: Canvas
-empty = Canvas $ array (0 :: Position, Position (V2 size size)) do
+empty = Canvas $ array bounds do
   x <- [0 .. size]
   y <- [0 .. size]
   pure (Position (V2 x y), Just blankSprite)

@@ -21,8 +21,8 @@ fromChar = \case
   'q' -> pure Quit
   _ -> Nothing
 
-fromVty :: Vty.Key -> Maybe Input
-fromVty = \case
+fromVty :: Vty.Key -> [Vty.Modifier] -> Maybe Input
+fromVty key _mods = case key of
   Vty.KChar c -> fromChar c
   Vty.KUp -> Just Up
   Vty.KDown -> Just Down
