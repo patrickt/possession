@@ -9,6 +9,7 @@ module UI.MainMenu
     State (..),
     initial,
     adjust,
+    render,
   )
 where
 
@@ -58,8 +59,8 @@ renderChoice = \case
 choices :: Vector Choice
 choices = [NewGame, About, Quit]
 
-render :: Bool -> Choice -> Brick.Widget n
-render isOn =
+render' :: Bool -> Choice -> Brick.Widget n
+render' isOn =
   (if isOn then Brick.border else id)
     . Brick.str
     . renderChoice
@@ -71,6 +72,9 @@ form = Form.newForm [theList]
       Form.listField
         (const choices)
         (Optics.toLensVL Optics.typed)
-        render
+        render'
         8
         Resource.MainMenu
+
+render :: State -> Brick.Widget Resource.Resource
+render = Form.renderForm . form

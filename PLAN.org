@@ -27,4 +27,6 @@ Monster locations:
 
 So how are we gonna do messages, too? Presumably there should be a status bar on the bottom, that we'll lay out with brick
 
-sidebar, status bar, and body
+sidebar, +status bar, and body+
+
+generalize the (Reader (BChan x)) and (Reader (MVar x)) and whatever with some unified Pipe interface

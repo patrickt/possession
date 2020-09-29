@@ -10,6 +10,8 @@ import Game.World qualified as World
 import Graphics.Vty qualified as Vty
 import Graphics.Vty.Attributes qualified as Attr
 import Linear (V2 (..))
+import UI.Resource
+import Brick qualified
 
 drawSprite :: Canvas.Sprite -> Vty.Image
 drawSprite (Canvas.Sprite (World.Glyph chr) color) = Vty.char attr chr
@@ -30,7 +32,9 @@ scanline idx canv = do
   let squares = fmap drawSprite scanlines
   Vty.horizCat squares
 
-render :: Game.Canvas -> Vty.Image
-render canv = do
+render :: Game.Canvas -> Brick.Widget Resource
+render canv =
   let allLines = [scanline x canv | x <- [0 .. Canvas.size]]
-  Vty.vertCat allLines
+  in Brick.viewport UI.Resource.Canvas Brick.Both
+     . Brick.raw
+     $ Vty.vertCat allLines

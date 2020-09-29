@@ -18,4 +18,7 @@ update :: Modeline -> Text -> Modeline
 update m t = m { unModeline = Brick.txt t }
 
 render :: Modeline -> Brick.Widget Resource
-render = Brick.vLimit 3 . Brick.viewport Resource.Modeline Brick.Vertical . unModeline
+render =
+  Brick.vLimit 3
+  . Brick.viewport Resource.Modeline Brick.Vertical
+  . unModeline

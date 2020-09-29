@@ -1,18 +1,17 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
 module UI.App (app) where
 
 import Brick qualified
 import Brick.AttrMap qualified as Brick.AttrMap
-import Brick.Forms qualified as Form
 import Brick.Widgets.Border qualified as Brick
 import Data.Generics.Product.Fields
 import Data.Generics.Product.Typed
 import Data.Maybe
-import Debug.Trace
 import Game.Action qualified as Action
 import Game.Action qualified as Game (Command)
 import Graphics.Vty qualified as Vty
@@ -21,7 +20,6 @@ import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
 import UI.Render qualified as Render
 import UI.Resource qualified as UI (Resource)
-import UI.Resource qualified as Resource
 import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline qualified as Modeline
@@ -29,13 +27,16 @@ import UI.Widgets.Modeline qualified as Modeline
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case State.mode s of
   State.InMenu ->
-    [ Brick.padAll 15 . Form.renderForm . MainMenu.form . State.mainMenu $ s
+    [ MainMenu.render . State.mainMenu $ s
     ]
   State.InGame ->
     pure . Brick.border . Brick.vBox $
-      [ Brick.border . Brick.padBottom Brick.Max . Brick.viewport Resource.Canvas Brick.Both . Brick.raw . Render.render . State.canvas $ s,
+      [ Brick.hBox $
+          [ Brick.hLimit 15 $ Brick.border $ Brick.txt "Status bar",
+            Brick.border . Brick.padBottom Brick.Max . Render.render . State.canvas $ s
+          ],
         Brick.hBorder,
-        Modeline.render (s ^. field @"modeline")
+        Brick.vLimit 3 . Modeline.render . view (field @"modeline") $ s
       ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
