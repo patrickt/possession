@@ -22,8 +22,10 @@ fromChar = \case
   _ -> Nothing
 
 fromVty :: Vty.Key -> [Vty.Modifier] -> Maybe Input
-fromVty key _mods = case key of
-  Vty.KChar c -> fromChar c
+fromVty key mods = case key of
+  Vty.KChar c -> case mods of
+    [Vty.MCtrl] -> Just Quit
+    _ -> fromChar c
   Vty.KUp -> Just Up
   Vty.KDown -> Just Down
   Vty.KLeft -> Just Left
