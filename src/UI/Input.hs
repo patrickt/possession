@@ -14,6 +14,7 @@ import Linear
 import Prelude hiding (Either (..))
 
 data Input = Up | Down | Left | Right | Accept | Quit | None
+  deriving (Show, Eq)
 
 fromChar :: Char -> Maybe Input
 fromChar = \case
@@ -25,6 +26,8 @@ fromVty = \case
   Vty.KChar c -> fromChar c
   Vty.KUp -> Just Up
   Vty.KDown -> Just Down
+  Vty.KLeft -> Just Left
+  Vty.KRight -> Just Right
   Vty.KEnter -> Just Accept
   _ -> Nothing
 

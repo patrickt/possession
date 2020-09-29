@@ -15,7 +15,7 @@ import UI.State qualified
 main :: IO ()
 main = do
   world <- Game.initWorld
-  brickEvLoop <- newBChan 1
+  brickEvLoop <- newBChan 10
   actionBox <- newEmptyMVar
   vty <- Vty.standardIOConfig >>= Vty.mkVty
   Game.start brickEvLoop actionBox world

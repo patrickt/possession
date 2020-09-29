@@ -9,7 +9,7 @@ import Game.Canvas qualified as Game (Canvas)
 import Game.World qualified as World
 import Graphics.Vty qualified as Vty
 import Graphics.Vty.Attributes qualified as Attr
-import Linear
+import Linear (V2(..))
 
 drawSprite :: Canvas.Sprite -> Vty.Image
 drawSprite (Canvas.Sprite (World.Glyph chr) color) = Vty.char attr chr
@@ -25,12 +25,12 @@ colorToVty = \case
 scanline :: Int -> Game.Canvas -> Vty.Image
 scanline idx canv = do
   let scanlines = do
-        x <- [0..80]
+        x <- [0..Canvas.size]
         pure (Canvas.at canv (World.Position (V2 x idx)))
   let squares = fmap drawSprite scanlines
   Vty.horizCat squares
 
 render :: Game.Canvas -> Vty.Image
 render canv = do
-  let allLines = [ scanline x canv | x <- [0..80] ]
+  let allLines = [ scanline x canv | x <- [0..Canvas.size] ]
   Vty.vertCat allLines
