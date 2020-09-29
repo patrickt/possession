@@ -32,10 +32,10 @@ draw s = case State.mode s of
     [ Brick.padAll 15 . Form.renderForm . MainMenu.form . State.mainMenu $ s
     ]
   State.InGame ->
-    pure . Brick.vBox $
-      [ Brick.border . Brick.viewport Resource.Canvas Brick.Both . Brick.raw . Render.render . State.canvas $ s,
+    pure . Brick.border . Brick.vBox $
+      [ Brick.border . Brick.padBottom Brick.Max . Brick.viewport Resource.Canvas Brick.Both . Brick.raw . Render.render . State.canvas $ s,
         Brick.hBorder,
-        Brick.viewport Resource.Modeline Brick.Vertical $ Modeline.render (s ^. field @"modeline")
+        Modeline.render (s ^. field @"modeline")
       ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)

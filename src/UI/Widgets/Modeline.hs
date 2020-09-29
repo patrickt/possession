@@ -7,6 +7,7 @@ module UI.Widgets.Modeline where
 import Brick qualified
 import Data.Text (Text)
 import UI.Resource (Resource)
+import UI.Resource qualified as Resource
 
 newtype Modeline = Modeline {unModeline :: Brick.Widget Resource}
 
@@ -17,4 +18,4 @@ update :: Modeline -> Text -> Modeline
 update m t = m { unModeline = Brick.txt t }
 
 render :: Modeline -> Brick.Widget Resource
-render = unModeline
+render = Brick.vLimit 3 . Brick.viewport Resource.Modeline Brick.Vertical . unModeline
