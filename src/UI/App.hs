@@ -11,6 +11,7 @@ import Brick.Forms qualified as Form
 import Data.Generics.Product.Typed
 import Data.Maybe
 import Debug.Trace
+import Brick.Widgets.Border qualified as Brick
 import Game.Action qualified as Action
 import Game.Action qualified as Game (Command)
 import Graphics.Vty qualified as Vty
@@ -28,8 +29,10 @@ draw s = case State.mode s of
     [ Brick.padAll 15 . Form.renderForm . MainMenu.form . State.mainMenu $ s
     ]
   State.InGame ->
-    [ Brick.raw . Render.render . State.canvas $ s
-    ]
+    pure . Brick.vBox $
+         [ Brick.border . Brick.raw . Render.render . State.canvas $ s
+         , Brick.hBorder
+         ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of

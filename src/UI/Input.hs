@@ -21,6 +21,9 @@ fromChar = \case
   'q' -> pure Quit
   _ -> Nothing
 
+-- we'll eventually need to move this into state, right?
+-- we can't decide what the correct behavior of Enter is
+-- unless we have access to the state, right?
 fromVty :: Vty.Key -> [Vty.Modifier] -> Maybe Input
 fromVty key mods = case key of
   Vty.KChar c -> case mods of
