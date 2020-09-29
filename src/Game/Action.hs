@@ -4,8 +4,8 @@ module Game.Action
   )
 where
 
-import Linear
 import Game.Canvas (Canvas)
+import Linear
 
 data Action
   = Move (V2 Int)

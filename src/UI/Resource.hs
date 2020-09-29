@@ -1,6 +1,7 @@
 module UI.Resource
-  ( Resource (..)
-  ) where
+  ( Resource (..),
+  )
+where
 
 data Resource = Resource
   deriving (Eq, Show, Ord)

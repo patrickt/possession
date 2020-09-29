@@ -18,8 +18,8 @@ import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
 import Game.Action qualified as Game
-import Game.Canvas qualified as Game (Canvas)
 import Game.Canvas qualified as Canvas
+import Game.Canvas qualified as Game (Canvas)
 import Optics
 import UI.Input
 import UI.MainMenu qualified as MainMenu

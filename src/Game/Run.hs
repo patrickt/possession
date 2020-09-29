@@ -13,11 +13,11 @@ import Control.Concurrent
 import Control.Monad
 import Control.Monad.IO.Class
 import Game.Action
+import Game.Canvas qualified as Canvas
+import Game.Canvas qualified as Game (Canvas)
 import Game.World qualified as Game (World)
 import Game.World qualified as World
-import Linear (V2(..))
-import Game.Canvas qualified as Game (Canvas)
-import Game.Canvas qualified as Canvas
+import Linear (V2 (..))
 
 draw :: (Eff.Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = do
@@ -43,7 +43,6 @@ loop = do
   case next of
     Move dir -> movePlayer dir
     NoOp -> pure ()
-
 
   canv <- draw
   pipe <- ask

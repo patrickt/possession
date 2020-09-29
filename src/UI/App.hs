@@ -40,7 +40,6 @@ event s evt = case evt of
       . fromMaybe Input.None
       $ given
   Brick.AppEvent (Action.Redraw canv) -> do
-    Brick.invalidateCache
     Brick.continue (s & field @"canvas" .~ canv)
   _ -> Brick.continue s
   where

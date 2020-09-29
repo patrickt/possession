@@ -19,8 +19,8 @@ import Data.Generics.Product.Typed as Optics
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import Optics
-import UI.Resource
 import UI.Input qualified as Input
+import UI.Resource
 
 data State = State {selected :: Maybe Choice}
   deriving (Generic)
