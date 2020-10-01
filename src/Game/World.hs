@@ -21,6 +21,9 @@ newtype Position = Position (V2 Int)
   deriving stock (Eq, Ord, Show)
   deriving newtype (Ix, Num)
 
+make :: Int -> Int -> Position
+make x y = Position (V2 x y)
+
 newtype Glyph = Glyph Char deriving newtype (Show)
 
 data Color = Black | Grey | White deriving (Show)

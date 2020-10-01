@@ -30,7 +30,7 @@ draw s = case State.mode s of
     [ MainMenu.render . State.mainMenu $ s
     ]
   State.InGame ->
-    pure . Brick.border . Brick.vBox $
+    [ Brick.border . Brick.vBox $
       [ Brick.hBox $
           [ Brick.hLimit 15 $ Brick.border $ Brick.txt "Status bar",
             Brick.border . Brick.padBottom Brick.Max . Render.render . State.canvas $ s
@@ -38,6 +38,7 @@ draw s = case State.mode s of
         Brick.hBorder,
         Brick.vLimit 3 . Modeline.render . view (field @"modeline") $ s
       ]
+    ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
