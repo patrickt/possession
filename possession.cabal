@@ -37,6 +37,7 @@ library
         base ^>=4.14.1.0
     exposed-modules:
       Possession
+      Data.Position
       Game.Action
       Game.Canvas
       Game.Command

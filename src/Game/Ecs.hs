@@ -1,8 +1,8 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -19,10 +19,13 @@ import Control.Concurrent
 import Control.Effect.Optics
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Generics.Product
 import Data.Foldable (for_)
+import Data.Generics.Product
 import Data.Maybe (isJust)
 import Data.Monoid
+import Data.Position
+import Data.Position (Position)
+import Data.Position qualified
 import Game.Action
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
@@ -30,8 +33,8 @@ import Game.State qualified
 import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear (V2 (..))
+import Optics hiding (assign, use)
 import Relude.Bool.Guard
-import Optics hiding (use, assign)
 
 type GameState = Game.State.State
 
@@ -42,7 +45,7 @@ draw = do
   trace (show new)
   pure (Canvas.empty `Canvas.update` new)
   where
-    go :: [(World.Position, Canvas.Sprite)] -> (World.Position, World.Glyph, World.Color) -> [(World.Position, Canvas.Sprite)]
+    go :: [(Position, Canvas.Sprite)] -> (Position, World.Glyph, World.Color) -> [(Position, Canvas.Sprite)]
     go acc (pos, chr, color) = (pos, Canvas.Sprite chr color) : acc
 
 loop ::
@@ -59,7 +62,7 @@ loop = do
 
   case next of
     Move dir -> do
-      prospective <- (World.Position dir +) <$> playerPosition
+      prospective <- (Position dir +) <$> playerPosition
       unlessM (occupied prospective) $
         movePlayer dir
     NoOp -> pure ()
@@ -72,18 +75,18 @@ loop = do
   pure ()
 
 movePlayer :: MonadIO m => V2 Int -> Apecs.SystemT Game.World m ()
-movePlayer dx = Apecs.cmap \(World.Position p, World.Player) -> World.Position (dx + p)
+movePlayer dx = Apecs.cmap \(Position p, World.Player) -> Position (dx + p)
 
-playerPosition :: (Eff.Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m World.Position
+playerPosition :: (Eff.Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = do
   p <- use @GameState #player
   (World.Player, loc) <- Apecs.get p
   pure loc
 
-occupied :: MonadIO m => World.Position -> Apecs.SystemT Game.World m Bool
+occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool
 occupied p = isJust . getAlt <$> cfoldMap go
   where
-    go :: World.Position -> Alt Maybe World.Position
+    go :: Position -> Alt Maybe Position
     go x = x <$ guard (x == p)
 
 cfoldMap :: forall w m c a. (Apecs.Members w m c, Apecs.Get w m c, Monoid a) => (c -> a) -> Apecs.SystemT w m a
@@ -91,8 +94,8 @@ cfoldMap f = Apecs.cfold (\a b -> a <> f b) mempty
 
 setup :: (Eff.Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
 setup = do
-  Apecs.newEntity (World.Position 3, World.Player, World.Glyph '@', World.White)
-    >>= assign @GameState#player
+  Apecs.newEntity (Position 3, World.Player, World.Glyph '@', World.White)
+    >>= assign @GameState #player
 
   for_ Canvas.borders \border -> do
     Apecs.newEntity (border, World.Wall, World.Glyph '#', World.White)
@@ -100,11 +103,11 @@ setup = do
 start :: BChan Command -> MVar Action -> Game.World -> IO ()
 start cmds acts world =
   let initialState = (Game.State.State (error "BUG: Tried to read uninitialized player"))
-  in void
-     . forkIO
-     . runTrace
-     . runReader cmds
-     . runReader acts
-     . evalState initialState
-     . Apecs.runWith world
-     $ setup *> forever loop
+   in void
+        . forkIO
+        . runTrace
+        . runReader cmds
+        . runReader acts
+        . evalState initialState
+        . Apecs.runWith world
+        $ setup *> forever loop

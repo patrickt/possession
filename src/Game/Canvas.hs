@@ -6,8 +6,9 @@
 module Game.Canvas where
 
 import Data.Array (Array, array, (!), (//))
-import Game.World (Color (..), Glyph (..), Position (..))
-import Game.World qualified as Position
+import Data.Position (Position)
+import Data.Position qualified as Position
+import Game.World (Color (..), Glyph (..))
 import Linear
 
 data Sprite = Sprite
@@ -23,7 +24,7 @@ size :: Int
 size = 16
 
 bounds :: (Position, Position)
-bounds = (0 :: Position, Position (V2 size size))
+bounds = (0 :: Position, Position.make size size)
 
 borders :: [Position]
 borders = up <> down <> left <> right
@@ -40,7 +41,7 @@ empty :: Canvas
 empty = Canvas $ array bounds do
   x <- [0 .. size]
   y <- [0 .. size]
-  pure (Position (V2 x y), blankSprite)
+  pure (Position.make x y, blankSprite)
 
 update :: Canvas -> [(Position, Sprite)] -> Canvas
 update (Canvas arr) assocs = Canvas (arr // assocs)

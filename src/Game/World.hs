@@ -15,14 +15,9 @@ import Apecs
 import Control.Algebra qualified as Eff
 import Control.Carrier.Reader qualified as Eff
 import Data.Ix
+import Data.Position
 import Linear (V2 (..))
 
-newtype Position = Position (V2 Int)
-  deriving stock (Eq, Ord, Show)
-  deriving newtype (Ix, Num)
-
-make :: Int -> Int -> Position
-make x y = Position (V2 x y)
 
 newtype Glyph = Glyph Char deriving newtype (Show)
 
