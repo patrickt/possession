@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -30,6 +31,9 @@ import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear (V2 (..))
 import Relude.Bool.Guard
+import Optics hiding (use, assign)
+
+type GameState = Game.State.State
 
 draw :: (Eff.Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = do
@@ -70,9 +74,9 @@ loop = do
 movePlayer :: MonadIO m => V2 Int -> Apecs.SystemT Game.World m ()
 movePlayer dx = Apecs.cmap \(World.Position p, World.Player) -> World.Position (dx + p)
 
-playerPosition :: (Eff.Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m World.Position
+playerPosition :: (Eff.Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m World.Position
 playerPosition = do
-  p <- use (field @"player" @Game.State.State)
+  p <- use @GameState #player
   (World.Player, loc) <- Apecs.get p
   pure loc
 
@@ -80,26 +84,27 @@ occupied :: MonadIO m => World.Position -> Apecs.SystemT Game.World m Bool
 occupied p = isJust . getAlt <$> cfoldMap go
   where
     go :: World.Position -> Alt Maybe World.Position
-    go x = guard (x == p) *> pure x
+    go x = x <$ guard (x == p)
 
 cfoldMap :: forall w m c a. (Apecs.Members w m c, Apecs.Get w m c, Monoid a) => (c -> a) -> Apecs.SystemT w m a
-cfoldMap f = Apecs.cfold (\a b -> a <> f b) (mempty :: a)
+cfoldMap f = Apecs.cfold (\a b -> a <> f b) mempty
 
 setup :: (Eff.Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
 setup = do
   Apecs.newEntity (World.Position 3, World.Player, World.Glyph '@', World.White)
-    >>= assign (field @"player" @Game.State.State)
+    >>= assign @GameState#player
 
   for_ Canvas.borders \border -> do
     Apecs.newEntity (border, World.Wall, World.Glyph '#', World.White)
 
 start :: BChan Command -> MVar Action -> Game.World -> IO ()
 start cmds acts world =
-  void
-    . forkIO
-    . runTrace
-    . runReader cmds
-    . runReader acts
-    . evalState (Game.State.State (error "BUG: Tried to read uninitialized player"))
-    . Apecs.runWith world
-    $ setup *> forever loop
+  let initialState = (Game.State.State (error "BUG: Tried to read uninitialized player"))
+  in void
+     . forkIO
+     . runTrace
+     . runReader cmds
+     . runReader acts
+     . evalState initialState
+     . Apecs.runWith world
+     $ setup *> forever loop
