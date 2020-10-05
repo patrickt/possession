@@ -1,19 +1,28 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Game.State (State (State)) where
+{-# OPTIONS_GHC -ddump-splices #-}
+
+module Game.State (State (State), player, debugMode) where
 
 import Apecs qualified
-import Optics
+import Data.Generics.Product.Typed
 import GHC.Generics (Generic)
+import Optics
 
 data State = State
   { statePlayer :: Apecs.Entity
-  } deriving Generic
+  , stateDebugMode :: Bool
+  }
+  deriving (Generic)
 
-makeFieldLabels ''State
+player :: Lens' State Apecs.Entity
+player = typed
+
+debugMode :: Lens' State Bool
+debugMode = typed

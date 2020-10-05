@@ -11,12 +11,13 @@ module Game.Ecs (start, cfoldMap) where
 
 import Apecs qualified
 import Brick.BChan
-import Control.Algebra qualified as Eff
-import Control.Carrier.Reader hiding (Has)
-import Control.Carrier.State.Strict hiding (Has)
-import Control.Carrier.Trace.Ignoring hiding (Has)
+import Control.Carrier.Random.Lifted qualified as Random
+import Control.Carrier.Reader
+import Control.Carrier.State.Strict
+import Control.Carrier.Trace.Ignoring
 import Control.Concurrent
 import Control.Effect.Optics
+import Control.Effect.Random (Random)
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Foldable (for_)
@@ -35,7 +36,7 @@ import Relude.Bool.Guard
 
 type GameState = Game.State.State
 
-draw :: (Eff.Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
+draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = do
   trace "Run::draw"
   new <- Apecs.cfold go []
@@ -47,19 +48,22 @@ draw = do
 
 loop ::
   ( MonadIO m,
-    Eff.Has (Reader (MVar Action)) sig m,
-    Eff.Has (Reader (BChan Command)) sig m,
-    Eff.Has (State Game.State.State) sig m,
-    Eff.Has Trace sig m
+    Has Random sig m,
+    Has (Reader (MVar Action)) sig m,
+    Has (Reader (BChan Command)) sig m,
+    Has (State Game.State.State) sig m,
+    Has Trace sig m
   ) =>
   Apecs.SystemT Game.World m ()
 loop = do
   trace "Loopin"
   next <- ask >>= liftIO . takeMVar @Action
+  debug <- use Game.State.debugMode
 
   case next of
     Move dir -> do
-      prospective <- Position.offset dir <$> playerPosition
+      adjusted <- (if debug then offsetRandomly else pure) dir
+      prospective <- Position.offset adjusted <$> playerPosition
       unlessM (occupied prospective) $
         movePlayer dir
     NoOp -> pure ()
@@ -71,12 +75,30 @@ loop = do
 
   pure ()
 
-movePlayer :: MonadIO m => V2 Int -> Apecs.SystemT Game.World m ()
-movePlayer dx = Apecs.cmap \(Position p, World.Player) -> Position (dx + p)
+offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)
+offsetRandomly (V2 x y) = V2 <$> go x <*> go y
+  where
+    go v = do
+      fuzz <- Random.uniformR (0, 2)
+      degree <- Random.uniformR (1, 3)
+      pure ((v + fuzz) * degree)
 
-playerPosition :: (Eff.Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
+movePlayer ::
+  ( Has (State GameState) sig m,
+    Has Random sig m,
+    MonadIO m
+  ) =>
+  V2 Int ->
+  Apecs.SystemT Game.World m ()
+movePlayer dx = do
+  debug <- use Game.State.debugMode
+  offset <- (if debug then pure else offsetRandomly) dx
+
+  Apecs.cmap \(Position p, World.Player) -> Position (offset + p)
+
+playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = do
-  (World.Player, loc) <- Apecs.get =<< use @GameState#player
+  (World.Player, loc) <- Apecs.get =<< use Game.State.player
   pure loc
 
 occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool
@@ -88,19 +110,20 @@ occupied p = isJust . getAlt <$> cfoldMap go
 cfoldMap :: forall w m c a. (Apecs.Members w m c, Apecs.Get w m c, Monoid a) => (c -> a) -> Apecs.SystemT w m a
 cfoldMap f = Apecs.cfold (\a b -> a <> f b) mempty
 
-setup :: (Eff.Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
+setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
 setup = do
   Apecs.newEntity (Position 3, World.Player, World.Glyph '@', World.White)
-    >>= assign @GameState #player
+    >>= assign Game.State.player
 
   for_ Canvas.borders \border -> do
     Apecs.newEntity (border, World.Wall, World.Glyph '#', World.White)
 
 start :: BChan Command -> MVar Action -> Game.World -> IO ()
 start cmds acts world =
-  let initialState = (Game.State.State (error "BUG: Tried to read uninitialized player"))
+  let initialState = (Game.State.State (Apecs.Entity 0) False)
    in void
         . forkIO
+        . Random.runRandomSystem
         . runTrace
         . runReader cmds
         . runReader acts
