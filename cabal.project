@@ -1,6 +1,1 @@
 packages: .
-
-source-repository-package
-  type: git
-  location: https://github.com/fused-effects/fused-effects-mwc-random.git
-  tag: db39d70ac78082660f9520177b6df9688df4f6a7
