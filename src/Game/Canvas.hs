@@ -9,7 +9,6 @@ import Data.Array (Array, array, (!), (//))
 import Data.Position (Position)
 import Data.Position qualified as Position
 import Game.World (Color (..), Glyph (..))
-import Linear
 
 data Sprite = Sprite
   { glyph :: !Glyph,
@@ -29,10 +28,12 @@ bounds = (0 :: Position, Position.make size size)
 borders :: [Position]
 borders = up <> down <> left <> right
   where
-    up = Position.make <$> [0..size] <*> pure 0
-    down = Position.make <$> [0..size] <*> pure (size)
-    left = Position.make 0 <$> [1..(size-1)]
-    right = Position.make (size-1) <$> [1..(size-1)]
+    up = Position.make <$> horizontal <*> pure 0
+    down = Position.make <$> horizontal <*> pure size
+    left = Position.make 0 <$> vertical
+    right = Position.make size <$> vertical
+    horizontal = [0..size]
+    vertical = [1..size-1]
 
 newtype Canvas = Canvas {unCanvas :: Array Position Sprite}
   deriving newtype (Show)

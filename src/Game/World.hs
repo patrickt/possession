@@ -8,16 +8,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Game.World (module Game.World) where
 
 import Apecs
 import Control.Algebra qualified as Eff
 import Control.Carrier.Reader qualified as Eff
-import Data.Ix
 import Data.Position
-import Linear (V2 (..))
-
 
 newtype Glyph = Glyph Char deriving newtype (Show)
 

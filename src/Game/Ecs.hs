@@ -20,12 +20,10 @@ import Control.Effect.Optics
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Foldable (for_)
-import Data.Generics.Product
 import Data.Maybe (isJust)
 import Data.Monoid
-import Data.Position
-import Data.Position (Position)
-import Data.Position qualified
+import Data.Position (Position (..))
+import Data.Position qualified as Position
 import Game.Action
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
@@ -33,7 +31,6 @@ import Game.State qualified
 import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear (V2 (..))
-import Optics hiding (assign, use)
 import Relude.Bool.Guard
 
 type GameState = Game.State.State
@@ -62,7 +59,7 @@ loop = do
 
   case next of
     Move dir -> do
-      prospective <- (Position dir +) <$> playerPosition
+      prospective <- Position.offset dir <$> playerPosition
       unlessM (occupied prospective) $
         movePlayer dir
     NoOp -> pure ()
@@ -79,8 +76,7 @@ movePlayer dx = Apecs.cmap \(Position p, World.Player) -> Position (dx + p)
 
 playerPosition :: (Eff.Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = do
-  p <- use @GameState #player
-  (World.Player, loc) <- Apecs.get p
+  (World.Player, loc) <- Apecs.get =<< use @GameState#player
   pure loc
 
 occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool

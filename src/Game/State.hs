@@ -6,8 +6,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -ddump-splices #-}
-module Game.State where
+module Game.State (State (State)) where
 
 import Apecs qualified
 import Optics
