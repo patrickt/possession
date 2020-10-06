@@ -21,20 +21,47 @@ import Control.Effect.Random (Random)
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Foldable (for_)
+import Data.Hitpoints
 import Data.Maybe (isJust)
 import Data.Monoid
 import Data.Position (Position (..))
 import Data.Position qualified as Position
+import Game.Command
 import Game.Action
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.State qualified
+import Game.Info qualified as Game (Info)
+import Game.Info qualified as Info
 import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear (V2 (..))
 import Relude.Bool.Guard
 
 type GameState = Game.State.State
+
+-- | Kick off the ECS with provided channels and inputs.
+start :: BChan Command -> MVar Action -> Game.World -> IO ()
+start cmds acts world =
+  let initialState = (Game.State.State (Apecs.Entity 0) True)
+   in void
+        . forkIO
+        . Random.runRandomSystem
+        . runTrace
+        . runReader cmds
+        . runReader acts
+        . evalState initialState
+        . Apecs.runWith world
+        $ setup *> forever loop
+
+-- | Initial setup associated with ECS creation.
+setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
+setup = do
+  Apecs.newEntity (Position 3, World.Player, World.Glyph '@', World.White, HP 100 100)
+    >>= assign Game.State.player
+
+  for_ Canvas.borders \border -> do
+    Apecs.newEntity (border, World.Wall, World.Glyph '#', World.White)
 
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = do
@@ -70,7 +97,10 @@ loop = do
 
   canv <- draw
   pipe <- ask
-  liftIO (writeBChan pipe (Redraw canv))
+  newinfo <- currentInfo
+  liftIO do
+    writeBChan pipe (Update newinfo)
+    writeBChan pipe (Redraw canv)
   trace "Done"
 
   pure ()
@@ -96,6 +126,16 @@ movePlayer dx = do
 
   Apecs.cmap \(Position p, World.Player) -> Position (offset + p)
 
+currentInfo ::
+  ( MonadIO m
+  , Has (State GameState) sig m
+  )
+  =>
+  Apecs.SystemT Game.World m Game.Info
+currentInfo = do
+  (World.Player, hp) <- Apecs.get =<< use Game.State.player
+  pure Info.Info { Info.playerHitpoints = Last (Just hp) }
+
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = do
   (World.Player, loc) <- Apecs.get =<< use Game.State.player
@@ -109,24 +149,3 @@ occupied p = isJust . getAlt <$> cfoldMap go
 
 cfoldMap :: forall w m c a. (Apecs.Members w m c, Apecs.Get w m c, Monoid a) => (c -> a) -> Apecs.SystemT w m a
 cfoldMap f = Apecs.cfold (\a b -> a <> f b) mempty
-
-setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
-setup = do
-  Apecs.newEntity (Position 3, World.Player, World.Glyph '@', World.White)
-    >>= assign Game.State.player
-
-  for_ Canvas.borders \border -> do
-    Apecs.newEntity (border, World.Wall, World.Glyph '#', World.White)
-
-start :: BChan Command -> MVar Action -> Game.World -> IO ()
-start cmds acts world =
-  let initialState = (Game.State.State (Apecs.Entity 0) False)
-   in void
-        . forkIO
-        . Random.runRandomSystem
-        . runTrace
-        . runReader cmds
-        . runReader acts
-        . evalState initialState
-        . Apecs.runWith world
-        $ setup *> forever loop

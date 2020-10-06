@@ -27,23 +27,27 @@ library
         fused-effects,
         fused-effects-mwc-random,
         fused-effects-optics,
-        linear,
         generic-optics,
-        relude,
-        text,
+        generic-monoid,
+        linear,
         optics,
         optics-th,
         optics-vl,
+        relude,
+        text,
+        text-show,
         vector,
         vty,
         base ^>=4.14.1.0
     exposed-modules:
       Possession
       Data.Position
+      Data.Hitpoints
       Game.Action
       Game.Canvas
       Game.Command
       Game.Ecs
+      Game.Info
       Game.State
       Game.World
       UI.App
@@ -51,6 +55,7 @@ library
       UI.MainMenu
       UI.Resource
       UI.Render
+      UI.Sidebar
       UI.State
       UI.Widgets.Modeline
 

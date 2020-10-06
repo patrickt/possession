@@ -13,10 +13,12 @@ import Data.Generics.Product.Fields
 import Data.Generics.Product.Typed
 import Data.Maybe
 import Game.Action qualified as Action
-import Game.Action qualified as Game (Command)
+import Game.Command (Command)
+import Game.Command qualified as Command
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Input qualified as Input
+import UI.Sidebar qualified as Sidebar
 import UI.MainMenu qualified as MainMenu
 import UI.Render qualified as Render
 import UI.Resource qualified as UI (Resource)
@@ -32,15 +34,15 @@ draw s = case State.mode s of
   State.InGame ->
     [ Brick.border . Brick.vBox $
       [ Brick.hBox $
-          [ Brick.hLimit 15 $ Brick.border $ Brick.txt "Status bar",
-            Brick.border . Brick.padBottom Brick.Max . Render.render . State.canvas $ s
+          [ Brick.hLimit 15 $ Brick.border . Sidebar.render . State.sidebar $ s
+          ,  Brick.border . Brick.padBottom Brick.Max . Render.render . State.canvas $ s
           ],
         Brick.hBorder,
         Brick.vLimit 3 . Modeline.render . view (field @"modeline") $ s
       ]
     ]
 
-event :: UI.State -> Brick.BrickEvent UI.Resource Game.Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
+event :: UI.State -> Brick.BrickEvent UI.Resource Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
   Brick.VtyEvent (Vty.EvKey key mods) -> do
     let given = Input.fromVty key mods
@@ -50,13 +52,15 @@ event s evt = case evt of
       . State.sendMaybe s
       . fromMaybe Input.None
       $ given
-  Brick.AppEvent (Action.Redraw canv) -> do
-    Brick.continue (s & typed .~ canv)
+  Brick.AppEvent cmd -> case cmd of
+    Command.Redraw canv -> Brick.continue (s & typed .~ canv)
+    Command.Update inf -> Brick.continue (s & field @"sidebar" % field @"info" .~ inf)
+
   _ -> Brick.continue s
   where
     transition = maybe (Brick.halt s) Brick.continue
 
-app :: Brick.App UI.State Game.Command UI.Resource
+app :: Brick.App UI.State Command UI.Resource
 app =
   Brick.App
     { Brick.appDraw = draw,

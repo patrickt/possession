@@ -21,6 +21,8 @@ import GHC.Generics (Generic)
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 import Game.Action qualified as Game
+import UI.Sidebar (Sidebar)
+import UI.Sidebar qualified as Sidebar
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Optics
@@ -36,12 +38,20 @@ data State = State
     mainMenu :: MainMenu.State,
     canvas :: Game.Canvas,
     modeline :: Modeline,
+    sidebar :: Sidebar,
     gamePort :: MVar Game.Action
   }
   deriving (Generic)
 
 initial :: MVar Game.Action -> State
-initial = State InMenu MainMenu.initial Canvas.empty Modeline.modeline
+initial gp = State {
+  mode = InMenu,
+  mainMenu = MainMenu.initial,
+  canvas = Canvas.empty,
+  modeline = Modeline.modeline,
+  sidebar = Sidebar.initial,
+  gamePort = gp
+}
 
 broadcast :: MonadIO m => State -> Game.Action -> m ()
 broadcast s act = liftIO . flip putMVar act . gamePort $ s

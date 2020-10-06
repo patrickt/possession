@@ -13,6 +13,7 @@
 module Game.World (module Game.World) where
 
 import Apecs
+import Data.Hitpoints
 import Control.Algebra qualified as Eff
 import Control.Carrier.Reader qualified as Eff
 import Data.Position
@@ -25,7 +26,15 @@ data Player = Player
 
 data Wall = Wall
 
-makeWorldAndComponents "World" [''Position, ''Glyph, ''Color, ''Player, ''Wall]
+makeWorldAndComponents
+  "World"
+  [ ''Color,
+    ''Glyph,
+    ''HP,
+    ''Player,
+    ''Position,
+    ''Wall
+  ]
 
 deriving newtype instance
   Eff.Algebra sig m =>
