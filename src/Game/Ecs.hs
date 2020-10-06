@@ -40,12 +40,14 @@ import Game.Info qualified as Info
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Game.World qualified as World
-import Optics.Operators.Unsafe
 import Linear (V2 (..))
+import Optics.Operators.Unsafe
 
 type GameState = Game.State.State
 
--- | Kick off the ECS with provided channels and inputs.
+-- | Kick off the ECS with provided channels and inputs. If we get
+-- more channels/mvars, we should pull those out into their own
+-- record.
 start :: BChan Command -> MVar Action -> Game.World -> IO ()
 start cmds acts world =
   let initialState = (Game.State.State (Apecs.Entity 0) True)
@@ -62,7 +64,7 @@ start cmds acts world =
 -- | Initial setup associated with ECS creation.
 setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
 setup = do
-  Apecs.newEntity (Player.initial^?!Player._Player)
+  Apecs.newEntity (Player.initial ^?! Player._Player)
     >>= assign Game.State.player
 
   for_ Canvas.borders \border -> do
