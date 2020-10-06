@@ -49,8 +49,10 @@ library
       Data.Hitpoints
       Game.Action
       Game.Canvas
+      Game.Callbacks
       Game.Command
       Game.Ecs
+      Game.Entity.Enemy
       Game.Entity.Player
       Game.Info
       Game.State

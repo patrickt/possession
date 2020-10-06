@@ -19,16 +19,24 @@ import Data.Color
 import Data.Glyph
 import Data.Hitpoints
 import Data.Position
-import Game.Entity.Player as Player
+import Game.Entity.Enemy qualified as Enemy
+import Data.Text (Text)
+import Game.Entity.Player qualified as Player
+import Game.Callbacks (Callbacks)
 
 data Wall = Wall
+
+type CBE = Callbacks Enemy.Enemy
 
 makeWorldAndComponents
   "World"
   [ ''Color,
+    ''CBE,
+    ''Enemy.Self,
     ''Glyph,
     ''HP,
     ''Player.Self,
+    ''Text,
     ''Position,
     ''Wall
   ]

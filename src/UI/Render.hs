@@ -26,6 +26,7 @@ colorToVty = \case
   Color.Black -> Attr.black
   Color.Grey -> Attr.rgbColor 221 221 (221 :: Int)
   Color.White -> Attr.white
+  Color.Yellow -> Attr.brightYellow
 
 scanline :: Int -> Game.Canvas -> Vty.Image
 scanline idx canv = do

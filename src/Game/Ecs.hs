@@ -26,6 +26,7 @@ import Data.Color qualified as Color
 import Data.Foldable (for_)
 import Data.Glyph
 import Data.Hitpoints
+import Game.Callbacks
 import Data.Maybe (isJust)
 import Data.Monoid
 import Data.Position (Position (..))
@@ -35,6 +36,7 @@ import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Command
 import Game.Entity.Player qualified as Player
+import Game.Entity.Enemy qualified as Enemy
 import Game.Info qualified as Game (Info)
 import Game.Info qualified as Info
 import Game.State qualified
@@ -67,6 +69,8 @@ setup = do
   Apecs.newEntity (Player.initial ^?! Player._Player)
     >>= assign Game.State.player
 
+  Apecs.newEntity (Enemy.initial ^?! Enemy._Enemy)
+
   for_ Canvas.borders \border -> do
     Apecs.newEntity (border, World.Wall, Glyph '#', Color.White)
 
@@ -85,7 +89,7 @@ loop ::
     Has Random sig m,
     Has (Reader (MVar Action)) sig m,
     Has (Reader (BChan Command)) sig m,
-    Has (State Game.State.State) sig m,
+    Has (State GameState) sig m,
     Has Trace sig m
   ) =>
   Apecs.SystemT Game.World m ()
@@ -93,16 +97,15 @@ loop = do
   trace "Loopin"
   next <- ask >>= liftIO . takeMVar @Action
   debug <- use Game.State.debugMode
-  pipe <- ask
 
   case next of
     Move dir -> do
       adjusted <- (if not debug then offsetRandomly else pure) dir
       prospective <- Position.offset adjusted <$> playerPosition
-      invalid <- occupied prospective
-      if invalid
-        then liftIO (writeBChan pipe (Notify "You can't go that way."))
-        else movePlayer dir
+      present <- occupant prospective
+      case present of
+        Nothing -> movePlayer dir
+        Just ent -> collideWith ent
     NoOp -> pure ()
 
   canv <- draw
@@ -112,6 +115,15 @@ loop = do
   trace "Done"
 
   pure ()
+
+collideWith ::
+  (MonadIO m, Has (Reader (BChan Command)) sig m)
+  => Apecs.Entity -> Apecs.SystemT Game.World m ()
+collideWith ent = do
+  cb <- Apecs.get ent
+  case onCollision cb of
+    Attack -> Channel.writeB (Notify "You attack!")
+    Invalid -> Channel.writeB (Notify "You can't go that way.")
 
 offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)
 offsetRandomly (V2 x y) = V2 <$> go x <*> go y
@@ -148,11 +160,14 @@ playerPosition = do
   (Player.Self, loc) <- Apecs.get =<< use Game.State.player
   pure loc
 
-occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool
-occupied p = isJust . getAlt <$> cfoldMap go
+occupant :: MonadIO m => Position -> Apecs.SystemT Game.World m (Maybe Apecs.Entity)
+occupant p = fmap snd . getAlt <$> cfoldMap go
   where
-    go :: Position -> Alt Maybe Position
-    go x = x <$ guard (x == p)
+    go :: (Position, Apecs.Entity) -> Alt Maybe (Position, Apecs.Entity)
+    go x = x <$ guard (fst x == p)
+
+occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool
+occupied = fmap isJust . occupant
 
 cfoldMap :: forall w m c a. (Apecs.Members w m c, Apecs.Get w m c, Monoid a) => (c -> a) -> Apecs.SystemT w m a
 cfoldMap f = Apecs.cfold (\a b -> a <> f b) mempty
