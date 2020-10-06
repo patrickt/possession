@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+
 module Data.Color where
 
 import GHC.Generics (Generic)

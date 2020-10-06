@@ -15,18 +15,18 @@ where
 import Brick qualified
 import Brick.Markup (markup, (@?))
 import Brick.Widgets.List qualified as Brick
+import Data.Generics.Product
 import Data.Message
 import Data.Sequence (Seq)
-import Data.Generics.Product
 import Data.Text.Markup qualified as Markup
+import GHC.Generics (Generic)
 import Optics
 import TextShow
 import UI.Resource (Resource)
 import UI.Resource qualified as Resource
-import GHC.Generics (Generic)
 
 newtype Modeline = Modeline (Seq Message)
-  deriving Generic
+  deriving (Generic)
 
 messages :: Lens' Modeline (Seq Message)
 messages = typed

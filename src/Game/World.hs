@@ -14,13 +14,12 @@ module Game.World (module Game.World) where
 
 import Apecs
 import Control.Algebra qualified as Eff
-import Data.Glyph
 import Control.Carrier.Reader qualified as Eff
+import Data.Color
+import Data.Glyph
 import Data.Hitpoints
 import Data.Position
-import Data.Color
-
-data Player = Player
+import Game.Entity.Player as Player
 
 data Wall = Wall
 
@@ -29,7 +28,7 @@ makeWorldAndComponents
   [ ''Color,
     ''Glyph,
     ''HP,
-    ''Player,
+    ''Player.Self,
     ''Position,
     ''Wall
   ]

@@ -9,7 +9,7 @@ module Data.Message
     contents,
     urgency,
     times,
-    Urgency(..),
+    Urgency (..),
   )
 where
 

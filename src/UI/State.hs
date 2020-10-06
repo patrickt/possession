@@ -22,6 +22,7 @@ where
 
 import Control.Concurrent.MVar
 import Control.Monad.IO.Class
+import Data.Generics.Product
 import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
 import Game.Action qualified as Game
@@ -34,7 +35,6 @@ import UI.Sidebar (Sidebar)
 import UI.Sidebar qualified as Sidebar
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
-import Data.Generics.Product
 
 data Mode
   = InMenu
@@ -83,7 +83,7 @@ broadcast :: MonadIO m => State -> Game.Action -> m ()
 broadcast s act = liftIO . flip putMVar act . view gamePort $ s
 
 send :: Input -> State -> State
-send i s = case (i, s^.mode, s^.mainMenu%field @"selected") of
+send i s = case (i, s ^. mode, s ^. mainMenu % field @"selected") of
   (Up, InMenu, _) -> go Up
   (Down, _, _) -> go Down
   (Accept, InMenu, Just MainMenu.NewGame) -> s & mode .~ InGame

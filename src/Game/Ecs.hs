@@ -20,25 +20,27 @@ import Control.Concurrent
 import Control.Effect.Channel qualified as Channel
 import Control.Effect.Optics
 import Control.Effect.Random (Random)
-import Data.Glyph
 import Control.Monad
 import Control.Monad.IO.Class
+import Data.Color qualified as Color
 import Data.Foldable (for_)
+import Data.Glyph
 import Data.Hitpoints
 import Data.Maybe (isJust)
 import Data.Monoid
 import Data.Position (Position (..))
 import Data.Position qualified as Position
 import Game.Action
-import Data.Color qualified as Color
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Command
+import Game.Entity.Player qualified as Player
 import Game.Info qualified as Game (Info)
 import Game.Info qualified as Info
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Game.World qualified as World
+import Optics.Operators.Unsafe
 import Linear (V2 (..))
 
 type GameState = Game.State.State
@@ -60,7 +62,7 @@ start cmds acts world =
 -- | Initial setup associated with ECS creation.
 setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
 setup = do
-  Apecs.newEntity (Position 3, World.Player, Glyph '@', Color.White, HP 100 100)
+  Apecs.newEntity (Player.initial^?!Player._Player)
     >>= assign Game.State.player
 
   for_ Canvas.borders \border -> do
@@ -128,7 +130,7 @@ movePlayer dx = do
   debug <- use Game.State.debugMode
   offset <- (if debug then pure else offsetRandomly) dx
 
-  Apecs.cmap \(Position p, World.Player) -> Position (offset + p)
+  Apecs.cmap \(Position p, Player.Self) -> Position (offset + p)
 
 currentInfo ::
   ( MonadIO m,
@@ -136,12 +138,12 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (World.Player, hp) <- Apecs.get =<< use Game.State.player
+  (Player.Self, hp) <- Apecs.get =<< use Game.State.player
   pure Info.Info {Info.playerHitpoints = Last (Just hp)}
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = do
-  (World.Player, loc) <- Apecs.get =<< use Game.State.player
+  (Player.Self, loc) <- Apecs.get =<< use Game.State.player
   pure loc
 
 occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool

@@ -5,13 +5,13 @@
 module UI.Render where
 
 import Brick qualified
-import Data.Position qualified as Position
+import Data.Color (Color)
+import Data.Color qualified as Color
 import Data.Glyph
+import Data.Position qualified as Position
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.World qualified as World
-import Data.Color (Color)
-import Data.Color qualified as Color
 import Graphics.Vty qualified as Vty
 import Graphics.Vty.Attributes qualified as Attr
 import UI.Resource
