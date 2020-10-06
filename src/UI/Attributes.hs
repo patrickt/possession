@@ -2,8 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module UI.Attributes
-  ( withStandard
-  ) where
+  ( withStandard,
+  )
+where
 
 import Brick qualified
 import Graphics.Vty qualified as Vty
@@ -13,6 +14,6 @@ withStandard = Brick.updateAttrMap (Brick.applyAttrMappings standard)
 
 standard :: [(Brick.AttrName, Vty.Attr)]
 standard =
-  [ ("green", Brick.fg Vty.green)
-  , ("bold", Vty.withStyle Vty.defAttr Vty.bold)
+  [ ("green", Brick.fg Vty.green),
+    ("bold", Vty.withStyle Vty.defAttr Vty.bold)
   ]

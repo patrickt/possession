@@ -1,7 +1,7 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 
 module Game.Canvas where
 
@@ -32,8 +32,8 @@ borders = up <> down <> left <> right
     down = Position.make <$> horizontal <*> pure size
     left = Position.make 0 <$> vertical
     right = Position.make size <$> vertical
-    horizontal = [0..size]
-    vertical = [1..size-1]
+    horizontal = [0 .. size]
+    vertical = [1 .. size -1]
 
 newtype Canvas = Canvas {unCanvas :: Array Position Sprite}
   deriving newtype (Show)

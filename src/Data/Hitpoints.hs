@@ -1,3 +1,3 @@
-module Data.Hitpoints ( HP (..) )where
+module Data.Hitpoints (HP (..)) where
 
-data HP = HP { current :: !Int, total :: !Int }
+data HP = HP {current :: !Int, total :: !Int}

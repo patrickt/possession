@@ -2,11 +2,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.Position
-  ( Position (..)
-  , V2 (..)
-  , make
-  , offset
-  ) where
+  ( Position (..),
+    V2 (..),
+    make,
+    offset,
+  )
+where
 
 import Data.Ix
 import Linear.V2

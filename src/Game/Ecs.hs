@@ -1,9 +1,9 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -16,8 +16,8 @@ import Control.Carrier.Random.Lifted qualified as Random
 import Control.Carrier.Reader
 import Control.Carrier.State.Strict
 import Control.Carrier.Trace.Ignoring
-import Control.Effect.Channel qualified as Channel
 import Control.Concurrent
+import Control.Effect.Channel qualified as Channel
 import Control.Effect.Optics
 import Control.Effect.Random (Random)
 import Control.Monad
@@ -28,13 +28,13 @@ import Data.Maybe (isJust)
 import Data.Monoid
 import Data.Position (Position (..))
 import Data.Position qualified as Position
-import Game.Command
 import Game.Action
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
-import Game.State qualified
+import Game.Command
 import Game.Info qualified as Game (Info)
 import Game.Info qualified as Info
+import Game.State qualified
 import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear (V2 (..))
@@ -129,14 +129,13 @@ movePlayer dx = do
   Apecs.cmap \(Position p, World.Player) -> Position (offset + p)
 
 currentInfo ::
-  ( MonadIO m
-  , Has (State GameState) sig m
-  )
-  =>
+  ( MonadIO m,
+    Has (State GameState) sig m
+  ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
   (World.Player, hp) <- Apecs.get =<< use Game.State.player
-  pure Info.Info { Info.playerHitpoints = Last (Just hp) }
+  pure Info.Info {Info.playerHitpoints = Last (Just hp)}
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = do

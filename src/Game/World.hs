@@ -13,9 +13,9 @@
 module Game.World (module Game.World) where
 
 import Apecs
-import Data.Hitpoints
 import Control.Algebra qualified as Eff
 import Control.Carrier.Reader qualified as Eff
+import Data.Hitpoints
 import Data.Position
 
 newtype Glyph = Glyph Char deriving newtype (Show)

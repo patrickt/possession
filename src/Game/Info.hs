@@ -1,16 +1,16 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Game.Info (module Game.Info) where
 
+import Data.Generics.Product
+import Data.Hitpoints (HP)
 import Data.Monoid
 import Data.Monoid.Generic
-import Data.Hitpoints (HP)
-import Data.Generics.Product
-import Optics
 import GHC.Generics (Generic)
+import Optics
 
 data Info = Info
   { playerHitpoints :: Last HP
@@ -20,4 +20,4 @@ data Info = Info
   deriving (Monoid) via GenericMonoid Info
 
 hitpoints :: Lens' Info (Maybe HP)
-hitpoints = field @"playerHitpoints" %coerced
+hitpoints = field @"playerHitpoints" % coerced

@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeApplications #-}
 
 module UI.State
@@ -18,16 +18,16 @@ import Control.Concurrent.MVar
 import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
-import UI.Widgets.Modeline (Modeline)
-import UI.Widgets.Modeline qualified as Modeline
 import Game.Action qualified as Game
-import UI.Sidebar (Sidebar)
-import UI.Sidebar qualified as Sidebar
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Optics
 import UI.Input
 import UI.MainMenu qualified as MainMenu
+import UI.Sidebar (Sidebar)
+import UI.Sidebar qualified as Sidebar
+import UI.Widgets.Modeline (Modeline)
+import UI.Widgets.Modeline qualified as Modeline
 
 data Mode
   = InMenu
@@ -44,14 +44,15 @@ data State = State
   deriving (Generic)
 
 initial :: MVar Game.Action -> State
-initial gp = State {
-  mode = InMenu,
-  mainMenu = MainMenu.initial,
-  canvas = Canvas.empty,
-  modeline = Modeline.modeline,
-  sidebar = Sidebar.initial,
-  gamePort = gp
-}
+initial gp =
+  State
+    { mode = InMenu,
+      mainMenu = MainMenu.initial,
+      canvas = Canvas.empty,
+      modeline = Modeline.modeline,
+      sidebar = Sidebar.initial,
+      gamePort = gp
+    }
 
 broadcast :: MonadIO m => State -> Game.Action -> m ()
 broadcast s act = liftIO . flip putMVar act . gamePort $ s

@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -15,18 +15,19 @@ import Brick qualified
 import Brick.Markup ((@?))
 import Brick.Markup qualified as Markup
 import Data.Generics.Product
-import TextShow (showt)
+import Data.Hitpoints
+import GHC.Generics (Generic)
 import Game.Info
 import Graphics.Vty qualified as Vty
 import Graphics.Vty.Attributes qualified as Attr
 import Optics
+import TextShow (showt)
 import UI.Resource
-import Data.Hitpoints
-import GHC.Generics (Generic)
 
 data Sidebar = Sidebar
   { info :: Info
-  } deriving Generic
+  }
+  deriving (Generic)
 
 initial :: Sidebar
 initial = Sidebar mempty
@@ -34,8 +35,8 @@ initial = Sidebar mempty
 render :: Sidebar -> Brick.Widget Resource
 render sb =
   Brick.vBox
-  [ Markup.markup renderedHP
-  ]
+    [ Markup.markup renderedHP
+    ]
   where
     renderedHP = case sb ^. field @"info" % hitpoints of
       Nothing -> boldhp <> "- / -"

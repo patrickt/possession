@@ -16,8 +16,8 @@ import GHC.Generics (Generic)
 import Optics
 
 data State = State
-  { statePlayer :: Apecs.Entity
-  , stateDebugMode :: Bool
+  { statePlayer :: Apecs.Entity,
+    stateDebugMode :: Bool
   }
   deriving (Generic)
 
