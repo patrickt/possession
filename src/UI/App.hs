@@ -22,6 +22,7 @@ import UI.Sidebar qualified as Sidebar
 import UI.MainMenu qualified as MainMenu
 import UI.Render qualified as Render
 import UI.Resource qualified as UI (Resource)
+import UI.Attributes qualified as Attributes
 import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline qualified as Modeline
@@ -32,7 +33,7 @@ draw s = case State.mode s of
     [ MainMenu.render . State.mainMenu $ s
     ]
   State.InGame ->
-    [ Brick.border . Brick.vBox $
+    [ Attributes.withStandard . Brick.border . Brick.vBox $
       [ Brick.hBox $
           [ Brick.hLimit 15 $ Brick.border . Sidebar.render . State.sidebar $ s
           ,  Brick.border . Brick.padBottom Brick.Max . Render.render . State.canvas $ s
@@ -52,9 +53,10 @@ event s evt = case evt of
       . State.sendMaybe s
       . fromMaybe Input.None
       $ given
-  Brick.AppEvent cmd -> case cmd of
-    Command.Redraw canv -> Brick.continue (s & typed .~ canv)
-    Command.Update inf -> Brick.continue (s & field @"sidebar" % field @"info" .~ inf)
+  Brick.AppEvent cmd -> Brick.continue $ case cmd of
+    Command.Redraw canv -> s & typed .~ canv
+    Command.Update inf -> s & field @"sidebar" % field @"info" .~ inf
+    Command.Notify msg -> s & field @"modeline" %~ Modeline.update msg
 
   _ -> Brick.continue s
   where

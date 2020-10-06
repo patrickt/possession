@@ -33,17 +33,13 @@ initial = Sidebar mempty
 
 render :: Sidebar -> Brick.Widget Resource
 render sb =
-  Brick.updateAttrMap allAttrs $
-    Brick.vBox
-      [ Markup.markup renderedHP
-      ]
+  Brick.vBox
+  [ Markup.markup renderedHP
+  ]
   where
-    renderedHP = case sb ^. field @"info" % hitpoints % coercedTo @(Maybe HP) of
+    renderedHP = case sb ^. field @"info" % hitpoints of
       Nothing -> boldhp <> "- / -"
       Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
     boldhp = "HP: " @? "bold"
     allAttrs =
       Brick.applyAttrMappings
-      [ ("green", Brick.fg Vty.green)
-      , ("bold", Attr.withStyle Attr.defAttr Attr.bold)
-      ]

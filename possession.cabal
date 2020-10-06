@@ -41,6 +41,7 @@ library
         base ^>=4.14.1.0
     exposed-modules:
       Possession
+      Data.Message
       Data.Position
       Data.Hitpoints
       Game.Action
@@ -50,6 +51,7 @@ library
       Game.Info
       Game.State
       Game.World
+      UI.Attributes
       UI.App
       UI.Input
       UI.MainMenu

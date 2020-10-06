@@ -7,5 +7,6 @@ data Resource
   = Modeline
   | Canvas
   | MainMenu
+  | Readout
   | Unspecified
   deriving (Eq, Show, Ord)

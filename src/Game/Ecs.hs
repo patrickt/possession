@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -86,17 +87,19 @@ loop = do
   trace "Loopin"
   next <- ask >>= liftIO . takeMVar @Action
   debug <- use Game.State.debugMode
+  pipe <- ask
 
   case next of
     Move dir -> do
-      adjusted <- (if debug then offsetRandomly else pure) dir
-      prospective <- Position.offset adjusted <$> playerPosition
-      unlessM (occupied prospective) $
-        movePlayer dir
+      ---adjusted <- (if debug then offsetRandomly else pure) dir
+      prospective <- Position.offset dir <$> playerPosition
+      invalid <- occupied prospective
+      if invalid
+        then liftIO (writeBChan pipe (Notify "You can't go that way."))
+        else movePlayer dir
     NoOp -> pure ()
 
   canv <- draw
-  pipe <- ask
   newinfo <- currentInfo
   liftIO do
     writeBChan pipe (Update newinfo)
