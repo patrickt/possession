@@ -5,7 +5,13 @@
 {-# LANGUAGE TypeApplications #-}
 
 module UI.State
-  ( State (..),
+  ( State (State),
+    sidebar,
+    mainMenu,
+    mode,
+    modeline,
+    gamePort,
+    canvas,
     Mode (..),
     initial,
     send,
@@ -28,44 +34,63 @@ import UI.Sidebar (Sidebar)
 import UI.Sidebar qualified as Sidebar
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
+import Data.Generics.Product
 
 data Mode
   = InMenu
   | InGame
 
 data State = State
-  { mode :: Mode,
-    mainMenu :: MainMenu.State,
-    canvas :: Game.Canvas,
-    modeline :: Modeline,
-    sidebar :: Sidebar,
-    gamePort :: MVar Game.Action
+  { _mode :: Mode,
+    _mainMenu :: MainMenu.State,
+    _canvas :: Game.Canvas,
+    _modeline :: Modeline,
+    _sidebar :: Sidebar,
+    _gamePort :: MVar Game.Action
   }
   deriving (Generic)
+
+sidebar :: Lens' State Sidebar
+sidebar = typed
+
+mainMenu :: Lens' State MainMenu.State
+mainMenu = typed
+
+mode :: Lens' State Mode
+mode = typed
+
+modeline :: Lens' State Modeline
+modeline = typed
+
+gamePort :: Lens' State (MVar Game.Action)
+gamePort = typed
+
+canvas :: Lens' State Game.Canvas
+canvas = typed
 
 initial :: MVar Game.Action -> State
 initial gp =
   State
-    { mode = InMenu,
-      mainMenu = MainMenu.initial,
-      canvas = Canvas.empty,
-      modeline = Modeline.modeline,
-      sidebar = Sidebar.initial,
-      gamePort = gp
+    { _mode = InMenu,
+      _mainMenu = MainMenu.initial,
+      _canvas = Canvas.empty,
+      _modeline = Modeline.initial,
+      _sidebar = Sidebar.initial,
+      _gamePort = gp
     }
 
 broadcast :: MonadIO m => State -> Game.Action -> m ()
-broadcast s act = liftIO . flip putMVar act . gamePort $ s
+broadcast s act = liftIO . flip putMVar act . view gamePort $ s
 
 send :: Input -> State -> State
-send i s = case (i, mode s, MainMenu.selected (mainMenu s)) of
+send i s = case (i, s^.mode, s^.mainMenu%field @"selected") of
   (Up, InMenu, _) -> go Up
   (Down, _, _) -> go Down
-  (Accept, InMenu, Just MainMenu.NewGame) -> s & field @"mode" .~ InGame
+  (Accept, InMenu, Just MainMenu.NewGame) -> s & mode .~ InGame
   _ -> s
   where
-    go x = over selection (MainMenu.adjust x) s
-    selection = field @"mainMenu" % field @"selected" % _Just
+    go x = s & selection %~ MainMenu.adjust x
+    selection = mainMenu % field @"selected" % _Just
 
 sendMaybe :: State -> Input -> Maybe State
 sendMaybe _ Quit = Nothing

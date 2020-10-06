@@ -25,10 +25,8 @@ Monster locations:
 - from [[https://github.com/sil-quirk/sil-q/blob/master/lib/edit/monster.txt][silq]]
 - from [[https://nikheizen.github.io/pages/compostband/mon-desc.html][poschengband]]
 
-So how are we gonna do messages, too? Presumably there should be a status bar on the bottom, that we'll lay out with brick
-
-sidebar, +status bar, and body+
-
 generalize the (Reader (BChan x)) and (Reader (MVar x)) and whatever with some unified Pipe interface
 slurp in some enemies
 multi-square things? z-levels in the canvas? gonna need them
+Consolidating error messages (monoid?)
+Fade out modeline message

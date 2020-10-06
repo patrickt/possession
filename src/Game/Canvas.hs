@@ -8,7 +8,8 @@ module Game.Canvas where
 import Data.Array (Array, array, (!), (//))
 import Data.Position (Position)
 import Data.Position qualified as Position
-import Game.World (Color (..), Glyph (..))
+import Data.Color
+import Data.Glyph
 
 data Sprite = Sprite
   { glyph :: !Glyph,

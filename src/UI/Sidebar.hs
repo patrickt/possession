@@ -18,8 +18,6 @@ import Data.Generics.Product
 import Data.Hitpoints
 import GHC.Generics (Generic)
 import Game.Info
-import Graphics.Vty qualified as Vty
-import Graphics.Vty.Attributes qualified as Attr
 import Optics
 import TextShow (showt)
 import UI.Resource
@@ -42,5 +40,3 @@ render sb =
       Nothing -> boldhp <> "- / -"
       Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
     boldhp = "HP: " @? "bold"
-    allAttrs =
-      Brick.applyAttrMappings

@@ -14,13 +14,11 @@ module Game.World (module Game.World) where
 
 import Apecs
 import Control.Algebra qualified as Eff
+import Data.Glyph
 import Control.Carrier.Reader qualified as Eff
 import Data.Hitpoints
 import Data.Position
-
-newtype Glyph = Glyph Char deriving newtype (Show)
-
-data Color = Black | Grey | White deriving (Show)
+import Data.Color
 
 data Player = Player
 

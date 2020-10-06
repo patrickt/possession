@@ -12,6 +12,7 @@ import Brick.Widgets.Border qualified as Brick
 import Data.Generics.Product.Fields
 import Data.Generics.Product.Typed
 import Data.Maybe
+import Data.Message
 import Game.Action qualified as Action
 import Game.Command (Command)
 import Game.Command qualified as Command
@@ -23,23 +24,25 @@ import UI.MainMenu qualified as MainMenu
 import UI.Render qualified as Render
 import UI.Resource qualified as UI (Resource)
 import UI.Sidebar qualified as Sidebar
+import UI.State (modeline, sidebar)
 import UI.State qualified as State
 import UI.State qualified as UI (State)
+import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
-draw s = case State.mode s of
+draw s = case s ^. State.mode of
   State.InMenu ->
-    [ MainMenu.render . State.mainMenu $ s
+    [ MainMenu.render . view State.mainMenu $ s
     ]
   State.InGame ->
     [ Attributes.withStandard . Brick.border . Brick.vBox $
-        [ Brick.hBox $
-            [ Brick.hLimit 15 $ Brick.border . Sidebar.render . State.sidebar $ s,
-              Brick.border . Brick.padBottom Brick.Max . Render.render . State.canvas $ s
+        [ Brick.hBox
+            [ Brick.hLimit 15 . Brick.border . Sidebar.render . view State.sidebar $ s,
+              Brick.border . Brick.padBottom Brick.Max . Render.render . view State.canvas $ s
             ],
           Brick.hBorder,
-          Brick.vLimit 3 . Modeline.render . view (field @"modeline") $ s
+          Brick.vLimit 3 . Modeline.render . view modeline $ s
         ]
     ]
 
@@ -55,8 +58,13 @@ event s evt = case evt of
       $ given
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Command.Redraw canv -> s & typed .~ canv
-    Command.Update inf -> s & field @"sidebar" % field @"info" .~ inf
-    Command.Notify msg -> s & field @"modeline" %~ Modeline.update msg
+    Command.Update inf -> s & sidebar % field @"info" .~ inf
+    Command.Notify msg -> do
+      let previous = s ^? modeline % messages % _last
+      let shouldCoalesce = previous ^? _Just % contents == Just (msg ^. contents)
+      case (previous, shouldCoalesce) of
+        (Just _, True) -> s & modeline % Modeline.messages % _last % times %~ succ
+        _ -> s & modeline %~ Modeline.update msg
   _ -> Brick.continue s
   where
     transition = maybe (Brick.halt s) Brick.continue

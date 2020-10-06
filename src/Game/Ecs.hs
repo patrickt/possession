@@ -20,6 +20,7 @@ import Control.Concurrent
 import Control.Effect.Channel qualified as Channel
 import Control.Effect.Optics
 import Control.Effect.Random (Random)
+import Data.Glyph
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Foldable (for_)
@@ -29,6 +30,7 @@ import Data.Monoid
 import Data.Position (Position (..))
 import Data.Position qualified as Position
 import Game.Action
+import Data.Color qualified as Color
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Command
@@ -58,11 +60,11 @@ start cmds acts world =
 -- | Initial setup associated with ECS creation.
 setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
 setup = do
-  Apecs.newEntity (Position 3, World.Player, World.Glyph '@', World.White, HP 100 100)
+  Apecs.newEntity (Position 3, World.Player, Glyph '@', Color.White, HP 100 100)
     >>= assign Game.State.player
 
   for_ Canvas.borders \border -> do
-    Apecs.newEntity (border, World.Wall, World.Glyph '#', World.White)
+    Apecs.newEntity (border, World.Wall, Glyph '#', Color.White)
 
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = do
@@ -71,7 +73,7 @@ draw = do
   trace (show new)
   pure (Canvas.empty `Canvas.update` new)
   where
-    go :: [(Position, Canvas.Sprite)] -> (Position, World.Glyph, World.Color) -> [(Position, Canvas.Sprite)]
+    go :: [(Position, Canvas.Sprite)] -> (Position, Glyph, Color.Color) -> [(Position, Canvas.Sprite)]
     go acc (pos, chr, color) = (pos, Canvas.Sprite chr color) : acc
 
 loop ::

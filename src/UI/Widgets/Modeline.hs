@@ -1,23 +1,38 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
-module UI.Widgets.Modeline where
+module UI.Widgets.Modeline
+  ( Modeline,
+    initial,
+    messages,
+    update,
+    render,
+  )
+where
 
 import Brick qualified
 import Brick.Markup (markup, (@?))
 import Brick.Widgets.List qualified as Brick
-import Data.Message (Message (Message))
-import Data.Message qualified as Message
-import Data.Sequence (Seq, (|>))
-import Data.Text (Text)
+import Data.Message
+import Data.Sequence (Seq)
+import Data.Generics.Product
+import Data.Text.Markup qualified as Markup
+import Optics
+import TextShow
 import UI.Resource (Resource)
 import UI.Resource qualified as Resource
+import GHC.Generics (Generic)
 
-newtype Modeline = Modeline {contents :: Seq Message}
+newtype Modeline = Modeline (Seq Message)
+  deriving Generic
 
-modeline :: Modeline
-modeline = Modeline mempty
+messages :: Lens' Modeline (Seq Message)
+messages = typed
+
+initial :: Modeline
+initial = Modeline mempty
 
 update :: Message -> Modeline -> Modeline
 update m (Modeline msgs) = Modeline (msgs |> m)
@@ -30,9 +45,12 @@ render (Modeline msgs) =
     $ Brick.list Resource.Readout msgs 1
 
 renderMessage :: Message -> Brick.Widget a
-renderMessage (Message msg urgency) =
-  let attr = case urgency of
-        Message.Info -> ""
-        Message.Warning -> "yellow"
-        Message.Danger -> "red"
-   in markup (msg @? attr)
+renderMessage m =
+  let attr = case m ^. urgency of
+        Info -> ""
+        Warning -> "yellow"
+        Danger -> "red"
+      toAppend = case m ^. times of
+        1 -> ""
+        n -> " (" <> showt n <> "x)"
+   in markup (((m ^. contents) @? attr) <> Markup.fromText toAppend)

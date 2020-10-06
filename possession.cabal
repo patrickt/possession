@@ -41,6 +41,9 @@ library
     exposed-modules:
       Possession
       Control.Effect.Channel
+      Data.Color
+      Data.Glyph
+      Data.Is
       Data.Message
       Data.Position
       Data.Hitpoints
@@ -48,6 +51,7 @@ library
       Game.Canvas
       Game.Command
       Game.Ecs
+      Game.Entity.Player
       Game.Info
       Game.State
       Game.World
