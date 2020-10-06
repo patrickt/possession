@@ -38,7 +38,6 @@ import Game.Info qualified as Info
 import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear (V2 (..))
-import Relude.Bool.Guard
 
 type GameState = Game.State.State
 
@@ -92,8 +91,8 @@ loop = do
 
   case next of
     Move dir -> do
-      ---adjusted <- (if debug then offsetRandomly else pure) dir
-      prospective <- Position.offset dir <$> playerPosition
+      adjusted <- (if not debug then offsetRandomly else pure) dir
+      prospective <- Position.offset adjusted <$> playerPosition
       invalid <- occupied prospective
       if invalid
         then liftIO (writeBChan pipe (Notify "You can't go that way."))

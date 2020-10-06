@@ -33,7 +33,6 @@ library
         optics,
         optics-th,
         optics-vl,
-        relude,
         text,
         text-show,
         vector,
