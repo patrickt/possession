@@ -16,6 +16,7 @@ import Control.Carrier.Random.Lifted qualified as Random
 import Control.Carrier.Reader
 import Control.Carrier.State.Strict
 import Control.Carrier.Trace.Ignoring
+import Control.Effect.Channel qualified as Channel
 import Control.Concurrent
 import Control.Effect.Optics
 import Control.Effect.Random (Random)
@@ -101,9 +102,8 @@ loop = do
 
   canv <- draw
   newinfo <- currentInfo
-  liftIO do
-    writeBChan pipe (Update newinfo)
-    writeBChan pipe (Redraw canv)
+  Channel.writeB (Update newinfo)
+  Channel.writeB (Redraw canv)
   trace "Done"
 
   pure ()

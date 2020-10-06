@@ -41,6 +41,7 @@ library
         base ^>=4.14.1.0
     exposed-modules:
       Possession
+      Control.Effect.Channel
       Data.Message
       Data.Position
       Data.Hitpoints
