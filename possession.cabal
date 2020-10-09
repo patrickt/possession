@@ -27,6 +27,7 @@ library
         fused-effects,
         fused-effects-mwc-random,
         fused-effects-optics,
+        generic-lens-core,
         generic-optics,
         generic-monoid,
         linear,
@@ -57,6 +58,7 @@ library
       Game.Info
       Game.State
       Game.World
+      Optics.Tupled
       UI.Attributes
       UI.App
       UI.Input

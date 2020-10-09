@@ -26,24 +26,25 @@ import Data.Color qualified as Color
 import Data.Foldable (for_)
 import Data.Glyph
 import Data.Hitpoints
-import Game.Callbacks
 import Data.Maybe (isJust)
 import Data.Monoid
 import Data.Position (Position (..))
 import Data.Position qualified as Position
 import Game.Action
+import Game.Callbacks
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Command
-import Game.Entity.Player qualified as Player
 import Game.Entity.Enemy qualified as Enemy
+import Game.Entity.Player qualified as Player
 import Game.Info qualified as Game (Info)
 import Game.Info qualified as Info
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Game.World qualified as World
 import Linear (V2 (..))
-import Optics.Operators.Unsafe
+import Optics ((^.))
+import Optics.Tupled
 
 type GameState = Game.State.State
 
@@ -66,10 +67,10 @@ start cmds acts world =
 -- | Initial setup associated with ECS creation.
 setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
 setup = do
-  Apecs.newEntity (Player.initial ^?! Player._Player)
+  Apecs.newEntity (Player.initial ^. tupled)
     >>= assign Game.State.player
 
-  Apecs.newEntity (Enemy.initial ^?! Enemy._Enemy)
+  Apecs.newEntity (Enemy.initial ^. tupled)
 
   for_ Canvas.borders \border -> do
     Apecs.newEntity (border, World.Wall, Glyph '#', Color.White)
@@ -117,8 +118,9 @@ loop = do
   pure ()
 
 collideWith ::
-  (MonadIO m, Has (Reader (BChan Command)) sig m)
-  => Apecs.Entity -> Apecs.SystemT Game.World m ()
+  (MonadIO m, Has (Reader (BChan Command)) sig m) =>
+  Apecs.Entity ->
+  Apecs.SystemT Game.World m ()
 collideWith ent = do
   cb <- Apecs.get ent
   case onCollision cb of

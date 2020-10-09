@@ -26,12 +26,11 @@ import Game.Callbacks (Callbacks)
 
 data Wall = Wall
 
-type CBE = Callbacks Enemy.Enemy
 
 makeWorldAndComponents
   "World"
   [ ''Color,
-    ''CBE,
+    ''Callbacks,
     ''Enemy.Self,
     ''Glyph,
     ''HP,

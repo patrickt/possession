@@ -1,14 +1,14 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Game.Entity.Enemy
   ( Enemy (Enemy),
-    _Enemy,
     Self (..),
     initial,
   )
@@ -23,6 +23,7 @@ import Data.Text (Text)
 import Game.Callbacks qualified as Callbacks
 import GHC.Generics (Generic)
 import Optics
+import Optics.Tupled
 
 data Self = Self
 
@@ -32,13 +33,12 @@ data Enemy = Enemy
     _hitpoints :: HP,
     _glyph :: Glyph,
     _color :: Color,
-    _pos :: Position,
-    _behavior :: Callbacks.Callbacks Enemy
+    _pos :: Position
   }
   deriving (Generic)
 
-initial :: Enemy
-initial = Enemy Self "" (HP 0 0) (Glyph '?') Yellow (Position 6) Callbacks.hostile
+instance Tupled Enemy (Self, Text, HP, Glyph, Color, Position) where
+  tupled = iso (\Enemy{..} -> (_self, _name, _hitpoints, _glyph, _color, _pos)) (\(_self, _name, _hitpoints, _glyph, _color, _pos) -> Enemy {..})
 
-_Enemy :: Prism' Enemy _
-_Enemy = _Ctor @"Enemy"
+initial :: Enemy
+initial = Enemy Self "" (HP 0 0) (Glyph '?') Yellow (Position 6)
