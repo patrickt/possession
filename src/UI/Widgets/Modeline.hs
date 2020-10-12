@@ -14,6 +14,7 @@ where
 
 import Brick qualified
 import Brick.Markup (markup, (@?))
+import Data.Sequence qualified as Seq
 import Brick.Widgets.List qualified as Brick
 import Data.Generics.Product
 import Data.Message
@@ -42,7 +43,8 @@ render (Modeline msgs) =
   Brick.viewport Resource.Modeline Brick.Vertical
     . Brick.vLimit 3
     . Brick.renderList (const renderMessage) False
-    $ Brick.list Resource.Readout msgs 1
+    -- TODO: move this viewport appropriately rather than gyrating with drop
+    $ Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1
 
 renderMessage :: Message -> Brick.Widget a
 renderMessage m =

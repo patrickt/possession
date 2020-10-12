@@ -20,6 +20,7 @@ library
     import: haskell
     hs-source-dirs: src
     build-depends:
+        aeson,
         apecs,
         array,
         brick,
@@ -42,6 +43,7 @@ library
     exposed-modules:
       Possession
       Control.Effect.Channel
+      Data.Aeson.Exts
       Data.Color
       Data.Glyph
       Data.Is

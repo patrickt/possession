@@ -124,9 +124,10 @@ collideWith ::
   Apecs.Entity ->
   Apecs.SystemT Game.World m ()
 collideWith ent = do
-  (cb, HP curr _, name) <- Apecs.get ent
+  (cb, name) <- Apecs.get ent
   case cb of
     Attack -> do
+      HP curr _ <- Apecs.get ent
       dam <- Random.uniformR (1, 5)
       Channel.writeB (Notify (Message.fromText ("You attack for " <> showt dam <> " damage.")))
       let new = curr - dam

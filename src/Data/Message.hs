@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Data.Message
@@ -14,6 +15,7 @@ module Data.Message
   )
 where
 
+import Data.Aeson.Exts
 import Data.Generics.Product
 import Data.Semigroup
 import Data.Semigroup.Generic
@@ -23,10 +25,12 @@ import GHC.Generics (Generic)
 import Optics
 
 data Urgency = Info | Warning | Danger
-  deriving (Eq, Show, Ord)
+  deriving stock (Eq, Show, Ord, Generic)
+  deriving anyclass (FromJSON, ToJSON)
 
 data Message = Message {_contents :: Last Text, _urgency :: Max Urgency, _times :: Sum Int}
-  deriving (Generic)
+  deriving stock (Generic)
+  deriving anyclass (FromJSON, ToJSON)
   deriving Semigroup via GenericSemigroup Message
 
 instance IsString Message where
