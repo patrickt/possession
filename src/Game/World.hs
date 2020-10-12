@@ -30,7 +30,6 @@ makeWorldAndComponents
   "World"
   [ ''Color,
     ''Collision,
-    ''Enemy.Self,
     ''Glyph,
     ''HP,
     ''Player.Self,

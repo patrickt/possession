@@ -16,6 +16,7 @@ where
 
 import Data.Generics.Product
 import Data.Semigroup
+import Data.Semigroup.Generic
 import Data.String
 import Data.Text (Text)
 import GHC.Generics (Generic)

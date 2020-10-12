@@ -28,5 +28,8 @@ Monster locations:
 generalize the (Reader (BChan x)) and (Reader (MVar x)) and whatever with some unified Pipe interface
 slurp in some enemies
 multi-square things? z-levels in the canvas? gonna need them
-Consolidating error messages (monoid?)
 Fade out modeline message
+Dhall for monster language? Would be useful for quick definitions
+
+monster :: Text -> Natural -> Monster
+furious :: Monster -> Monster

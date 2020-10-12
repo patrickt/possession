@@ -14,7 +14,6 @@ import Data.Generics.Product.Fields
 import Data.Generics.Product.Typed
 import Data.Maybe
 import Data.Message
-import Data.Text (Text)
 import Game.Action qualified as Action
 import Game.Command (Command)
 import Game.Command qualified as Command
@@ -62,8 +61,8 @@ event s evt = case evt of
     Command.Redraw canv -> s & typed .~ canv
     Command.Update inf -> s & sidebar % field @"info" .~ inf
     Command.Notify msg -> do
-      let previous = s ^? modeline % messages % _last
-      let shouldCoalesce = previous^?_Just%contents == Just (msg ^. contents)
+      let previous = s ^? modeline % messages % _last % contents
+      let shouldCoalesce = previous == Just (msg ^. contents)
       case (previous, shouldCoalesce) of
         (Just _, True) -> s & modeline % Modeline.messages % _last % times %~ succ
         _ -> s & modeline %~ Modeline.update msg
