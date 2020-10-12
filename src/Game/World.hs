@@ -32,7 +32,6 @@ makeWorldAndComponents
     ''Collision,
     ''Glyph,
     ''HP,
-    ''Player.Self,
     ''Text,
     ''Position,
     ''Wall

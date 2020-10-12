@@ -158,7 +158,8 @@ movePlayer dx = do
   debug <- use Game.State.debugMode
   offset <- (if debug then pure else offsetRandomly) dx
 
-  Apecs.cmap \(Position p, Player.Self) -> Position (offset + p)
+  player <- use Game.State.player
+  Apecs.modify player \(Position p) -> Position (offset + p)
 
 currentInfo ::
   ( MonadIO m,
@@ -166,13 +167,11 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (Player.Self, hp) <- Apecs.get =<< use Game.State.player
+  hp <- Apecs.get =<< use Game.State.player
   pure Info.Info {Info.playerHitpoints = Last (Just hp)}
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
-playerPosition = do
-  (Player.Self, loc) <- Apecs.get =<< use Game.State.player
-  pure loc
+playerPosition = Apecs.get =<< use Game.State.player
 
 occupant :: MonadIO m => Position -> Apecs.SystemT Game.World m (Maybe Apecs.Entity)
 occupant p = fmap snd . getAlt <$> cfoldMap go

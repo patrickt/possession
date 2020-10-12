@@ -22,12 +22,10 @@ import Optics hiding (Is)
 import Optics.Operators.Unsafe
 import Optics.Tupled
 
-data Self = Self
+data Player = Player Position Glyph Color HP deriving Generic
 
-data Player = Player Self Position Glyph Color HP deriving Generic
-
-instance Tupled Player (Self, Position, Glyph, Color, HP) where
+instance Tupled Player (Position, Glyph, Color, HP) where
   tupled = iso (^?! _Ctor @"Player") (_Ctor @"Player" #)
 
 initial :: Player
-initial = tupled # (Self, (Position 3), (Glyph '@'), White, (HP 100 100))
+initial = tupled # ((Position 3), (Glyph '@'), White, (HP 100 100))
