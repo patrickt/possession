@@ -22,15 +22,14 @@ import Data.Position
 import Game.Entity.Enemy qualified as Enemy
 import Data.Text (Text)
 import Game.Entity.Player qualified as Player
-import Game.Callbacks (Callbacks)
+import Game.Callbacks
 
 data Wall = Wall
-
 
 makeWorldAndComponents
   "World"
   [ ''Color,
-    ''Callbacks,
+    ''Collision,
     ''Enemy.Self,
     ''Glyph,
     ''HP,

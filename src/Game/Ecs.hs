@@ -28,6 +28,7 @@ import Data.Glyph
 import Data.Hitpoints
 import Data.Maybe (isJust)
 import Data.Monoid
+import Data.Message qualified as Message
 import Data.Position (Position (..))
 import Data.Position qualified as Position
 import Game.Action
@@ -45,6 +46,7 @@ import Game.World qualified as World
 import Linear (V2 (..))
 import Optics ((^.))
 import Optics.Tupled
+import TextShow
 
 type GameState = Game.State.State
 
@@ -73,7 +75,7 @@ setup = do
   Apecs.newEntity (Enemy.initial ^. tupled)
 
   for_ Canvas.borders \border -> do
-    Apecs.newEntity (border, World.Wall, Glyph '#', Color.White)
+    Apecs.newEntity (border, World.Wall, Glyph '#', Color.White, Invalid)
 
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = do
@@ -118,13 +120,23 @@ loop = do
   pure ()
 
 collideWith ::
-  (MonadIO m, Has (Reader (BChan Command)) sig m) =>
+  (MonadIO m, Has (Reader (BChan Command)) sig m, Has Random sig m) =>
   Apecs.Entity ->
   Apecs.SystemT Game.World m ()
 collideWith ent = do
-  cb <- Apecs.get ent
-  case onCollision cb of
-    Attack -> Channel.writeB (Notify "You attack!")
+  (cb, HP curr _, name) <- Apecs.get ent
+  case cb of
+    Attack -> do
+      dam <- Random.uniformR (1, 5)
+      Channel.writeB (Notify (Message.fromText ("You attack for " <> showt dam <> " damage.")))
+      let new = curr - dam
+      if new <= 0
+        then do
+          Channel.writeB (Notify (Message.fromText ("You kill the " <> name <> ".")))
+          Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
+        else do
+          Apecs.modify ent (\(HP c m) -> HP (c - dam) m)
+
     Invalid -> Channel.writeB (Notify "You can't go that way.")
 
 offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)

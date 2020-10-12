@@ -3,6 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module UI.App (app) where
 
@@ -13,6 +14,7 @@ import Data.Generics.Product.Fields
 import Data.Generics.Product.Typed
 import Data.Maybe
 import Data.Message
+import Data.Text (Text)
 import Game.Action qualified as Action
 import Game.Command (Command)
 import Game.Command qualified as Command
@@ -52,7 +54,7 @@ event s evt = case evt of
     let given = Input.fromVty key mods
     State.broadcast s (fromMaybe Action.NoOp (given >>= Input.toAction))
 
-    transition
+    maybe (Brick.halt s) Brick.continue
       . State.sendMaybe s
       . fromMaybe Input.None
       $ given
@@ -61,13 +63,11 @@ event s evt = case evt of
     Command.Update inf -> s & sidebar % field @"info" .~ inf
     Command.Notify msg -> do
       let previous = s ^? modeline % messages % _last
-      let shouldCoalesce = previous ^? _Just % contents == Just (msg ^. contents)
+      let shouldCoalesce = previous^?_Just%contents == Just (msg ^. contents)
       case (previous, shouldCoalesce) of
         (Just _, True) -> s & modeline % Modeline.messages % _last % times %~ succ
         _ -> s & modeline %~ Modeline.update msg
   _ -> Brick.continue s
-  where
-    transition = maybe (Brick.halt s) Brick.continue
 
 app :: Brick.App UI.State Command UI.Resource
 app =

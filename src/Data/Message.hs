@@ -6,6 +6,7 @@
 
 module Data.Message
   ( Message (Message),
+    fromText,
     contents,
     urgency,
     times,
@@ -25,12 +26,13 @@ data Urgency = Info | Warning | Danger
 
 data Message = Message {_contents :: Last Text, _urgency :: Max Urgency, _times :: Sum Int}
   deriving (Generic)
-
-instance Semigroup Message where
-  Message a b c <> Message d e f = Message (a <> d) (b <> e) (c <> f)
+  deriving Semigroup via GenericSemigroup Message
 
 instance IsString Message where
   fromString s = Message (pure (fromString s)) (pure Info) 1
+
+fromText :: Text -> Message
+fromText t = Message (pure t) (pure Info) 1
 
 contents :: Lens' Message Text
 contents = field @"_contents" % coerced

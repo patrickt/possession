@@ -10,6 +10,7 @@
 module Game.Entity.Enemy
   ( Enemy (Enemy),
     Self (..),
+    Impl,
     initial,
   )
 where
@@ -27,18 +28,12 @@ import Optics.Tupled
 
 data Self = Self
 
-data Enemy = Enemy
-  { _self :: Self,
-    _name :: Text,
-    _hitpoints :: HP,
-    _glyph :: Glyph,
-    _color :: Color,
-    _pos :: Position
-  }
-  deriving (Generic)
+type Impl = (Self, Text, HP, Glyph, Color, Position, Callbacks.Collision)
 
-instance Tupled Enemy (Self, Text, HP, Glyph, Color, Position) where
-  tupled = iso (\Enemy{..} -> (_self, _name, _hitpoints, _glyph, _color, _pos)) (\(_self, _name, _hitpoints, _glyph, _color, _pos) -> Enemy {..})
+newtype Enemy = Enemy Impl
+
+instance Tupled Enemy Impl where
+  tupled = coerced
 
 initial :: Enemy
-initial = Enemy Self "" (HP 0 0) (Glyph '?') Yellow (Position 6)
+initial = Enemy (Self, "gibbering idiot", HP 0 0, Glyph '?', Yellow, Position 6, Callbacks.Attack)
