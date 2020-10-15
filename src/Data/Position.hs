@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- A 2-tuple of integers for position on the world grid.
 module Data.Position
   ( Position (..),
     V2 (..),

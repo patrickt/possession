@@ -50,7 +50,6 @@ library
       Data.Amount
       Data.Color
       Data.Glyph
-      Data.Is
       Data.Message
       Data.Name
       Data.Position

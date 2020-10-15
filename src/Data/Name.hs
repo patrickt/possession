@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DerivingStrategies #-}
+-- | A type for the names of items and monsters.
 module Data.Name ( Name (..) )where
 
 import Data.Text (Text)

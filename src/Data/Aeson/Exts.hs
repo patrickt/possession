@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+-- | Instances not provided by Aeson.
 module Data.Aeson.Exts (module Data.Aeson) where
 
 import Data.Aeson

@@ -3,7 +3,13 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Game.Info (module Game.Info) where
+-- | A rendering-agnostic container for information about the state of the world.
+-- This is created in the ECS loop and sent via a broker to the rendering engine.
+module Game.Info
+  ( Info (Info)
+  , hitpoints
+  , gold
+  ) where
 
 import Data.Generics.Product
 import Data.Hitpoints (HP)

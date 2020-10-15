@@ -1,6 +1,8 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
+-- | A natural number representing a quantity of something.
+-- Used for things like value of gold pieces.
 module Data.Amount (Amount (..)) where
 
 import Dhall (FromDhall)

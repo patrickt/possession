@@ -5,6 +5,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ApplicativeDo #-}
 
+-- | A character used to hint the rendering system as to how to render
+-- a given entity. We'll have to reexamine this when a GL background lands.
 module Data.Glyph where
 
 import Dhall qualified

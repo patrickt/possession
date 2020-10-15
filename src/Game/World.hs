@@ -23,8 +23,6 @@ import Data.Name (Name)
 import Data.Position
 import Game.Callbacks
 
-data Wall = Wall
-
 makeWorldAndComponents
   "World"
   [ ''Amount,

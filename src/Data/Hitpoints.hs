@@ -1,3 +1,6 @@
+-- | A (ℕ, ℕ) tuple representing the health of living things.
 module Data.Hitpoints (HP (..)) where
 
-data HP = HP {current :: !Int, total :: !Int}
+import Numeric.Natural
+
+data HP = HP {current :: !Natural, total :: !Natural}

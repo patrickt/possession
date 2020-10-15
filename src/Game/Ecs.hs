@@ -49,7 +49,7 @@ import Game.Info qualified as Info
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
-import Optics ((^.))
+import Optics hiding (assign, use)
 import Optics.Tupled
 import TextShow
 
@@ -151,9 +151,9 @@ collideWith ent = do
   case cb of
     Attack -> do
       HP curr _ <- Apecs.get ent
-      dam <- Random.uniformR (1, 5)
+      dam :: Int <- Random.uniformR (1, 5)
       Channel.writeB (Notify (Message.fromText ("You attack for " <> showt dam <> " damage.")))
-      let new = curr - dam
+      let new = fromIntegral curr - dam
       if new <= 0
         then do
           Channel.writeB (Notify (Message.fromText ("You kill the " <> Name.text name <> ".")))
@@ -167,7 +167,7 @@ collideWith ent = do
               void $ Apecs.newEntity (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
 
         else do
-          Apecs.modify ent (\(HP c m) -> HP (c - dam) m)
+          Apecs.modify ent (\(HP c m) -> HP (c - fromIntegral) m)
     Invalid -> Channel.writeB (Notify "You can't go that way.")
     PickUp -> do
       case mValue :: Maybe Amount of
@@ -208,7 +208,10 @@ currentInfo ::
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
   (hp, gold) <- Apecs.get =<< use Game.State.player
-  pure Info.Info {Info.playerHitpoints = Last (Just hp), Info.playerGold = pure gold}
+  let info = mempty @Info.Info
+        & Info.hitpoints ?~ hp
+        & Info.gold .~ gold
+  pure info
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = Apecs.get =<< use Game.State.player
