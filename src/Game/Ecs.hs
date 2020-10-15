@@ -13,6 +13,7 @@
 -- 'Command' values back.
 module Game.Ecs (start, cfoldMap) where
 
+import Apecs (Entity)
 import Apecs qualified
 import Brick.BChan
 import Control.Carrier.Random.Lifted qualified as Random
@@ -131,9 +132,7 @@ loop = forever do
       adjusted <- (if not debug then offsetRandomly else pure) dir
       prospective <- Position.offset adjusted <$> playerPosition
       present <- occupant prospective
-      case present of
-        Nothing -> movePlayer dir
-        Just ent -> collideWith ent
+      maybe (movePlayer dir) collideWith present
     NoOp -> pure ()
 
   canv <- draw
@@ -142,45 +141,53 @@ loop = forever do
   Broker.sendCommand (Redraw canv)
   trace "Done"
 
+playerAttack :: (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) => Entity -> Apecs.SystemT Game.World m ()
+playerAttack ent = do
+  (HP curr _, pos :: Position, canDrop, mXP, name) <- Apecs.get ent
+  play <- use Game.State.player
+  dam :: Int <- Random.uniformR (1, 5)
+  Broker.notify (Message.fromText ("You attack for " <> showt dam <> " damage."))
+  let new = fromIntegral curr - dam
+  if new <= 0
+    then do
+      notify (Message.fromText ("You kill the " <> Name.text name <> "."))
+      Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
+      Apecs.destroy ent (Apecs.Proxy @(HP, Position))
+
+      case mXP :: Maybe XP of
+        Nothing -> pure ()
+        Just x -> Apecs.modify play (<> x)
+
+      case canDrop :: Amount of
+        0 -> pure ()
+        n -> do
+          amt <- Random.uniformR (1, n)
+          void $ Apecs.newEntity (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
+    else do
+      Apecs.modify ent (\(HP c m) -> HP (c - fromIntegral dam) m)
+
+playerPickUp :: (Has (State GameState) sig m, Has Broker sig m, MonadIO m) => Entity -> Apecs.SystemT Game.World m ()
+playerPickUp ent = do
+  (mValue, pos :: Position) <- Apecs.get ent
+  play <- use Game.State.player
+  case mValue :: Maybe Amount of
+    Nothing -> pure ()
+    Just x -> do
+      Apecs.modify play (+ x)
+      Broker.notify (Message.fromText ("You pick up " <> showt x <> " gold."))
+      Apecs.destroy ent (Apecs.Proxy @(Amount, Position, Glyph, Color.Color, Collision))
+      Apecs.set play pos
+
 collideWith ::
   (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) =>
   Apecs.Entity ->
   Apecs.SystemT Game.World m ()
 collideWith ent = do
-  (cb, name, canDrop, pos, mValue, mXP) <- Apecs.get ent
-  play <- use Game.State.player
+  cb <- Apecs.get ent
   case cb of
-    Attack -> do
-      HP curr _ <- Apecs.get ent
-      dam :: Int <- Random.uniformR (1, 5)
-      Broker.sendCommand (Notify (Message.fromText ("You attack for " <> showt dam <> " damage.")))
-      let new = fromIntegral curr - dam
-      if new <= 0
-        then do
-          Broker.sendCommand (Notify (Message.fromText ("You kill the " <> Name.text name <> ".")))
-          Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
-          Apecs.destroy ent (Apecs.Proxy @(HP, Position))
-
-          case mXP :: Maybe XP of
-            Nothing -> pure ()
-            Just x -> Apecs.modify play (<> x)
-
-          case canDrop :: Amount of
-            0 -> pure ()
-            n -> do
-              amt <- Random.uniformR (1, n)
-              void $ Apecs.newEntity (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
-        else do
-          Apecs.modify ent (\(HP c m) -> HP (c - fromIntegral dam) m)
-    Invalid -> Broker.sendCommand (Notify "You can't go that way.")
-    PickUp -> do
-      case mValue :: Maybe Amount of
-        Nothing -> pure ()
-        Just x -> do
-          Apecs.modify play (+ x)
-          Broker.sendCommand (Notify (Message.fromText ("You pick up " <> showt x <> " gold.")))
-          Apecs.destroy ent (Apecs.Proxy @(Amount, Position, Glyph, Color.Color, Collision))
-          Apecs.set play pos
+    Attack -> playerAttack ent
+    Invalid -> Broker.notify "You can't go that way."
+    PickUp -> playerPickUp ent
 
 offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)
 offsetRandomly (V2 x y) = V2 <$> go x <*> go y

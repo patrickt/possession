@@ -13,7 +13,7 @@ module Control.Effect.Broker
     popAction,
     sendCommand,
     runBroker,
-  )
+  notify)
 where
 
 import Brick.BChan
@@ -27,6 +27,7 @@ import Game.Action
 import qualified Game.Action as Game
 import Game.Command (Command)
 import qualified Game.Command as Game
+import Data.Message (Message)
 
 data Brokerage = Brokerage
   { _toBrick :: BChan Command,
@@ -47,6 +48,9 @@ popAction = send Pop
 
 sendCommand :: Has Broker sig m => Game.Command -> m ()
 sendCommand = send . Cmd
+
+notify :: Has Broker sig m => Message -> m ()
+notify = sendCommand . Game.Notify
 
 newtype BrokerC m a = BrokerC {runBrokerC :: ReaderC Brokerage m a}
   deriving newtype (Functor, Applicative, Monad, MonadIO)
