@@ -15,10 +15,10 @@ module Data.Position
   )
 where
 
+import Control.Effect.Random
 import Data.Generics.Product
 import Data.Ix
 import Linear.V2
-import Control.Effect.Random
 import Optics
 
 newtype Position = Position (V2 Int)

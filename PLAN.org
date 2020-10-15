@@ -29,7 +29,4 @@ generalize the (Reader (BChan x)) and (Reader (MVar x)) and whatever with some u
 slurp in some enemies
 multi-square things? z-levels in the canvas? gonna need them
 Fade out modeline message
-Dhall for monster language? Would be useful for quick definitions
-
-monster :: Text -> Natural -> Monster
-furious :: Monster -> Monster
+Save world state: have to write some Any type

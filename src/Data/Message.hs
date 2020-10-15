@@ -1,8 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeApplications #-}
 
 -- | A message that should be passed to the rendering system,
@@ -35,7 +35,7 @@ data Urgency = Info | Warning | Danger
 data Message = Message {_contents :: Data.Semigroup.Last Text, _urgency :: Max Urgency, _times :: Sum Int}
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
-  deriving Semigroup via GenericSemigroup Message
+  deriving (Semigroup) via GenericSemigroup Message
 
 instance IsString Message where
   fromString s = Message (pure (fromString s)) (pure Info) 1

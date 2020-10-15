@@ -22,8 +22,11 @@ import Control.Effect.Optics
 import Control.Effect.Random (Random)
 import Control.Monad
 import Control.Monad.IO.Class
+import Data.Amount (Amount)
 import Data.Color qualified as Color
+import Data.Experience (XP (..))
 import Data.Foldable (for_)
+import Data.Function
 import Data.Glyph
 import Data.Hitpoints
 import Data.Maybe (isJust)
@@ -36,14 +39,12 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Dhall qualified
 import Game.Action
-import Data.Amount (Amount)
 import Game.Callbacks
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Command
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
-import Data.Function
 import Game.Info qualified as Game (Info)
 import Game.Info qualified as Info
 import Game.State qualified
@@ -147,7 +148,8 @@ collideWith ::
   Apecs.Entity ->
   Apecs.SystemT Game.World m ()
 collideWith ent = do
-  (cb, name, canDrop, pos, mValue) <- Apecs.get ent
+  (cb, name, canDrop, pos, mValue, mXP) <- Apecs.get ent
+  play <- use Game.State.player
   case cb of
     Attack -> do
       HP curr _ <- Apecs.get ent
@@ -160,24 +162,25 @@ collideWith ent = do
           Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
           Apecs.destroy ent (Apecs.Proxy @(HP, Position))
 
+          case mXP :: Maybe XP of
+            Nothing -> pure ()
+            Just x -> Apecs.modify play (<> x)
+
           case canDrop :: Amount of
             0 -> pure ()
             n -> do
               amt <- Random.uniformR (1, n)
               void $ Apecs.newEntity (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
-
         else do
-          Apecs.modify ent (\(HP c m) -> HP (c - fromIntegral) m)
+          Apecs.modify ent (\(HP c m) -> HP (c - fromIntegral dam) m)
     Invalid -> Channel.writeB (Notify "You can't go that way.")
     PickUp -> do
       case mValue :: Maybe Amount of
         Nothing -> pure ()
         Just x -> do
-          play <- use Game.State.player
           Apecs.modify play (+ x)
           Channel.writeB (Notify (Message.fromText ("You pick up " <> showt x <> " gold.")))
           Apecs.destroy ent (Apecs.Proxy @(Amount, Position, Glyph, Color.Color, Collision))
-
 
 offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)
 offsetRandomly (V2 x y) = V2 <$> go x <*> go y
@@ -207,10 +210,12 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (hp, gold) <- Apecs.get =<< use Game.State.player
-  let info = mempty @Info.Info
-        & Info.hitpoints ?~ hp
-        & Info.gold .~ gold
+  (hp, gold, xp) <- Apecs.get =<< use Game.State.player
+  let info =
+        mempty @Info.Info
+          & Info.hitpoints ?~ hp
+          & Info.gold .~ gold
+          & Info.xp .~ xp
   pure info
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position

@@ -49,11 +49,13 @@ library
       Data.Aeson.Exts
       Data.Amount
       Data.Color
+      Data.Experience
       Data.Glyph
       Data.Message
       Data.Name
       Data.Position
       Data.Hitpoints
+      Dhall.Exts
       Game.Action
       Game.Canvas
       Game.Callbacks

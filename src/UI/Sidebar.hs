@@ -14,6 +14,7 @@ where
 import Brick qualified
 import Brick.Markup ((@?))
 import Brick.Markup qualified as Markup
+import Data.Experience (XP (..))
 import Data.Generics.Product
 import Data.Hitpoints
 import GHC.Generics (Generic)
@@ -31,15 +32,19 @@ initial :: Sidebar
 initial = Sidebar mempty
 
 render :: Sidebar -> Brick.Widget Resource
-render (Sidebar info) =
+render (Sidebar i) =
   Brick.vBox
-    [ Markup.markup renderedHP
-    , Markup.markup renderedGold
+    [ Markup.markup renderedHP,
+      Markup.markup renderedGold,
+      Markup.markup renderedXP
     ]
   where
-    renderedHP = case info ^. hitpoints of
+    renderedHP = case i ^. hitpoints of
       Nothing -> boldhp <> "- / -"
       Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
     boldhp = "HP: " @? "bold"
 
-    renderedGold = "GP: " <> (showt (info^.gold) @? "yellow")
+    renderedGold = "GP: " <> (showt (i ^. gold) @? "yellow")
+
+    renderedXP = case i ^. xp of
+      XP curr next -> (("XP: " <> showt curr <> " (next: " <> showt next <> ")") @? "")

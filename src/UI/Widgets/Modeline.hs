@@ -14,11 +14,11 @@ where
 
 import Brick qualified
 import Brick.Markup (markup, (@?))
-import Data.Sequence qualified as Seq
 import Brick.Widgets.List qualified as Brick
 import Data.Generics.Product
 import Data.Message
 import Data.Sequence (Seq)
+import Data.Sequence qualified as Seq
 import Data.Text.Markup qualified as Markup
 import GHC.Generics (Generic)
 import Optics

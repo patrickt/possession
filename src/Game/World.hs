@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -15,12 +17,14 @@ module Game.World (module Game.World) where
 import Apecs
 import Control.Algebra qualified as Eff
 import Control.Carrier.Reader qualified as Eff
+import Data.Amount
 import Data.Color
+import Data.Experience
 import Data.Glyph
 import Data.Hitpoints
-import Data.Amount
 import Data.Name (Name)
 import Data.Position
+import GHC.Generics (Generic)
 import Game.Callbacks
 
 makeWorldAndComponents
@@ -30,9 +34,12 @@ makeWorldAndComponents
     ''Collision,
     ''Glyph,
     ''HP,
+    ''XP,
     ''Name,
     ''Position
   ]
+
+deriving stock instance Generic World
 
 deriving newtype instance
   Eff.Algebra sig m =>
