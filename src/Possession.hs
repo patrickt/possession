@@ -17,6 +17,6 @@ main = do
   brickEvLoop <- newBChan 1
   actionBox <- newEmptyMVar
   vty <- Vty.standardIOConfig >>= Vty.mkVty
-  Game.initWorld >>= Ecs.start brickEvLoop actionBox
-  let ui = UI.State.initial actionBox
+  thread <- Game.initWorld >>= Ecs.start brickEvLoop actionBox
+  let ui = UI.State.initial actionBox thread
   void $ Brick.customMain vty (pure vty) (Just brickEvLoop) App.app ui

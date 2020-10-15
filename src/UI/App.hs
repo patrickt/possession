@@ -11,7 +11,6 @@ import Brick qualified
 import Brick.AttrMap qualified as Brick.AttrMap
 import Brick.Widgets.Border qualified as Brick
 import Data.Generics.Product.Fields
-import Data.Generics.Product.Typed
 import Data.Maybe
 import Data.Message
 import Game.Action qualified as Action
@@ -32,6 +31,7 @@ import UI.State qualified as UI (State)
 import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
 import Control.Monad.IO.Class
+import Control.Concurrent (killThread)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case s ^. State.mode of
@@ -53,15 +53,18 @@ event :: UI.State -> Brick.BrickEvent UI.Resource Command -> Brick.EventM UI.Res
 event s evt = case evt of
   Brick.VtyEvent (Vty.EvKey key mods) -> do
     let given = Input.fromVty key mods
-    liftIO . Broker.runBroker (error "no queue") (s^.State.gamePort) $
-      Broker.pushAction (fromMaybe Action.NoOp (given >>= Input.toAction))
+    liftIO
+      . Broker.runBroker (error "no queue") (s^.State.gamePort)
+      . Broker.pushAction
+      . fromMaybe Action.NoOp
+      $ given >>= Input.toAction
 
-    maybe (Brick.halt s) Brick.continue
+    maybe (shutdown s)  Brick.continue
       . State.sendMaybe s
       . fromMaybe Input.None
       $ given
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
-    Command.Redraw canv -> s & typed .~ canv
+    Command.Redraw canv -> s & State.canvas .~ canv
     Command.Update inf -> s & sidebar % field @"info" .~ inf
     Command.Notify msg -> do
       let previous = s ^? modeline % messages % _last % contents
@@ -70,6 +73,11 @@ event s evt = case evt of
         (Just _, True) -> s & modeline % Modeline.messages % _last % times %~ succ
         _ -> s & modeline %~ Modeline.update msg
   _ -> Brick.continue s
+
+shutdown :: UI.State -> Brick.EventM a (Brick.Next UI.State)
+shutdown s = do
+  liftIO (killThread (s^.State.gameThread))
+  Brick.halt s
 
 app :: Brick.App UI.State Command UI.Resource
 app =

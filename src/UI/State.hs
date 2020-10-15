@@ -12,6 +12,7 @@ module UI.State
     modeline,
     gamePort,
     canvas,
+    gameThread,
     Mode (..),
     initial,
     send,
@@ -32,6 +33,7 @@ import UI.Sidebar (Sidebar)
 import UI.Sidebar qualified as Sidebar
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
+import Control.Concurrent (ThreadId)
 
 data Mode
   = InMenu
@@ -43,7 +45,8 @@ data State = State
     _canvas :: Game.Canvas,
     _modeline :: Modeline,
     _sidebar :: Sidebar,
-    _gamePort :: MVar Game.Action
+    _gamePort :: MVar Game.Action,
+    _gameThread :: ThreadId
   }
   deriving (Generic)
 
@@ -65,15 +68,19 @@ gamePort = typed
 canvas :: Lens' State Game.Canvas
 canvas = typed
 
-initial :: MVar Game.Action -> State
-initial gp =
+gameThread :: Lens' State ThreadId
+gameThread = typed
+
+initial :: MVar Game.Action -> ThreadId -> State
+initial gp tid =
   State
     { _mode = InMenu,
       _mainMenu = MainMenu.initial,
       _canvas = Canvas.empty,
       _modeline = Modeline.initial,
       _sidebar = Sidebar.initial,
-      _gamePort = gp
+      _gamePort = gp,
+      _gameThread = tid
     }
 
 send :: Input -> State -> State
@@ -81,6 +88,7 @@ send i s = case (i, s ^. mode, s ^. mainMenu % field @"selected") of
   (Up, InMenu, _) -> go Up
   (Down, _, _) -> go Down
   (Accept, InMenu, Just MainMenu.NewGame) -> s & mode .~ InGame
+  (Menu, InGame, _) -> s & mode .~ InMenu
   _ -> s
   where
     go x = s & selection %~ MainMenu.adjust x

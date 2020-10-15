@@ -30,3 +30,4 @@ slurp in some enemies
 multi-square things? z-levels in the canvas? gonna need them
 Fade out modeline message
 Save world state: have to write some Any type
+Confusing method dispatch

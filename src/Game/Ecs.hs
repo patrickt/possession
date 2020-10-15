@@ -17,7 +17,6 @@ import Control.Carrier.Reader
 import Control.Carrier.State.Strict
 import Control.Carrier.Trace.Ignoring
 import Control.Concurrent
-import Control.Effect.Broker (Broker)
 import Control.Effect.Broker qualified as Broker
 import Control.Effect.Optics
 import Control.Effect.Random (Random)
@@ -61,12 +60,11 @@ type GameState = Game.State.State
 -- | Kick off the ECS with provided channels and inputs. If we get
 -- more channels/mvars, we should pull those out into their own
 -- record.
-start :: BChan Command -> MVar Action -> Game.World -> IO ()
+start :: BChan Command -> MVar Action -> Game.World -> IO ThreadId
 start cmds acts world = do
   let initialState = (Game.State.State (Apecs.Entity 0) True)
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
-  void
-    . forkIO
+  forkIO
     . Random.runRandomSystem
     . runTrace
     . runReader @(Vector Enemy.Enemy) values
