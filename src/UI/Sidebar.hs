@@ -14,7 +14,10 @@ where
 import Brick qualified
 import Brick.Markup ((@?))
 import Brick.Markup qualified as Markup
+import Data.Text.Markup qualified as Markup
 import Data.Experience (XP (..))
+import Data.Monoid
+import Data.Semigroup (Max (..))
 import Data.Generics.Product
 import Data.Hitpoints
 import GHC.Generics (Generic)
@@ -44,7 +47,9 @@ render (Sidebar i) =
       Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
     boldhp = "HP: " @? "bold"
 
-    renderedGold = "GP: " <> (showt (i ^. gold) @? "yellow")
+    renderedGold = ("GP: " @? "bold") <> (showt (i ^. gold) @? "yellow")
 
     renderedXP = case i ^. xp of
-      XP curr next -> (("XP: " <> showt curr <> " (next: " <> showt next <> ")") @? "")
+      XP (Sum curr) (Max next) -> ("XP: " @? "bold") <> showm curr <> " (next: " <> showm next <> ")"
+
+    showm = Markup.fromText . showt

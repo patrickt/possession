@@ -17,7 +17,8 @@ import Control.Carrier.Reader
 import Control.Carrier.State.Strict
 import Control.Carrier.Trace.Ignoring
 import Control.Concurrent
-import Control.Effect.Channel qualified as Channel
+import Control.Effect.Broker (Broker)
+import Control.Effect.Broker qualified as Broker
 import Control.Effect.Optics
 import Control.Effect.Random (Random)
 import Control.Monad
@@ -37,6 +38,7 @@ import Data.Position (Position (..))
 import Data.Position qualified as Position
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Control.Effect.Broker
 import Dhall qualified
 import Game.Action
 import Game.Callbacks
@@ -67,12 +69,11 @@ start cmds acts world = do
     . forkIO
     . Random.runRandomSystem
     . runTrace
-    . runReader cmds
-    . runReader acts
     . runReader @(Vector Enemy.Enemy) values
+    . runBroker cmds acts
     . evalState initialState
     . Apecs.runWith world
-    $ setup *> forever loop
+    $ setup *> loop
 
 -- | Initial setup associated with ECS creation.
 setup ::
@@ -83,12 +84,14 @@ setup ::
   ) =>
   Apecs.SystemT Game.World m ()
 setup = do
+  -- Create the player
   Apecs.newEntity (Player.initial ^. tupled)
     >>= assign Game.State.player
 
-  allEnemies <- ask @(Vector Enemy.Enemy)
-
+  -- Fill in some enemies
   let mkEnemy e = do
+        -- This function could be pulled out into
+        -- findUnoccupied :: m Position
         pos <- fix $ \f -> do
           pos <- Position.randomIn 1 10
           occ <- occupied pos
@@ -96,33 +99,30 @@ setup = do
 
         Apecs.newEntity (e ^. tupled, HP 5 5, pos)
 
-  Vector.mapM_ mkEnemy allEnemies
+  ask @(Vector Enemy.Enemy) >>= Vector.mapM_ mkEnemy
 
+  -- Build some walls
   for_ Canvas.borders \border -> do
     Apecs.newEntity (border, Glyph '#', Color.White, Invalid)
 
+-- | Renders a canvas from the current system, for passing back to the display thread.
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
-draw = do
-  trace "Run::draw"
-  new <- Apecs.cfold go []
-  trace (show new)
-  pure (Canvas.empty `Canvas.update` new)
+draw = Apecs.cfold (flip go) Canvas.empty
   where
-    go :: [(Position, Canvas.Sprite)] -> (Position, Glyph, Color.Color) -> [(Position, Canvas.Sprite)]
-    go acc (pos, chr, color) = (pos, Canvas.Sprite chr color) : acc
+    go (pos, chr, color) = flip Canvas.update [(pos, Canvas.Sprite chr color)]
 
+-- The main game loop.
 loop ::
   ( MonadIO m,
     Has Random sig m,
-    Has (Reader (MVar Action)) sig m,
-    Has (Reader (BChan Command)) sig m,
+    Has Broker sig m,
     Has (State GameState) sig m,
     Has Trace sig m
   ) =>
   Apecs.SystemT Game.World m ()
-loop = do
-  trace "Loopin"
-  next <- ask >>= liftIO . takeMVar @Action
+loop = forever do
+  trace "Starting game loop"
+  next <- Broker.popAction
   debug <- use Game.State.debugMode
 
   case next of
@@ -137,14 +137,12 @@ loop = do
 
   canv <- draw
   newinfo <- currentInfo
-  Channel.writeB (Update newinfo)
-  Channel.writeB (Redraw canv)
+  Broker.sendCommand (Update newinfo)
+  Broker.sendCommand (Redraw canv)
   trace "Done"
 
-  pure ()
-
 collideWith ::
-  (MonadIO m, Has (Reader (BChan Command)) sig m, Has Random sig m, Has (State GameState) sig m) =>
+  (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) =>
   Apecs.Entity ->
   Apecs.SystemT Game.World m ()
 collideWith ent = do
@@ -154,11 +152,11 @@ collideWith ent = do
     Attack -> do
       HP curr _ <- Apecs.get ent
       dam :: Int <- Random.uniformR (1, 5)
-      Channel.writeB (Notify (Message.fromText ("You attack for " <> showt dam <> " damage.")))
+      Broker.sendCommand (Notify (Message.fromText ("You attack for " <> showt dam <> " damage.")))
       let new = fromIntegral curr - dam
       if new <= 0
         then do
-          Channel.writeB (Notify (Message.fromText ("You kill the " <> Name.text name <> ".")))
+          Broker.sendCommand (Notify (Message.fromText ("You kill the " <> Name.text name <> ".")))
           Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
           Apecs.destroy ent (Apecs.Proxy @(HP, Position))
 
@@ -173,14 +171,15 @@ collideWith ent = do
               void $ Apecs.newEntity (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
         else do
           Apecs.modify ent (\(HP c m) -> HP (c - fromIntegral dam) m)
-    Invalid -> Channel.writeB (Notify "You can't go that way.")
+    Invalid -> Broker.sendCommand (Notify "You can't go that way.")
     PickUp -> do
       case mValue :: Maybe Amount of
         Nothing -> pure ()
         Just x -> do
           Apecs.modify play (+ x)
-          Channel.writeB (Notify (Message.fromText ("You pick up " <> showt x <> " gold.")))
+          Broker.sendCommand (Notify (Message.fromText ("You pick up " <> showt x <> " gold.")))
           Apecs.destroy ent (Apecs.Proxy @(Amount, Position, Glyph, Color.Color, Collision))
+          Apecs.set play pos
 
 offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)
 offsetRandomly (V2 x y) = V2 <$> go x <*> go y
@@ -210,13 +209,12 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (hp, gold, xp) <- Apecs.get =<< use Game.State.player
-  let info =
-        mempty @Info.Info
-          & Info.hitpoints ?~ hp
-          & Info.gold .~ gold
-          & Info.xp .~ xp
-  pure info
+  (hp, gold, xp) <- Apecs.get =<< use Game.State.player;
+   mempty @Info.Info
+    & Info.hitpoints ?~ hp
+    & Info.gold .~ gold
+    & Info.xp .~ xp
+    & pure
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = Apecs.get =<< use Game.State.player

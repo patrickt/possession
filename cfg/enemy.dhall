@@ -19,7 +19,7 @@ in    [ { name = "gibbering idiot"
         , glyph = "C"
         , behavior = "attack"
         , color = "gray"
-        , canDrop = 0,
+        , canDrop = 0
         , yieldsXP = 5
         }
       ]

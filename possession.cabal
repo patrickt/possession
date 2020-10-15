@@ -25,6 +25,7 @@ library
         array,
         brick,
         containers,
+        comonad,
         dhall,
         either,
         fused-effects,
@@ -45,7 +46,7 @@ library
         base ^>=4.14.1.0
     exposed-modules:
       Possession
-      Control.Effect.Channel
+      Control.Effect.Broker
       Data.Aeson.Exts
       Data.Amount
       Data.Color

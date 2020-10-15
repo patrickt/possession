@@ -39,7 +39,7 @@ draw s = case s ^. State.mode of
   State.InGame ->
     [ Attributes.withStandard . Brick.border . Brick.vBox $
         [ Brick.hBox
-            [ Brick.hLimit 15 . Brick.border . Sidebar.render . view State.sidebar $ s,
+            [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
               Brick.border . Brick.padBottom Brick.Max . Render.render . view State.canvas $ s
             ],
           Brick.hBorder,

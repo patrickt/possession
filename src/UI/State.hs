@@ -23,13 +23,13 @@ where
 import Control.Concurrent.MVar
 import Control.Monad.IO.Class
 import Data.Generics.Product
-import Data.Generics.Product.Fields
 import GHC.Generics (Generic)
 import Game.Action qualified as Game
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Optics
 import UI.Input
+import Control.Effect.Broker qualified as Broker
 import UI.MainMenu qualified as MainMenu
 import UI.Sidebar (Sidebar)
 import UI.Sidebar qualified as Sidebar
@@ -80,7 +80,8 @@ initial gp =
     }
 
 broadcast :: MonadIO m => State -> Game.Action -> m ()
-broadcast s act = liftIO . flip putMVar act . view gamePort $ s
+broadcast s act = liftIO . Broker.runBroker (error "no queue available") (s^.gamePort) $
+  Broker.pushAction act
 
 send :: Input -> State -> State
 send i s = case (i, s ^. mode, s ^. mainMenu % field @"selected") of
