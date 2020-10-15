@@ -3,6 +3,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
+-- | A UI-agnostic representation of the current state of the
+-- displayable world. Sent over the wire to the UI in a 'Command' to
+-- trigger a redraw.
+--
+-- TODO: this does not use sharing very well.
 module Game.Canvas where
 
 import Data.Array (Array, array, (!), (//))

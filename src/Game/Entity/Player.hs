@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Operations on the player.
 module Game.Entity.Player where
 
 import Data.Amount (Amount)
@@ -26,6 +27,9 @@ import Optics.Tupled
 
 type Wealth = Amount
 
+-- This kind of C++-ish pattern is used to cope with the fact
+-- that Apecs deals in tuples exclusively (which is useful!
+-- but not as typesafe as we want).
 type Impl = (Position, Glyph, Color, HP, Wealth, XP)
 
 data Player = Player

@@ -1,19 +1,19 @@
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Data.Experience where
 
+import Data.Either.Validation
 import Data.Monoid
 import Data.Monoid.Generic
 import Data.Semigroup (Max)
 import Dhall qualified
 import Dhall.Exts ()
 import GHC.Generics (Generic)
-import Data.Either.Validation
 import Numeric.Natural (Natural)
 
 data XP = XP {_current :: Sum Natural, _toNextLevel :: Max Natural}

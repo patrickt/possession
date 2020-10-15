@@ -14,12 +14,12 @@ where
 import Brick qualified
 import Brick.Markup ((@?))
 import Brick.Markup qualified as Markup
-import Data.Text.Markup qualified as Markup
 import Data.Experience (XP (..))
-import Data.Monoid
-import Data.Semigroup (Max (..))
 import Data.Generics.Product
 import Data.Hitpoints
+import Data.Monoid
+import Data.Semigroup (Max (..))
+import Data.Text.Markup qualified as Markup
 import GHC.Generics (Generic)
 import Game.Info
 import Optics

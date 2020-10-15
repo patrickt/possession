@@ -8,6 +8,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- | Provides the high-level constructs associated with the
+-- game thread. Receives 'Action' values from the UI and sends
+-- 'Command' values back.
 module Game.Ecs (start, cfoldMap) where
 
 import Apecs qualified
@@ -17,6 +20,7 @@ import Control.Carrier.Reader
 import Control.Carrier.State.Strict
 import Control.Carrier.Trace.Ignoring
 import Control.Concurrent
+import Control.Effect.Broker
 import Control.Effect.Broker qualified as Broker
 import Control.Effect.Optics
 import Control.Effect.Random (Random)
@@ -37,7 +41,6 @@ import Data.Position (Position (..))
 import Data.Position qualified as Position
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Control.Effect.Broker
 import Dhall qualified
 import Game.Action
 import Game.Behavior
@@ -207,8 +210,8 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (hp, gold, xp) <- Apecs.get =<< use Game.State.player;
-   mempty @Info.Info
+  (hp, gold, xp) <- Apecs.get =<< use Game.State.player
+  mempty @Info.Info
     & Info.hitpoints ?~ hp
     & Info.gold .~ gold
     & Info.xp .~ xp

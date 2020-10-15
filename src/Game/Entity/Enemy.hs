@@ -10,6 +10,8 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+-- | Operations and accessors on enemy values.
+-- Should probably be called something else.
 module Game.Entity.Enemy
   ( Enemy (Enemy),
     Impl,

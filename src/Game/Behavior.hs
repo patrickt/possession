@@ -4,8 +4,9 @@
 
 -- Behavior values determine what entities do when other entities interact with them.
 module Game.Behavior
-  ( Collision (..)
-  ) where
+  ( Collision (..),
+  )
+where
 
 import Data.Either.Validation
 import Data.Text (Text)

@@ -10,6 +10,9 @@ module UI.App (app) where
 import Brick qualified
 import Brick.AttrMap qualified as Brick.AttrMap
 import Brick.Widgets.Border qualified as Brick
+import Control.Concurrent (killThread)
+import Control.Effect.Broker qualified as Broker
+import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
 import Data.Maybe
 import Data.Message
@@ -22,7 +25,6 @@ import UI.Attributes qualified as Attributes
 import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
 import UI.Render qualified as Render
-import Control.Effect.Broker qualified as Broker
 import UI.Resource qualified as UI (Resource)
 import UI.Sidebar qualified as Sidebar
 import UI.State (modeline, sidebar)
@@ -30,8 +32,6 @@ import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
-import Control.Monad.IO.Class
-import Control.Concurrent (killThread)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case s ^. State.mode of
@@ -56,11 +56,11 @@ event s evt = case evt of
     let action = fromMaybe Action.NoOp (inp >>= Input.toAction)
 
     liftIO
-      . Broker.runBroker (error "no queue") (s^.State.gamePort)
+      . Broker.runBroker (error "no queue") (s ^. State.gamePort)
       . Broker.pushAction
       $ action
 
-    maybe (shutdown s)  Brick.continue
+    maybe (shutdown s) Brick.continue
       . State.sendMaybe s
       . fromMaybe Input.None
       $ inp
@@ -77,7 +77,7 @@ event s evt = case evt of
 
 shutdown :: UI.State -> Brick.EventM a (Brick.Next UI.State)
 shutdown s = do
-  liftIO (killThread (s^.State.gameThread))
+  liftIO (killThread (s ^. State.gameThread))
   Brick.halt s
 
 app :: Brick.App UI.State Command UI.Resource

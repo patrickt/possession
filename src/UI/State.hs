@@ -20,6 +20,7 @@ module UI.State
   )
 where
 
+import Control.Concurrent (ThreadId)
 import Control.Concurrent.MVar
 import Data.Generics.Product
 import GHC.Generics (Generic)
@@ -33,7 +34,6 @@ import UI.Sidebar (Sidebar)
 import UI.Sidebar qualified as Sidebar
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
-import Control.Concurrent (ThreadId)
 
 data Mode
   = InMenu
