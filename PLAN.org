@@ -31,4 +31,5 @@ Fade out modeline message
 Save world state: have to write some Any type
 Confusing method dispatch (got a little better)
 Where to shut down the thread upon new-game if a game is active? (move the start-the-ECS invocation into the Brick dispatcher? I think so)
-Resume menu item
+Resume menu item, persist save game information
+Template Haskell for writing Impl implementations

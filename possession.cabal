@@ -68,6 +68,7 @@ library
       Game.State
       Game.World
       Optics.Tupled
+      System.Random.MWC.Exts
       UI.Attributes
       UI.App
       UI.Input
