@@ -10,12 +10,14 @@ module Data.Position
     pos,
     make,
     offset,
+    randomIn,
   )
 where
 
 import Data.Generics.Product
 import Data.Ix
 import Linear.V2
+import Control.Effect.Random
 import Optics
 
 newtype Position = Position (V2 Int)
@@ -30,3 +32,6 @@ make x y = Position (V2 x y)
 
 offset :: V2 Int -> Position -> Position
 offset v (Position p) = Position (v + p)
+
+randomIn :: Has Random sig m => Int -> Int -> m Position
+randomIn x y = make <$> uniformR (x, y) <*> uniformR (x, y)

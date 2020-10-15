@@ -18,10 +18,8 @@ import Control.Carrier.Reader qualified as Eff
 import Data.Color
 import Data.Glyph
 import Data.Hitpoints
+import Data.Name (Name)
 import Data.Position
-import Game.Entity.Enemy qualified as Enemy
-import Data.Text (Text)
-import Game.Entity.Player qualified as Player
 import Game.Callbacks
 
 data Wall = Wall
@@ -32,7 +30,7 @@ makeWorldAndComponents
     ''Collision,
     ''Glyph,
     ''HP,
-    ''Text,
+    ''Name,
     ''Position
   ]
 

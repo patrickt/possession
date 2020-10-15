@@ -27,10 +27,14 @@ import Data.Foldable (for_)
 import Data.Glyph
 import Data.Hitpoints
 import Data.Maybe (isJust)
-import Data.Monoid
 import Data.Message qualified as Message
+import Data.Monoid
+import Data.Name qualified as Name
 import Data.Position (Position (..))
 import Data.Position qualified as Position
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
+import Dhall qualified
 import Game.Action
 import Game.Callbacks
 import Game.Canvas qualified as Canvas
@@ -38,11 +42,11 @@ import Game.Canvas qualified as Game (Canvas)
 import Game.Command
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
+import Data.Function
 import Game.Info qualified as Game (Info)
 import Game.Info qualified as Info
 import Game.State qualified
 import Game.World qualified as Game (World)
-import Game.World qualified as World
 import Linear (V2 (..))
 import Optics ((^.))
 import Optics.Tupled
@@ -54,25 +58,43 @@ type GameState = Game.State.State
 -- more channels/mvars, we should pull those out into their own
 -- record.
 start :: BChan Command -> MVar Action -> Game.World -> IO ()
-start cmds acts world =
+start cmds acts world = do
   let initialState = (Game.State.State (Apecs.Entity 0) True)
-   in void
-        . forkIO
-        . Random.runRandomSystem
-        . runTrace
-        . runReader cmds
-        . runReader acts
-        . evalState initialState
-        . Apecs.runWith world
-        $ setup *> forever loop
+  values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
+  void
+    . forkIO
+    . Random.runRandomSystem
+    . runTrace
+    . runReader cmds
+    . runReader acts
+    . runReader @(Vector Enemy.Enemy) values
+    . evalState initialState
+    . Apecs.runWith world
+    $ setup *> forever loop
 
 -- | Initial setup associated with ECS creation.
-setup :: (Has (State Game.State.State) sig m, MonadIO m) => Apecs.SystemT Game.World m ()
+setup ::
+  ( Has (State Game.State.State) sig m,
+    Has (Reader (Vector Enemy.Enemy)) sig m,
+    Has Random sig m,
+    MonadIO m
+  ) =>
+  Apecs.SystemT Game.World m ()
 setup = do
   Apecs.newEntity (Player.initial ^. tupled)
     >>= assign Game.State.player
 
-  Apecs.newEntity (Enemy.initial ^. tupled, HP 5 5, Position 6)
+  allEnemies <- ask @(Vector Enemy.Enemy)
+
+  let mkEnemy e = do
+        pos <- fix $ \f -> do
+          pos <- Position.randomIn 1 10
+          occ <- occupied pos
+          if occ then f else pure pos
+
+        Apecs.newEntity (e ^. tupled, HP 5 5, pos)
+
+  Vector.mapM_ mkEnemy allEnemies
 
   for_ Canvas.borders \border -> do
     Apecs.newEntity (border, Glyph '#', Color.White, Invalid)
@@ -133,12 +155,11 @@ collideWith ent = do
       let new = curr - dam
       if new <= 0
         then do
-          Channel.writeB (Notify (Message.fromText ("You kill the " <> name <> ".")))
+          Channel.writeB (Notify (Message.fromText ("You kill the " <> Name.text name <> ".")))
           Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
           Apecs.destroy ent (Apecs.Proxy @(HP, Position))
         else do
           Apecs.modify ent (\(HP c m) -> HP (c - dam) m)
-
     Invalid -> Channel.writeB (Notify "You can't go that way.")
 
 offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)

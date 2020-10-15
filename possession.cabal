@@ -25,6 +25,8 @@ library
         array,
         brick,
         containers,
+        dhall,
+        either,
         fused-effects,
         fused-effects-mwc-random,
         fused-effects-optics,

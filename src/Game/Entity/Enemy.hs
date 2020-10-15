@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -17,16 +19,13 @@ where
 
 import Data.Color
 import Data.Generics.Sum
+import Dhall
 import Data.Glyph
-import Data.Hitpoints
 import Data.Name (Name)
-import Data.Position (Position (..))
-import Data.Text (Text)
 import Game.Callbacks qualified as Callbacks
 import Optics
 import Optics.Operators.Unsafe
 import Optics.Tupled
-import GHC.Generics (Generic)
 
 type Impl = (Name, Glyph, Color, Callbacks.Collision)
 
@@ -35,7 +34,9 @@ data Enemy = Enemy
     glyph :: Glyph,
     color :: Color,
     behavior :: Callbacks.Collision
-  } deriving Generic
+  }
+  deriving stock Generic
+  deriving anyclass FromDhall
 
 instance Tupled Enemy Impl where
   tupled = iso (^?! _Ctor @"Enemy") (_Ctor @"Enemy" #)
