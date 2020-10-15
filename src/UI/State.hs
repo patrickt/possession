@@ -45,7 +45,7 @@ data State = State
     _canvas :: Game.Canvas,
     _modeline :: Modeline,
     _sidebar :: Sidebar,
-    _gamePort :: MVar Game.Action,
+    _gamePort :: MVar (Game.Action 'Game.Game),
     _gameThread :: ThreadId
   }
   deriving (Generic)
@@ -62,7 +62,7 @@ mode = typed
 modeline :: Lens' State Modeline
 modeline = typed
 
-gamePort :: Lens' State (MVar Game.Action)
+gamePort :: Lens' State (MVar (Game.Action 'Game.Game))
 gamePort = typed
 
 canvas :: Lens' State Game.Canvas
@@ -71,7 +71,7 @@ canvas = typed
 gameThread :: Lens' State ThreadId
 gameThread = typed
 
-initial :: MVar Game.Action -> ThreadId -> State
+initial :: MVar (Game.Action 'Game.Game) -> ThreadId -> State
 initial gp tid =
   State
     { _mode = InMenu,

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -23,30 +24,28 @@ import Control.Carrier.Reader
 import Control.Concurrent
 import Control.Monad.IO.Class
 import Data.Kind (Type)
-import Game.Action
+import Game.Action (Action, Dest (..))
 import qualified Game.Action as Game
-import Game.Command (Command)
-import qualified Game.Command as Game
 import Data.Message (Message)
 
 data Brokerage = Brokerage
-  { _toBrick :: BChan Command,
-    _currentAction :: MVar Action
+  { _toBrick :: BChan (Action 'UI),
+    _currentAction :: MVar (Action 'Game)
   }
 
 data Broker (m :: Type -> Type) k where
-  Push :: Game.Action -> Broker m ()
-  Pop :: Broker m Game.Action
-  Cmd :: Game.Command -> Broker m ()
+  Push :: Action 'Game -> Broker m ()
+  Pop :: Broker m (Action 'Game)
+  Cmd :: Action 'UI -> Broker m ()
 
 -- | Blocks if the queue is full
-pushAction :: Has Broker sig m => Game.Action -> m ()
+pushAction :: Has Broker sig m => Action 'Game -> m ()
 pushAction = send . Push
 
-popAction :: Has Broker sig m => m Game.Action
+popAction :: Has Broker sig m => m (Action 'Game)
 popAction = send Pop
 
-sendCommand :: Has Broker sig m => Game.Command -> m ()
+sendCommand :: Has Broker sig m => Action 'UI -> m ()
 sendCommand = send . Cmd
 
 notify :: Has Broker sig m => Message -> m ()
@@ -55,7 +54,7 @@ notify = sendCommand . Game.Notify
 newtype BrokerC m a = BrokerC {runBrokerC :: ReaderC Brokerage m a}
   deriving newtype (Functor, Applicative, Monad, MonadIO)
 
-runBroker :: BChan Command -> MVar Action -> BrokerC m a -> m a
+runBroker :: BChan (Action 'UI) -> MVar (Action 'Game) -> BrokerC m a -> m a
 runBroker to curr = runReader (Brokerage to curr) . runBrokerC
 
 instance Has (Lift IO) sig m => Algebra (Broker :+: sig) (BrokerC m) where

@@ -1,4 +1,5 @@
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
 
 module UI.Input
@@ -37,7 +38,7 @@ fromVty key mods = case key of
   Vty.KEsc -> Just Menu
   _ -> Nothing
 
-toAction :: Input -> Maybe Game.Action
+toAction :: Input -> Maybe (Game.Action 'Game.Game)
 toAction i = case i of
   Up -> move (0, -1)
   Down -> move (0, 1)

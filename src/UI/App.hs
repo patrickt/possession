@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -16,9 +17,8 @@ import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
 import Data.Maybe
 import Data.Message
+import Game.Action (Action, Dest(..))
 import Game.Action qualified as Action
-import Game.Command (Command)
-import Game.Command qualified as Command
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Attributes qualified as Attributes
@@ -49,7 +49,7 @@ draw s = case s ^. State.mode of
         ]
     ]
 
-event :: UI.State -> Brick.BrickEvent UI.Resource Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
+event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
   Brick.VtyEvent (Vty.EvKey key mods) -> do
     let inp = Input.fromVty key mods
@@ -65,9 +65,9 @@ event s evt = case evt of
       . fromMaybe Input.None
       $ inp
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
-    Command.Redraw canv -> s & State.canvas .~ canv
-    Command.Update inf -> s & sidebar % field @"info" .~ inf
-    Command.Notify msg -> do
+    Action.Redraw canv -> s & State.canvas .~ canv
+    Action.Update inf -> s & sidebar % field @"info" .~ inf
+    Action.Notify msg -> do
       let previous = s ^? modeline % messages % _last % contents
       let shouldCoalesce = previous == Just (msg ^. contents)
       case (previous, shouldCoalesce) of
@@ -80,7 +80,7 @@ shutdown s = do
   liftIO (killThread (s ^. State.gameThread))
   Brick.halt s
 
-app :: Brick.App UI.State Command UI.Resource
+app :: Brick.App UI.State (Action 'UI) UI.Resource
 app =
   Brick.App
     { Brick.appDraw = draw,

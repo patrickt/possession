@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -47,7 +48,6 @@ import Game.Action
 import Game.Behavior
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
-import Game.Command
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Info qualified as Game (Info)
@@ -64,7 +64,7 @@ type GameState = Game.State.State
 -- | Kick off the ECS with provided channels and inputs. If we get
 -- more channels/mvars, we should pull those out into their own
 -- record.
-start :: BChan Command -> MVar Action -> Game.World -> IO ThreadId
+start :: BChan (Action 'UI) -> MVar (Action 'Game) -> Game.World -> IO ThreadId
 start cmds acts world = do
   let initialState = (Game.State.State (Apecs.Entity 0) True)
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"

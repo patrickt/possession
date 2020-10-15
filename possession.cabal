@@ -60,7 +60,6 @@ library
       Game.Action
       Game.Canvas
       Game.Behavior
-      Game.Command
       Game.Ecs
       Game.Entity.Enemy
       Game.Entity.Player
