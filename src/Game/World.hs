@@ -18,6 +18,7 @@ import Control.Carrier.Reader qualified as Eff
 import Data.Color
 import Data.Glyph
 import Data.Hitpoints
+import Data.Amount
 import Data.Name (Name)
 import Data.Position
 import Game.Callbacks
@@ -26,7 +27,8 @@ data Wall = Wall
 
 makeWorldAndComponents
   "World"
-  [ ''Color,
+  [ ''Amount,
+    ''Color,
     ''Collision,
     ''Glyph,
     ''HP,

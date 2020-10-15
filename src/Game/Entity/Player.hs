@@ -21,11 +21,14 @@ import Data.Position
 import Optics hiding (Is)
 import Optics.Operators.Unsafe
 import Optics.Tupled
+import Data.Amount (Amount)
 
-data Player = Player Position Glyph Color HP deriving Generic
+type Wealth = Amount
 
-instance Tupled Player (Position, Glyph, Color, HP) where
+data Player = Player Position Glyph Color HP Wealth  deriving Generic
+
+instance Tupled Player (Position, Glyph, Color, HP, Wealth) where
   tupled = iso (^?! _Ctor @"Player") (_Ctor @"Player" #)
 
 initial :: Player
-initial = tupled # ((Position 3), (Glyph '@'), White, (HP 100 100))
+initial = tupled # ((Position 3), (Glyph '@'), White, (HP 100 100), 0 :: Amount)

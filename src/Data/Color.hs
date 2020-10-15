@@ -10,7 +10,7 @@ import Data.Either.Validation
 import Dhall qualified
 import Data.Text (Text)
 
-data Color = Black | Grey | White | Yellow
+data Color = Black | Grey | White | Yellow | Brown
   deriving (Show, Generic)
 
 instance Dhall.FromDhall Color where
@@ -24,4 +24,5 @@ instance Dhall.FromDhall Color where
           "gray"  -> pure Grey
           "white" -> pure White
           "yellow" -> pure Yellow
+          "brown" -> pure Yellow
           x -> Dhall.extractError ("Unrecognized color name: " <> x)

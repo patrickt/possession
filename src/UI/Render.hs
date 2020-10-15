@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
@@ -11,7 +12,6 @@ import Data.Glyph
 import Data.Position qualified as Position
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
-import Game.World qualified as World
 import Graphics.Vty qualified as Vty
 import Graphics.Vty.Attributes qualified as Attr
 import UI.Resource
@@ -27,6 +27,7 @@ colorToVty = \case
   Color.Grey -> Attr.rgbColor 221 221 (221 :: Int)
   Color.White -> Attr.white
   Color.Yellow -> Attr.brightYellow
+  Color.Brown -> Attr.rgbColor @Int 0x78 0x58 0x32
 
 scanline :: Int -> Game.Canvas -> Vty.Image
 scanline idx canv = do

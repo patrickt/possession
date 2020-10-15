@@ -11,9 +11,11 @@ import Data.Monoid
 import Data.Monoid.Generic
 import GHC.Generics (Generic)
 import Optics
+import Data.Amount
 
 data Info = Info
   { playerHitpoints :: Last HP
+  , playerGold :: Sum Amount
   }
   deriving stock (Generic)
   deriving (Semigroup) via GenericSemigroup Info
@@ -21,3 +23,6 @@ data Info = Info
 
 hitpoints :: Lens' Info (Maybe HP)
 hitpoints = field @"playerHitpoints" % coerced
+
+gold :: Lens' Info Amount
+gold = field @"playerGold" % coerced

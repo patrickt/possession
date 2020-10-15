@@ -10,6 +10,7 @@ import Data.Either.Validation
 data Collision
   = Invalid
   | Attack
+  | PickUp
 
 data Callbacks = Callbacks
   { onCollision :: Collision
@@ -26,4 +27,5 @@ instance Dhall.FromDhall Collision where
         Success t -> case t of
           "invalid" -> pure Invalid
           "attack"  -> pure Attack
+          "pickup"  -> pure PickUp
           x -> Dhall.extractError ("Unrecognized collision behavior: " <> x)

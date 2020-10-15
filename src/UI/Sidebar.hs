@@ -31,12 +31,15 @@ initial :: Sidebar
 initial = Sidebar mempty
 
 render :: Sidebar -> Brick.Widget Resource
-render sb =
+render (Sidebar info) =
   Brick.vBox
     [ Markup.markup renderedHP
+    , Markup.markup renderedGold
     ]
   where
-    renderedHP = case sb ^. field @"info" % hitpoints of
+    renderedHP = case info ^. hitpoints of
       Nothing -> boldhp <> "- / -"
       Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
     boldhp = "HP: " @? "bold"
+
+    renderedGold = "GP: " <> (showt (info^.gold) @? "yellow")

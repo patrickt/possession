@@ -36,6 +36,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Dhall qualified
 import Game.Action
+import Data.Amount (Amount)
 import Game.Callbacks
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
@@ -142,11 +143,11 @@ loop = do
   pure ()
 
 collideWith ::
-  (MonadIO m, Has (Reader (BChan Command)) sig m, Has Random sig m) =>
+  (MonadIO m, Has (Reader (BChan Command)) sig m, Has Random sig m, Has (State GameState) sig m) =>
   Apecs.Entity ->
   Apecs.SystemT Game.World m ()
 collideWith ent = do
-  (cb, name) <- Apecs.get ent
+  (cb, name, canDrop, pos, mValue) <- Apecs.get ent
   case cb of
     Attack -> do
       HP curr _ <- Apecs.get ent
@@ -158,9 +159,25 @@ collideWith ent = do
           Channel.writeB (Notify (Message.fromText ("You kill the " <> Name.text name <> ".")))
           Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
           Apecs.destroy ent (Apecs.Proxy @(HP, Position))
+
+          case canDrop :: Amount of
+            0 -> pure ()
+            n -> do
+              amt <- Random.uniformR (1, n)
+              void $ Apecs.newEntity (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
+
         else do
           Apecs.modify ent (\(HP c m) -> HP (c - dam) m)
     Invalid -> Channel.writeB (Notify "You can't go that way.")
+    PickUp -> do
+      case mValue :: Maybe Amount of
+        Nothing -> pure ()
+        Just x -> do
+          play <- use Game.State.player
+          Apecs.modify play (+ x)
+          Channel.writeB (Notify (Message.fromText ("You pick up " <> showt x <> " gold.")))
+          Apecs.destroy ent (Apecs.Proxy @(Amount, Position, Glyph, Color.Color, Collision))
+
 
 offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)
 offsetRandomly (V2 x y) = V2 <$> go x <*> go y
@@ -190,8 +207,8 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  hp <- Apecs.get =<< use Game.State.player
-  pure Info.Info {Info.playerHitpoints = Last (Just hp)}
+  (hp, gold) <- Apecs.get =<< use Game.State.player
+  pure Info.Info {Info.playerHitpoints = Last (Just hp), Info.playerGold = pure gold}
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = Apecs.get =<< use Game.State.player

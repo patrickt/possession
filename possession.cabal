@@ -34,6 +34,7 @@ library
         generic-optics,
         generic-monoid,
         linear,
+        mwc-random,
         optics,
         optics-th,
         optics-vl,
@@ -46,6 +47,7 @@ library
       Possession
       Control.Effect.Channel
       Data.Aeson.Exts
+      Data.Amount
       Data.Color
       Data.Glyph
       Data.Is
