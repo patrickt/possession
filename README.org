@@ -1,0 +1,14 @@
+* Hello
+
+This is a little roguelike made for fun.
+
+It is unconventional in terms of its implementation, being a fused-effects application working atop the Apecs ECS, reading configuration via Dhall.
+
+For future directions and technical details, see ~PLAN.org~ in this directory.
+
+* Code organization
+
+This follows the following module hierarchy:
+- ~Data~ - for generic data structures unspecific to core game logic, used in ~Game~ and ~UI~
+- ~Game~ - data structures involved in the ECS and its care & feeding
+- ~UI~ - Brick-specific code (will eventually be an OpenGL frontend or something)

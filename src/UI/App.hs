@@ -52,17 +52,18 @@ draw s = case s ^. State.mode of
 event :: UI.State -> Brick.BrickEvent UI.Resource Command -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
   Brick.VtyEvent (Vty.EvKey key mods) -> do
-    let given = Input.fromVty key mods
+    let inp = Input.fromVty key mods
+    let action = fromMaybe Action.NoOp (inp >>= Input.toAction)
+
     liftIO
       . Broker.runBroker (error "no queue") (s^.State.gamePort)
       . Broker.pushAction
-      . fromMaybe Action.NoOp
-      $ given >>= Input.toAction
+      $ action
 
     maybe (shutdown s)  Brick.continue
       . State.sendMaybe s
       . fromMaybe Input.None
-      $ given
+      $ inp
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Command.Redraw canv -> s & State.canvas .~ canv
     Command.Update inf -> s & sidebar % field @"info" .~ inf

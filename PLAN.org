@@ -25,9 +25,10 @@ Monster locations:
 - from [[https://github.com/sil-quirk/sil-q/blob/master/lib/edit/monster.txt][silq]]
 - from [[https://nikheizen.github.io/pages/compostband/mon-desc.html][poschengband]]
 
-generalize the (Reader (BChan x)) and (Reader (MVar x)) and whatever with some unified Pipe interface
 slurp in some enemies
 multi-square things? z-levels in the canvas? gonna need them
 Fade out modeline message
 Save world state: have to write some Any type
-Confusing method dispatch
+Confusing method dispatch (got a little better)
+Where to shut down the thread upon new-game if a game is active? (move the start-the-ECS invocation into the Brick dispatcher? I think so)
+Resume menu item
