@@ -33,8 +33,7 @@ makeWorldAndComponents
     ''Glyph,
     ''HP,
     ''Text,
-    ''Position,
-    ''Wall
+    ''Position
   ]
 
 deriving newtype instance

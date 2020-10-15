@@ -72,10 +72,10 @@ setup = do
   Apecs.newEntity (Player.initial ^. tupled)
     >>= assign Game.State.player
 
-  Apecs.newEntity (Enemy.initial ^. tupled)
+  Apecs.newEntity (Enemy.initial ^. tupled, HP 5 5, Position 6)
 
   for_ Canvas.borders \border -> do
-    Apecs.newEntity (border, World.Wall, Glyph '#', Color.White, Invalid)
+    Apecs.newEntity (border, Glyph '#', Color.White, Invalid)
 
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = do
@@ -135,6 +135,7 @@ collideWith ent = do
         then do
           Channel.writeB (Notify (Message.fromText ("You kill the " <> name <> ".")))
           Apecs.destroy ent (Apecs.Proxy @Enemy.Impl)
+          Apecs.destroy ent (Apecs.Proxy @(HP, Position))
         else do
           Apecs.modify ent (\(HP c m) -> HP (c - dam) m)
 

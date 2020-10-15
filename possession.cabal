@@ -48,6 +48,7 @@ library
       Data.Glyph
       Data.Is
       Data.Message
+      Data.Name
       Data.Position
       Data.Hitpoints
       Game.Action
