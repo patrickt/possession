@@ -23,6 +23,7 @@ import UI.Attributes qualified as Attributes
 import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
 import UI.Render qualified as Render
+import Control.Effect.Broker qualified as Broker
 import UI.Resource qualified as UI (Resource)
 import UI.Sidebar qualified as Sidebar
 import UI.State (modeline, sidebar)
@@ -30,6 +31,7 @@ import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
+import Control.Monad.IO.Class
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = case s ^. State.mode of
@@ -51,7 +53,8 @@ event :: UI.State -> Brick.BrickEvent UI.Resource Command -> Brick.EventM UI.Res
 event s evt = case evt of
   Brick.VtyEvent (Vty.EvKey key mods) -> do
     let given = Input.fromVty key mods
-    State.broadcast s (fromMaybe Action.NoOp (given >>= Input.toAction))
+    liftIO . Broker.runBroker (error "no queue") (s^.State.gamePort) $
+      Broker.pushAction (fromMaybe Action.NoOp (given >>= Input.toAction))
 
     maybe (Brick.halt s) Brick.continue
       . State.sendMaybe s
