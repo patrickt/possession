@@ -24,18 +24,18 @@ import Data.Generics.Sum
 import Data.Glyph
 import Data.Name (Name)
 import Dhall
-import Game.Callbacks qualified as Callbacks
+import Game.Behavior qualified as Behavior
 import Optics
 import Optics.Operators.Unsafe
 import Optics.Tupled
 
-type Impl = (Name, Glyph, Color, Callbacks.Collision, Amount, XP)
+type Impl = (Name, Glyph, Color, Behavior.Collision, Amount, XP)
 
 data Enemy = Enemy
   { name :: Name,
     glyph :: Glyph,
     color :: Color,
-    behavior :: Callbacks.Collision,
+    behavior :: Behavior.Collision,
     canDrop :: Amount,
     yieldsXP :: XP
   }
@@ -46,4 +46,4 @@ instance Tupled Enemy Impl where
   tupled = iso (^?! _Ctor @"Enemy") (_Ctor @"Enemy" #)
 
 initial :: Enemy
-initial = tupled # ("gibbering idiot", Glyph '?', Yellow, Callbacks.Attack, Amount 0, XP 5 0)
+initial = tupled # ("gibbering idiot", Glyph '?', Yellow, Behavior.Attack, Amount 0, XP 5 0)

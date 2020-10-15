@@ -25,7 +25,7 @@ import Data.Hitpoints
 import Data.Name (Name)
 import Data.Position
 import GHC.Generics (Generic)
-import Game.Callbacks
+import Game.Behavior
 
 makeWorldAndComponents
   "World"

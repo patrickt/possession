@@ -2,7 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Game.Callbacks where
+-- Behavior values determine what entities do when other entities interact with them.
+module Game.Behavior
+  ( Collision (..)
+  ) where
 
 import Data.Either.Validation
 import Data.Text (Text)
@@ -12,13 +15,6 @@ data Collision
   = Invalid
   | Attack
   | PickUp
-
-data Callbacks = Callbacks
-  { onCollision :: Collision
-  }
-
-hostile :: Callbacks
-hostile = Callbacks (Attack)
 
 instance Dhall.FromDhall Collision where
   autoWith n = Dhall.strictText {Dhall.extract = extract}

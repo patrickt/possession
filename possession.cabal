@@ -59,7 +59,7 @@ library
       Dhall.Exts
       Game.Action
       Game.Canvas
-      Game.Callbacks
+      Game.Behavior
       Game.Command
       Game.Ecs
       Game.Entity.Enemy

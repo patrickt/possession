@@ -40,7 +40,7 @@ import Data.Vector qualified as Vector
 import Control.Effect.Broker
 import Dhall qualified
 import Game.Action
-import Game.Callbacks
+import Game.Behavior
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Command
