@@ -1,12 +1,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
 module UI.Sidebar
   ( Sidebar (Sidebar),
-    initial,
     render,
   )
 where
@@ -18,6 +18,7 @@ import Data.Experience (XP (..))
 import Data.Experience qualified as Experience
 import Data.Hitpoints
 import Data.Monoid
+import Data.Monoid.Generic
 import Data.Semigroup (Max (..))
 import Data.Text.Markup qualified as Markup
 import GHC.Generics (Generic)
@@ -30,18 +31,19 @@ data Sidebar = Sidebar
   { info :: Info
   }
   deriving (Generic)
-
-initial :: Sidebar
-initial = Sidebar mempty
+  deriving (Semigroup) via GenericSemigroup Sidebar
+  deriving (Monoid) via GenericMonoid Sidebar
 
 render :: Sidebar -> Brick.Widget Resource
 render (Sidebar i) =
-  Brick.vBox $ fmap Markup.markup
-    [ renderedHP,
-      renderedGold,
-      renderedLevel,
-      renderedXP
-    ]
+  Brick.vBox $
+    fmap
+      Markup.markup
+      [ renderedHP,
+        renderedGold,
+        renderedLevel,
+        renderedXP
+      ]
   where
     renderedHP = case i ^. hitpoints of
       Nothing -> boldhp <> "- / -"

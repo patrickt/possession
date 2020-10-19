@@ -33,7 +33,6 @@ import Optics
 import UI.Input
 import UI.MainMenu qualified as MainMenu
 import UI.Sidebar (Sidebar)
-import UI.Sidebar qualified as Sidebar
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 import Data.Position
@@ -88,7 +87,7 @@ initial gp tid =
       _mainMenu = MainMenu.initial,
       _canvas = Canvas.empty,
       _modeline = Modeline.initial,
-      _sidebar = Sidebar.initial,
+      _sidebar = mempty @Sidebar,
       _gamePort = gp,
       _gameThread = tid
     }
