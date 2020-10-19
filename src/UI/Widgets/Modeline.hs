@@ -2,6 +2,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module UI.Widgets.Modeline
   ( Modeline,
@@ -23,6 +24,7 @@ import Data.Text.Markup qualified as Markup
 import GHC.Generics (Generic)
 import Optics
 import TextShow
+import UI.Render
 import UI.Resource (Resource)
 import UI.Resource qualified as Resource
 
@@ -38,21 +40,21 @@ initial = Modeline mempty
 update :: Message -> Modeline -> Modeline
 update m (Modeline msgs) = Modeline (msgs |> m)
 
-render :: Modeline -> Brick.Widget Resource
-render (Modeline msgs) =
-  Brick.viewport Resource.Modeline Brick.Vertical
-    . Brick.vLimit 3
-    . Brick.renderList (const renderMessage) False
-    -- TODO: move this viewport appropriately rather than gyrating with drop
-    $ Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1
+instance Render Modeline where
+  render (Modeline msgs) =
+    Brick.viewport Resource.Modeline Brick.Vertical
+      . Brick.vLimit 3
+      . Brick.renderList (const render @Message) False
+      -- TODO: move this viewport appropriately rather than gyrating with drop
+      $ Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1
 
-renderMessage :: Message -> Brick.Widget a
-renderMessage m =
-  let attr = case m ^. urgency of
-        Info -> ""
-        Warning -> "yellow"
-        Danger -> "red"
-      toAppend = case m ^. times of
-        1 -> ""
-        n -> " (" <> showt n <> "x)"
-   in markup (((m ^. contents) @? attr) <> Markup.fromText toAppend)
+instance Render Message where
+  render m =
+    let attr = case m ^. urgency of
+          Info -> ""
+          Warning -> "yellow"
+          Danger -> "red"
+        toAppend = case m ^. times of
+          1 -> ""
+          n -> " (" <> showt n <> "x)"
+     in markup (((m ^. contents) @? attr) <> Markup.fromText toAppend)

@@ -24,6 +24,7 @@ import Data.Text.Markup qualified as Markup
 import GHC.Generics (Generic)
 import Game.Info
 import Optics
+import UI.Render
 import TextShow (showt)
 import UI.Resource
 
@@ -34,27 +35,27 @@ data Sidebar = Sidebar
   deriving (Semigroup) via GenericSemigroup Sidebar
   deriving (Monoid) via GenericMonoid Sidebar
 
-render :: Sidebar -> Brick.Widget Resource
-render (Sidebar i) =
-  Brick.vBox $
-    fmap
-      Markup.markup
-      [ renderedHP,
-        renderedGold,
-        renderedLevel,
-        renderedXP
-      ]
-  where
-    renderedHP = case i ^. hitpoints of
-      Nothing -> boldhp <> "- / -"
-      Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
-    boldhp = "HP: " @? "bold"
+instance Renderable Sidebar where
+  render (Sidebar i) =
+    Brick.vBox $
+      fmap
+        Markup.markup
+        [ renderedHP,
+          renderedGold,
+          renderedLevel,
+          renderedXP
+        ]
+    where
+      renderedHP = case i ^. hitpoints of
+        Nothing -> boldhp <> "- / -"
+        Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
+      boldhp = "HP: " @? "bold"
 
-    renderedGold = ("GP: " @? "bold") <> (showt (i ^. gold) @? "yellow")
+      renderedGold = ("GP: " @? "bold") <> (showt (i ^. gold) @? "yellow")
 
-    renderedXP = case i ^. xp of
-      XP (Sum curr) (Max next) -> ("XP: " @? "bold") <> showm curr <> " (next: " <> showm next <> ")"
+      renderedXP = case i ^. xp of
+        XP (Sum curr) (Max next) -> ("XP: " @? "bold") <> showm curr <> " (next: " <> showm next <> ")"
 
-    renderedLevel = ("Level: " @? "bold") <> showm (i ^. xp & Experience.level)
+      renderedLevel = ("Level: " @? "bold") <> showm (i ^. xp & Experience.level)
 
-    showm = Markup.fromText . showt
+      showm = Markup.fromText . showt

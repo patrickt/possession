@@ -9,7 +9,6 @@ module UI.MainMenu
     State (..),
     initial,
     adjust,
-    render,
   )
 where
 
@@ -21,6 +20,7 @@ import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import Optics
 import UI.Input qualified as Input
+import UI.Render
 import UI.Resource qualified as Resource
 
 data State = State {selected :: Maybe Choice}
@@ -76,5 +76,4 @@ form = Form.newForm [theList]
         8
         Resource.MainMenu
 
-render :: State -> Brick.Widget Resource.Resource
-render = Form.renderForm . form
+instance Renderable State where render = Form.renderForm . form
