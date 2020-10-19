@@ -25,7 +25,7 @@ import Optics
 import UI.Attributes qualified as Attributes
 import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
-import UI.Canvas qualified as Canvas
+import UI.Render
 import UI.Resource qualified as Resource
 import Data.Position qualified as Position
 import UI.Resource qualified as UI (Resource)
@@ -42,23 +42,23 @@ draw s =
       offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
   in case s ^. State.mode of
     State.MainMenu ->
-      [ MainMenu.render . view State.mainMenu $ s
+      [ render . view State.mainMenu $ s
       ]
     State.InGame ->
       [ Attributes.withStandard . Brick.border . Brick.vBox $
           [ Brick.hBox
-              [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
-                Brick.border . Brick.padBottom Brick.Max . Canvas.render . view State.canvas $ s
+              [ Brick.hLimit 25 . Brick.border . render . view State.sidebar $ s,
+                Brick.border . Brick.padBottom Brick.Max . render . view State.canvas $ s
               ],
             Brick.hBorder,
-            Brick.vLimit 3 . Modeline.render . view modeline $ s
+            Brick.vLimit 3 . render . view modeline $ s
           ]
       ]
     State.Looking pos ->
       [ Brick.showCursor Resource.Look (pos^.to curPos%to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
           [ Brick.hBox
               [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
-                Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . Render.render . view State.canvas $ s
+                Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
               ],
             Brick.hBorder,
             Brick.vLimit 3 . Modeline.render . view modeline $ s
