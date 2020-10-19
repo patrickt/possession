@@ -6,7 +6,6 @@
 module UI.Render where
 
 import Brick qualified
-import Data.Color (Color)
 import Data.Color qualified as Color
 import Data.Glyph
 import Data.Position qualified as Position
@@ -19,27 +18,18 @@ import UI.Resource
 drawSprite :: Canvas.Sprite -> Vty.Image
 drawSprite (Canvas.Sprite (Glyph chr) color) = Vty.char attr chr
   where
-    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (colorToVty color)}
+    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (Color.toVty color)}
 
-colorToVty :: Color -> Vty.Color
-colorToVty = \case
-  Color.Black -> Attr.black
-  Color.Grey -> Attr.rgbColor 221 221 (221 :: Int)
-  Color.White -> Attr.white
-  Color.Yellow -> Attr.brightYellow
-  Color.Brown -> Attr.rgbColor @Int 0x78 0x58 0x32
-
-scanline :: Int -> Game.Canvas -> Vty.Image
-scanline idx canv = do
+scanline :: Game.Canvas -> Int -> Vty.Image
+scanline canv idx =
   let scanlines = do
         x <- [0 .. Canvas.size]
-        pure (Canvas.at canv (Position.make x idx))
-  let squares = fmap drawSprite scanlines
-  Vty.horizCat squares
+        pure (drawSprite (Canvas.at canv (Position.make x idx)))
+  in Vty.horizCat scanlines
 
 render :: Game.Canvas -> Brick.Widget Resource
 render canv =
-  let allLines = [scanline x canv | x <- [0 .. Canvas.size]]
+  let allLines = scanline canv <$> [0 .. Canvas.size]
    in Brick.viewport UI.Resource.Canvas Brick.Both
         . Brick.raw
         $ Vty.vertCat allLines

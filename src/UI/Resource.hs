@@ -3,6 +3,7 @@ module UI.Resource
   )
 where
 
+-- | Names visible widgets in the UI.
 data Resource
   = Modeline
   | Canvas
