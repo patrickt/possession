@@ -15,7 +15,7 @@ import Brick qualified
 import Brick.Markup ((@?))
 import Brick.Markup qualified as Markup
 import Data.Experience (XP (..))
-import Data.Generics.Product
+import Data.Experience qualified as Experience
 import Data.Hitpoints
 import Data.Monoid
 import Data.Semigroup (Max (..))
@@ -36,10 +36,11 @@ initial = Sidebar mempty
 
 render :: Sidebar -> Brick.Widget Resource
 render (Sidebar i) =
-  Brick.vBox
-    [ Markup.markup renderedHP,
-      Markup.markup renderedGold,
-      Markup.markup renderedXP
+  Brick.vBox $ fmap Markup.markup
+    [ renderedHP,
+      renderedGold,
+      renderedLevel,
+      renderedXP
     ]
   where
     renderedHP = case i ^. hitpoints of
@@ -51,5 +52,7 @@ render (Sidebar i) =
 
     renderedXP = case i ^. xp of
       XP (Sum curr) (Max next) -> ("XP: " @? "bold") <> showm curr <> " (next: " <> showm next <> ")"
+
+    renderedLevel = ("Level: " @? "bold") <> showm (i ^. xp & Experience.level)
 
     showm = Markup.fromText . showt

@@ -15,7 +15,6 @@
 module Game.Entity.Enemy
   ( Enemy (Enemy),
     Impl,
-    initial,
   )
 where
 
@@ -46,6 +45,3 @@ data Enemy = Enemy
 
 instance Tupled Enemy Impl where
   tupled = iso (^?! _Ctor @"Enemy") (_Ctor @"Enemy" #)
-
-initial :: Enemy
-initial = tupled # ("gibbering idiot", Glyph '?', Yellow, Behavior.Attack, Amount 0, XP 5 0)

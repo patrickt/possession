@@ -17,10 +17,11 @@ import Data.Message (Message)
 data Dest = Game | UI
 
 -- The type parameter here indicates the direction
--- in which this request can flow.
+-- in which this request can flow. NoOp is bidirectional.
 data Action (dest :: Dest) where
+  NoOp :: Action a
+
   Move :: V2 Int -> Action 'Game
-  NoOp :: Action 'Game
 
   Redraw :: Canvas -> Action 'UI
   Update :: Info -> Action 'UI

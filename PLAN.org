@@ -33,3 +33,4 @@ Confusing method dispatch (got a little better)
 Where to shut down the thread upon new-game if a game is active? (move the start-the-ECS invocation into the Brick dispatcher? I think so)
 Resume menu item, persist save game information
 Template Haskell for writing Impl implementations
+Alert when a level is gained (need to figure out where this logic lives)

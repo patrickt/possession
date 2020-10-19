@@ -10,6 +10,7 @@ module Game.Info
     hitpoints,
     gold,
     xp,
+    playerPosition,
   )
 where
 
@@ -21,11 +22,13 @@ import Data.Monoid
 import Data.Monoid.Generic
 import GHC.Generics (Generic)
 import Optics
+import Data.Position
 
 data Info = Info
   { playerHitpoints :: Last HP,
     playerGold :: Sum Amount,
-    playerXP :: XP
+    playerXP :: XP,
+    playerPos :: Last Position
   }
   deriving stock (Generic)
   deriving (Semigroup) via GenericSemigroup Info
@@ -39,3 +42,6 @@ gold = field @"playerGold" % coerced
 
 xp :: Lens' Info XP
 xp = typed
+
+playerPosition :: Lens' Info (Maybe Position)
+playerPosition = field @"playerPos" % coerced

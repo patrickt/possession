@@ -14,12 +14,13 @@ import Graphics.Vty qualified as Vty
 import Linear
 import Prelude hiding (Either (..))
 
-data Input = Up | Down | Left | Right | Accept | Quit | Menu | None
+data Input = Up | Down | Left | Right | Accept | Quit | Menu | Look | None
   deriving (Show, Eq)
 
 fromChar :: Char -> Maybe Input
 fromChar = \case
   'q' -> pure Quit
+  'l' -> pure Look
   _ -> Nothing
 
 -- we'll eventually need to move this into state, right?

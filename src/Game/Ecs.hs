@@ -217,11 +217,12 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (hp, gold, xp) <- Apecs.get =<< use Game.State.player
+  (hp, gold, xp, pos) <- Apecs.get =<< use Game.State.player
   mempty @Info.Info
     & Info.hitpoints ?~ hp
     & Info.gold .~ gold
     & Info.xp .~ xp
+    & Info.playerPosition .~ pos
     & pure
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position

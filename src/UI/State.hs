@@ -14,12 +14,14 @@ module UI.State
     canvas,
     gameThread,
     Mode (..),
+    _Looking,
     initial,
     send,
     sendMaybe,
   )
 where
 
+import Prelude hiding (Either (..))
 import Control.Concurrent (ThreadId)
 import Control.Concurrent.MVar
 import Data.Generics.Product
@@ -34,10 +36,18 @@ import UI.Sidebar (Sidebar)
 import UI.Sidebar qualified as Sidebar
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
+import Data.Position
+import Data.Generics.Sum
+import Game.Info (playerPosition)
 
 data Mode
-  = InMenu
+  = MainMenu
   | InGame
+  | Looking Position
+    deriving Generic
+
+_Looking :: Prism' Mode Position
+_Looking = _Ctor @"Looking"
 
 data State = State
   { _mode :: Mode,
@@ -74,7 +84,7 @@ gameThread = typed
 initial :: MVar (Game.Action 'Game.Game) -> ThreadId -> State
 initial gp tid =
   State
-    { _mode = InMenu,
+    { _mode = MainMenu,
       _mainMenu = MainMenu.initial,
       _canvas = Canvas.empty,
       _modeline = Modeline.initial,
@@ -85,10 +95,19 @@ initial gp tid =
 
 send :: Input -> State -> State
 send i s = case (i, s ^. mode, s ^. mainMenu % field @"selected") of
-  (Up, InMenu, _) -> go Up
-  (Down, _, _) -> go Down
-  (Accept, InMenu, Just MainMenu.NewGame) -> s & mode .~ InGame
-  (Menu, InGame, _) -> s & mode .~ InMenu
+  (Up, MainMenu, _) -> go Up
+  (Down, MainMenu, _) -> go Down
+  (Up, Looking _, _) ->
+    s & mode % _Ctor @"Looking" % _2 %~ pred
+  (Down, Looking _, _) ->
+    s & mode % _Ctor @"Looking" % _2 %~ succ
+  (Left, Looking _, _) ->
+    s & mode % _Ctor @"Looking" % _1 %~ pred
+  (Right, Looking _, _) ->
+    s & mode % _Ctor @"Looking" % _1 %~ succ
+  (Accept, MainMenu, Just MainMenu.NewGame) -> s & mode .~ InGame
+  (Menu, InGame, _) -> s & mode .~ MainMenu
+  (Look, InGame, _) -> s & mode .~ Looking (s ^. sidebar % field @"info" % playerPosition % non 0)
   _ -> s
   where
     go x = s & selection %~ MainMenu.adjust x

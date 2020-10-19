@@ -15,7 +15,12 @@ import Dhall qualified
 import Dhall.Exts ()
 import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
+import Optics.IxFold
+import Data.Maybe
+import Data.List (genericLength)
 
+-- toNextLevel is dumb, it can be computed statically
+-- and then everything here gets simpler
 data XP = XP {_current :: Sum Natural, _toNextLevel :: Max Natural}
   deriving stock (Generic)
   deriving (Semigroup) via GenericSemigroup XP
@@ -28,3 +33,14 @@ instance Dhall.FromDhall XP where
       extract e = case Dhall.extract (Dhall.autoWith @Natural n) e of
         Failure v -> Failure v
         Success t -> pure (XP (pure t) 0)
+
+level :: XP -> Natural
+level (XP (Sum curr) _) =
+  let within (x, y) = curr >= x && curr < y
+      indices = [ 10, 25, 45, 70, 100, 140 ] :: [Natural]
+      paired = zip (0 : indices) indices
+      orMax = fromMaybe (genericLength indices + 1) . getFirst
+      go idx minmax acc
+        | within minmax = acc <> pure (fromIntegral idx + 1)
+        | otherwise = acc
+  in orMax $ ifoldr go (First Nothing) paired
