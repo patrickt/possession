@@ -15,9 +15,10 @@ import Control.Concurrent (killThread)
 import Control.Effect.Broker qualified as Broker
 import Control.Monad.IO.Class
 import Data.Generics.Product.Fields
-import Data.Position (components)
 import Data.Maybe
 import Data.Message
+import Data.Position (components)
+import Data.Position qualified as Position
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Action
 import Graphics.Vty qualified as Vty
@@ -27,7 +28,6 @@ import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
 import UI.Render
 import UI.Resource qualified as Resource
-import Data.Position qualified as Position
 import UI.Resource qualified as UI (Resource)
 import UI.Sidebar qualified as Sidebar
 import UI.State (modeline, sidebar)
@@ -40,30 +40,30 @@ draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s =
   let curPos p = view components (p + offset)
       offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
-  in case s ^. State.mode of
-    State.MainMenu ->
-      [ render . view State.mainMenu $ s
-      ]
-    State.InGame ->
-      [ Attributes.withStandard . Brick.border . Brick.vBox $
-          [ Brick.hBox
-              [ Brick.hLimit 25 . Brick.border . render . view State.sidebar $ s,
-                Brick.border . Brick.padBottom Brick.Max . render . view State.canvas $ s
-              ],
-            Brick.hBorder,
-            Brick.vLimit 3 . render . view modeline $ s
+   in case s ^. State.mode of
+        State.MainMenu ->
+          [ render . view State.mainMenu $ s
           ]
-      ]
-    State.Looking pos ->
-      [ Brick.showCursor Resource.Look (pos^.to curPos%to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
-          [ Brick.hBox
-              [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
-                Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
-              ],
-            Brick.hBorder,
-            Brick.vLimit 3 . Modeline.render . view modeline $ s
+        State.InGame ->
+          [ Attributes.withStandard . Brick.border . Brick.vBox $
+              [ Brick.hBox
+                  [ Brick.hLimit 25 . Brick.border . render . view State.sidebar $ s,
+                    Brick.border . Brick.padBottom Brick.Max . render . view State.canvas $ s
+                  ],
+                Brick.hBorder,
+                Brick.vLimit 3 . render . view modeline $ s
+              ]
           ]
-      ]
+        State.Looking pos ->
+          [ Brick.showCursor Resource.Look (pos ^. to curPos % to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
+              [ Brick.hBox
+                  [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
+                    Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
+                  ],
+                Brick.hBorder,
+                Brick.vLimit 3 . Modeline.render . view modeline $ s
+              ]
+          ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
@@ -72,8 +72,6 @@ event s evt = case evt of
     let action
           | has (State.mode % State._Looking) s = Action.NoOp
           | otherwise = fromMaybe Action.NoOp (inp >>= Input.toAction)
-
-
 
     liftIO
       . Broker.runBroker (error "no queue") (s ^. State.gamePort)

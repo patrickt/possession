@@ -3,10 +3,10 @@
 -- | Provides useful instances that MWC doesn't
 module System.Random.MWC.Exts (Variate (..)) where
 
-import System.Random.MWC
-import Numeric.Natural
-import Data.Word
 import Data.Bifunctor
+import Data.Word
+import Numeric.Natural
+import System.Random.MWC
 
 -- | Picks from Word64 values.
 instance Variate Natural where

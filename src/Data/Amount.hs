@@ -1,7 +1,7 @@
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- | A natural number representing a quantity of something.
 -- Used for things like value of gold pieces.

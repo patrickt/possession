@@ -1,9 +1,9 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- A 2-tuple of integers for position on the world grid.
 module Data.Position
@@ -36,13 +36,11 @@ instance Field1 Position Position Int Int where
 instance Field2 Position Position Int Int where
   _2 = _Position % lensVL _y
 
-
 pos :: forall a. HasType Position a => Lens' a Position
 pos = typed
 
 components :: Iso' Position (Int, Int)
 components = iso (\(Position (V2 a b)) -> (a, b)) (\(a, b) -> Position (V2 a b))
-
 
 make :: Int -> Int -> Position
 make x y = Position (V2 x y)

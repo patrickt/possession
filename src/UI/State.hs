@@ -21,29 +21,29 @@ module UI.State
   )
 where
 
-import Prelude hiding (Either (..))
 import Control.Concurrent (ThreadId)
 import Control.Concurrent.MVar
 import Data.Generics.Product
+import Data.Generics.Sum
+import Data.Position
 import GHC.Generics (Generic)
 import Game.Action qualified as Game
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
+import Game.Info (playerPosition)
 import Optics
 import UI.Input
 import UI.MainMenu qualified as MainMenu
 import UI.Sidebar (Sidebar)
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
-import Data.Position
-import Data.Generics.Sum
-import Game.Info (playerPosition)
+import Prelude hiding (Either (..))
 
 data Mode
   = MainMenu
   | InGame
   | Looking Position
-    deriving Generic
+  deriving (Generic)
 
 _Looking :: Prism' Mode Position
 _Looking = _Ctor @"Looking"

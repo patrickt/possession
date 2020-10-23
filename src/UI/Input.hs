@@ -1,5 +1,5 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 
 module UI.Input

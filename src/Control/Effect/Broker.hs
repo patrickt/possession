@@ -14,7 +14,8 @@ module Control.Effect.Broker
     popAction,
     sendCommand,
     runBroker,
-  notify)
+    notify,
+  )
 where
 
 import Brick.BChan
@@ -24,9 +25,9 @@ import Control.Carrier.Reader
 import Control.Concurrent
 import Control.Monad.IO.Class
 import Data.Kind (Type)
+import Data.Message (Message)
 import Game.Action (Action, Dest (..))
 import qualified Game.Action as Game
-import Data.Message (Message)
 
 data Brokerage = Brokerage
   { _toBrick :: BChan (Action 'UI),

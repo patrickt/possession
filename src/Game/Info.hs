@@ -20,9 +20,9 @@ import Data.Generics.Product
 import Data.Hitpoints (HP)
 import Data.Monoid
 import Data.Monoid.Generic
+import Data.Position
 import GHC.Generics (Generic)
 import Optics
-import Data.Position
 
 data Info = Info
   { playerHitpoints :: Last HP,

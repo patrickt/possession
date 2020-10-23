@@ -24,8 +24,8 @@ import Data.Text.Markup qualified as Markup
 import GHC.Generics (Generic)
 import Game.Info
 import Optics
-import UI.Render
 import TextShow (showt)
+import UI.Render
 import UI.Resource
 
 data Sidebar = Sidebar
