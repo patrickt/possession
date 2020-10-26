@@ -22,6 +22,7 @@ import Optics
 import UI.Input qualified as Input
 import UI.Render
 import UI.Resource qualified as Resource
+import qualified Brick.Widgets.Center as Brick
 
 data State = State {selected :: Maybe Choice}
   deriving (Generic)
@@ -61,7 +62,8 @@ choices = [NewGame, About, Quit]
 
 render' :: Bool -> Choice -> Brick.Widget n
 render' isOn =
-  (if isOn then Brick.border else id)
+  Brick.hCenter
+    . (if isOn then Brick.border else id)
     . Brick.str
     . renderChoice
 

@@ -2,6 +2,9 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- | This module represents messages that the Brick UI interprets
+-- and translates into UI-agnostic items. They are interpreted from
+-- Vty key events, and into Action values.
 module UI.Input
   ( Input (..),
     fromVty,
@@ -14,7 +17,7 @@ import Graphics.Vty qualified as Vty
 import Linear
 import Prelude hiding (Either (..))
 
-data Input = Up | Down | Left | Right | Accept | Quit | Menu | Look | None
+data Input = Up | Down | Left | Right | StartGame | Quit | Menu | Look | None
   deriving (Show, Eq)
 
 fromChar :: Char -> Maybe Input
@@ -35,7 +38,7 @@ fromVty key mods = case key of
   Vty.KDown -> Just Down
   Vty.KLeft -> Just Left
   Vty.KRight -> Just Right
-  Vty.KEnter -> Just Accept
+  Vty.KEnter -> Just StartGame
   Vty.KEsc -> Just Menu
   _ -> Nothing
 

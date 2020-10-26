@@ -93,20 +93,20 @@ initial gp tid =
     }
 
 send :: Input -> State -> State
-send i s = case (i, s ^. mode, s ^. mainMenu % field @"selected") of
-  (Up, MainMenu, _) -> go Up
-  (Down, MainMenu, _) -> go Down
-  (Up, Looking _, _) ->
-    s & mode % _Ctor @"Looking" % _2 %~ pred
-  (Down, Looking _, _) ->
-    s & mode % _Ctor @"Looking" % _2 %~ succ
-  (Left, Looking _, _) ->
-    s & mode % _Ctor @"Looking" % _1 %~ pred
-  (Right, Looking _, _) ->
-    s & mode % _Ctor @"Looking" % _1 %~ succ
-  (Accept, MainMenu, Just MainMenu.NewGame) -> s & mode .~ InGame
-  (Menu, InGame, _) -> s & mode .~ MainMenu
-  (Look, InGame, _) -> s & mode .~ Looking (s ^. sidebar % field @"info" % playerPosition % non 0)
+send i s = case (i, s ^. mode) of
+  (Up, MainMenu) -> go Up
+  (Down, MainMenu) -> go Down
+  (Up, Looking _) ->
+    s & mode % _Looking % _2 %~ pred
+  (Down, Looking _) ->
+    s & mode % _Looking % _2 %~ succ
+  (Left, Looking _) ->
+    s & mode % _Looking % _1 %~ pred
+  (Right, Looking _) ->
+    s & mode % _Looking % _1 %~ succ
+  (StartGame, MainMenu) -> s & mode .~ InGame
+  (Menu, InGame) -> s & mode .~ MainMenu
+  (Look, InGame) -> s & mode .~ Looking (s ^. sidebar % field @"info" % playerPosition % non 0)
   _ -> s
   where
     go x = s & selection %~ MainMenu.adjust x
