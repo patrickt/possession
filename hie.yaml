@@ -1,6 +1,8 @@
 cradle:
   cabal:
+    - path: "./test"
+      component: "test:possession-test"
     - path: "./app"
-      component: "lib:possession"
+      component: "exe:possession"
     - path: "./src"
       component: "lib:possession"

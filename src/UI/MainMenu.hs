@@ -15,14 +15,14 @@ where
 import Brick qualified
 import Brick.Forms qualified as Form
 import Brick.Widgets.Border qualified as Brick
-import Data.Generics.Product.Typed as Optics
-import Data.Vector (Vector)
+import Brick.Widgets.Center qualified as Brick
+import Data.Generics.Product.Typed as Optics (HasType (typed))
+import Data.Vector
 import GHC.Generics (Generic)
 import Optics
 import UI.Input qualified as Input
-import UI.Render
+import UI.Render (Renderable (..))
 import UI.Resource qualified as Resource
-import qualified Brick.Widgets.Center as Brick
 
 data State = State {selected :: Maybe Choice}
   deriving (Generic)
@@ -42,6 +42,7 @@ data Choice
   | Quit
   deriving (Eq, Ord, Show, Enum)
 
+-- >>> moveUp NewGame
 moveUp :: Choice -> Choice
 moveUp = \case
   NewGame -> NewGame

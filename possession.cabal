@@ -78,6 +78,16 @@ library
       UI.State
       UI.Widgets.Modeline
 
+test-suite possession-test
+    import: haskell
+    type: exitcode-stdio-1.0
+    main-is:          Test.hs
+    build-depends:    base ^>=4.14.1.0
+                    , possession
+    hs-source-dirs:   test
+    ghc-options:
+      -threaded
+
 executable possession
     import: haskell
     main-is:          Main.hs
