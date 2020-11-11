@@ -22,6 +22,9 @@ import UI.Resource
 class Renderable a where
   render :: a -> Brick.Widget Resource
 
+  renderMany :: a -> [Brick.Widget Resource]
+  renderMany = pure . render
+
 instance Renderable Message where
   render m =
     let attr = case m ^. urgency of

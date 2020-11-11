@@ -3,6 +3,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE OverloadedLists #-}
 
 module UI.State
   ( State (State),
@@ -13,6 +14,7 @@ module UI.State
     gamePort,
     canvas,
     gameThread,
+    responders,
     Mode (..),
     _Looking,
     initial,
@@ -31,6 +33,7 @@ import Game.Action qualified as Game
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Info (playerPosition)
+import UI.Responder qualified as Responder
 import Optics
 import UI.Input
 import UI.MainMenu qualified as MainMenu
@@ -55,9 +58,13 @@ data State = State
     _modeline :: Modeline,
     _sidebar :: Sidebar,
     _gamePort :: MVar (Game.Action 'Game.Game),
-    _gameThread :: ThreadId
+    _gameThread :: ThreadId,
+    _responders :: Responder.Chain
   }
   deriving (Generic)
+
+responders :: Lens' State Responder.Chain
+responders = typed
 
 sidebar :: Lens' State Sidebar
 sidebar = typed
@@ -89,7 +96,8 @@ initial gp tid =
       _modeline = Modeline.initial,
       _sidebar = mempty @Sidebar,
       _gamePort = gp,
-      _gameThread = tid
+      _gameThread = tid,
+      _responders = Responder.Chain [Responder.SomeResponder MainMenu.initial]
     }
 
 send :: Input -> State -> State
@@ -104,7 +112,6 @@ send i s = case (i, s ^. mode) of
     s & mode % _Looking % _1 %~ pred
   (Right, Looking _) ->
     s & mode % _Looking % _1 %~ succ
-  (StartGame, MainMenu) -> s & mode .~ InGame
   (Menu, InGame) -> s & mode .~ MainMenu
   (Look, InGame) -> s & mode .~ Looking (s ^. sidebar % field @"info" % playerPosition % non 0)
   _ -> s

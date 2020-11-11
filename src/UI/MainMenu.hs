@@ -22,10 +22,32 @@ import GHC.Generics (Generic)
 import Optics
 import UI.Input qualified as Input
 import UI.Render (Renderable (..))
+import UI.Responder
+import UI.InGame qualified as InGame
 import UI.Resource qualified as Resource
+import Graphics.Vty qualified as Vty
 
+-- TODO: change to Just
 data State = State {selected :: Maybe Choice}
   deriving (Generic)
+
+instance Responder State where
+  translate (Vty.EvKey k _) _ = case k of
+    Vty.KUp -> Input.Up
+    Vty.KDown -> Input.Down
+    Vty.KEnter -> Input.Confirm
+    _ -> Input.None
+  translate _ _ = Input.None
+
+  onSend i (State s) = case (i, s) of
+    (Input.Up, Just NewGame) -> Nil
+    (Input.Down, Just Quit) -> Nil
+    (Input.Up, Just x) -> Update (State (Just (pred x)))
+    (Input.Down, Just x) -> Update (State (Just (succ x)))
+    (Input.Confirm, Just NewGame) -> Push (SomeResponder InGame.initial)
+    (Input.Confirm, Just Quit) -> Terminate
+
+    _ -> Nil
 
 initial :: State
 initial = State (Just NewGame)

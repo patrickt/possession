@@ -71,6 +71,7 @@ library
       UI.Attributes
       UI.App
       UI.Input
+      UI.InGame
       UI.MainMenu
       UI.Resource
       UI.Render

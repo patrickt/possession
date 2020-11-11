@@ -17,7 +17,7 @@ import Graphics.Vty qualified as Vty
 import Linear
 import Prelude hiding (Either (..))
 
-data Input = Up | Down | Left | Right | StartGame | Quit | Menu | Look | None
+data Input = Up | Down | Left | Right | Confirm | Quit | Menu | Look | None
   deriving (Show, Eq)
 
 fromChar :: Char -> Maybe Input
@@ -38,7 +38,7 @@ fromVty key mods = case key of
   Vty.KDown -> Just Down
   Vty.KLeft -> Just Left
   Vty.KRight -> Just Right
-  Vty.KEnter -> Just StartGame
+  Vty.KEnter -> Just Confirm
   Vty.KEsc -> Just Menu
   _ -> Nothing
 

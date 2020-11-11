@@ -35,53 +35,62 @@ import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
+import UI.Responder qualified as Responder
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
-draw s =
-  let curPos p = view components (p + offset)
-      offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
-   in case s ^. State.mode of
-        State.MainMenu ->
-          [ render . view State.mainMenu $ s
-          ]
-        State.InGame ->
-          [ Attributes.withStandard . Brick.border . Brick.vBox $
-              [ Brick.hBox
-                  [ Brick.hLimit 25 . Brick.border . render . view State.sidebar $ s,
-                    Brick.border . Brick.padBottom Brick.Max . render . view State.canvas $ s
-                  ],
-                Brick.hBorder,
-                Brick.vLimit 3 . render . view modeline $ s
-              ]
-          ]
-        State.Looking pos ->
-          [ Brick.showCursor Resource.Look (pos ^. to curPos % to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
-              [ Brick.hBox
-                  [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
-                    Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
-                  ],
-                Brick.hBorder,
-                Brick.vLimit 3 . Modeline.render . view modeline $ s
-              ]
-          ]
+draw s = s ^. State.responders % Responder.first % to renderMany
+  -- let curPos p = view components (p + offset)
+  --     offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
+  --  in case s ^. State.mode of
+  --       State.MainMenu ->
+  --         [ render . view State.mainMenu $ s
+  --         ]
+  --       State.InGame ->
+  --         [ Attributes.withStandard . Brick.border . Brick.vBox $
+  --             [ Brick.hBox
+  --                 [ Brick.hLimit 25 . Brick.border . render . view State.sidebar $ s,
+  --                   Brick.border . Brick.padBottom Brick.Max . render . view State.canvas $ s
+  --                 ],
+  --               Brick.hBorder,
+  --               Brick.vLimit 3 . render . view modeline $ s
+  --             ]
+  --         ]
+  --       State.Looking pos ->
+  --         [ Brick.showCursor Resource.Look (pos ^. to curPos % to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
+  --             [ Brick.hBox
+  --                 [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
+  --                   Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
+  --                 ],
+  --               Brick.hBorder,
+  --               Brick.vLimit 3 . Modeline.render . view modeline $ s
+  --             ]
+  --         ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
-  Brick.VtyEvent (Vty.EvKey key mods) -> do
-    let inp = Input.fromVty key mods
-    let action
-          | has (State.mode % State._Looking) s = Action.NoOp
-          | otherwise = fromMaybe Action.NoOp (inp >>= Input.toAction)
+  Brick.VtyEvent vty-> do
+    let first = s ^. State.responders % Responder.first
+    let inp = Responder.translate vty first
+    let act = Responder.onSend inp first
 
-    liftIO
-      . Broker.runBroker (error "no queue") (s ^. State.gamePort)
-      . Broker.pushAction
-      $ action
+    case act of
+      Responder.Nil ->
+        Brick.continue s
+      Responder.Push r ->
+        Brick.continue (s & State.responders %~ Responder.push r)
+      Responder.Pop ->
+        Brick.continue (s & State.responders %~ Responder.pop)
+      Responder.Update a ->
+        Brick.continue (s & State.responders % Responder.first .~ a)
+      Responder.Broadcast act -> do
+        liftIO
+          . Broker.runBroker (error "no queue") (s ^. State.gamePort)
+          . Broker.pushAction
+          $ act
+        Brick.continue s
+      Responder.Terminate ->
+        shutdown s
 
-    maybe (shutdown s) Brick.continue
-      . State.sendMaybe s
-      . fromMaybe Input.None
-      $ inp
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s
     Action.Redraw canv -> s & State.canvas .~ canv
