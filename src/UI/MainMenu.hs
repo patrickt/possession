@@ -28,7 +28,9 @@ import UI.Resource qualified as Resource
 import Graphics.Vty qualified as Vty
 
 -- TODO: change to Just
-data State = State {selected :: Maybe Choice}
+data State = State {
+  selected :: Maybe Choice
+  }
   deriving (Generic)
 
 instance Responder State where
@@ -44,7 +46,7 @@ instance Responder State where
     (Input.Down, Just Quit) -> Nil
     (Input.Up, Just x) -> Update (State (Just (pred x)))
     (Input.Down, Just x) -> Update (State (Just (succ x)))
-    (Input.Confirm, Just NewGame) -> Push (SomeResponder InGame.initial)
+    (Input.Confirm, Just NewGame) -> Pop
     (Input.Confirm, Just Quit) -> Terminate
 
     _ -> Nil

@@ -30,7 +30,6 @@ import UI.Render
 import UI.Resource qualified as Resource
 import UI.Resource qualified as UI (Resource)
 import UI.Sidebar qualified as Sidebar
-import UI.State (modeline, sidebar)
 import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline (messages)
@@ -93,14 +92,15 @@ event s evt = case evt of
 
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s
-    Action.Redraw canv -> s & State.canvas .~ canv
-    Action.Update inf -> s & sidebar % field @"info" .~ inf
-    Action.Notify msg -> do
-      let previous = s ^? modeline % messages % _last % contents
-      let shouldCoalesce = previous == Just (msg ^. contents)
-      case (previous, shouldCoalesce) of
-        (Just _, True) -> s & modeline % Modeline.messages % _last % times %~ succ
-        _ -> s & modeline %~ Modeline.update msg
+    -- Action.Redraw canv -> s & State.canvas .~ canv
+    -- Action.Update inf -> s & sidebar % field @"info" .~ inf
+    -- Action.Notify msg -> do
+    --   let previous = s ^? modeline % messages % _last % contents
+    --   let shouldCoalesce = previous == Just (msg ^. contents)
+    --   case (previous, shouldCoalesce) of
+    --     (Just _, True) -> s & modeline % Modeline.messages % _last % times %~ succ
+    --     _ -> s & modeline %~ Modeline.update msg
+    _ -> s
   _ -> Brick.continue s
 
 shutdown :: UI.State -> Brick.EventM a (Brick.Next UI.State)
