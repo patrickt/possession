@@ -1,68 +1,56 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE OverloadedLabels #-}
 
 module UI.App (app) where
 
 import Brick qualified
-import Brick.AttrMap qualified as Brick.AttrMap
+import Brick.AttrMap qualified
 import Control.Concurrent (killThread)
 import Control.Effect.Broker qualified as Broker
-import Data.Generics.Product
 import Control.Monad.IO.Class
+import Data.Generics.Product
 import Data.Message
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Action
 import Graphics.Vty qualified as Vty
 import Optics
-import UI.Responder (castTo)
+import UI.InGame (InGame)
 import UI.Render
 import UI.Resource qualified as UI (Resource)
+import UI.Responder (castTo)
+import UI.Responder qualified as Responder
 import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
-import UI.Responder qualified as Responder
-import UI.InGame (InGame)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = s ^. State.responders % Responder.first % to renderMany
-  -- let curPos p = view components (p + offset)
-  --     offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
-  --  in case s ^. State.mode of
-  --       State.MainMenu ->
-  --         [ render . view State.mainMenu $ s
-  --         ]
-  --       State.InGame ->
-  --         [ Attributes.withStandard . Brick.border . Brick.vBox $
-  --             [ Brick.hBox
-  --                 [ Brick.hLimit 25 . Brick.border . render . view State.sidebar $ s,
-  --                   Brick.border . Brick.padBottom Brick.Max . render . view State.canvas $ s
-  --                 ],
-  --               Brick.hBorder,
-  --               Brick.vLimit 3 . render . view modeline $ s
-  --             ]
-  --         ]
-  --       State.Looking pos ->
-  --         [ Brick.showCursor Resource.Look (pos ^. to curPos % to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
-  --             [ Brick.hBox
-  --                 [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
-  --                   Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
-  --                 ],
-  --               Brick.hBorder,
-  --               Brick.vLimit 3 . Modeline.render . view modeline $ s
-  --             ]
-  --         ]
+
+-- let curPos p = view components (p + offset)
+--     offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
+--  in case s ^. State.mode of
+--       State.Looking pos ->
+--         [ Brick.showCursor Resource.Look (pos ^. to curPos % to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
+--             [ Brick.hBox
+--                 [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
+--                   Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
+--                 ],
+--               Brick.hBorder,
+--               Brick.vLimit 3 . Modeline.render . view modeline $ s
+--             ]
+--         ]
 
 event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
-  Brick.VtyEvent vty-> do
+  Brick.VtyEvent vty -> do
     let first = s ^. State.responders % Responder.first
     let inp = Responder.translate vty first
     let act = Responder.onSend inp first
@@ -89,7 +77,6 @@ event s evt = case evt of
         Brick.continue s
       Responder.Terminate ->
         shutdown s
-
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s
     Action.Redraw canv -> s & State.responders %~ Responder.propagate @InGame (#canvas .~ canv)

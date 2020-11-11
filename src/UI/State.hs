@@ -27,7 +27,6 @@ import GHC.Generics (Generic)
 import Game.Action qualified as Game
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
-import Game.Info (playerPosition)
 import UI.Responder qualified as Responder
 import Optics
 import UI.Input

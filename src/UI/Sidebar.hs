@@ -3,6 +3,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 
 module UI.Sidebar
@@ -26,7 +27,6 @@ import Game.Info
 import Optics
 import TextShow (showt)
 import UI.Render
-import UI.Resource
 
 data Sidebar = Sidebar
   { info :: Info
@@ -46,16 +46,16 @@ instance Renderable Sidebar where
           renderedXP
         ]
     where
-      renderedHP = case i ^. hitpoints of
+      renderedHP = case i ^. #hitpoints % coerced of
         Nothing -> boldhp <> "- / -"
         Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
       boldhp = "HP: " @? "bold"
 
-      renderedGold = ("GP: " @? "bold") <> (showt (i ^. gold) @? "yellow")
+      renderedGold = ("GP: " @? "bold") <> (showt (i ^. #gold) @? "yellow")
 
-      renderedXP = case i ^. xp of
+      renderedXP = case i ^. #xp of
         XP (Sum curr) (Max next) -> ("XP: " @? "bold") <> showm curr <> " (next: " <> showm next <> ")"
 
-      renderedLevel = ("Level: " @? "bold") <> showm (i ^. xp & Experience.level)
+      renderedLevel = ("Level: " @? "bold") <> showm (i ^. #xp & Experience.level)
 
       showm = Markup.fromText . showt

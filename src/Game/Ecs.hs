@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 
 -- | Provides the high-level constructs associated with the
@@ -216,12 +217,12 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (hp, gold, xp, pos) <- Apecs.get =<< use Game.State.player
+  (hp :: HP, gold, xp, pos) <- Apecs.get =<< use Game.State.player
   mempty @Info.Info
-    & Info.hitpoints ?~ hp
-    & Info.gold .~ gold
-    & Info.xp .~ xp
-    & Info.playerPosition .~ pos
+    & #hitpoints .~ pure @Last hp
+    & #gold .~ pure gold
+    & #xp .~ xp
+    & #position .~ pure @Last @Position pos
     & pure
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
