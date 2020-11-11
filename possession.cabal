@@ -74,6 +74,7 @@ library
       UI.MainMenu
       UI.Resource
       UI.Render
+      UI.Responder
       UI.Sidebar
       UI.State
       UI.Widgets.Modeline
