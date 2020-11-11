@@ -2,6 +2,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module UI.MainMenu
   ( form,
@@ -23,15 +24,23 @@ import Optics
 import UI.Input qualified as Input
 import UI.Render (Renderable (..))
 import UI.Responder
-import UI.InGame qualified as InGame
 import UI.Resource qualified as Resource
 import Graphics.Vty qualified as Vty
+
+
+data Choice
+  = NewGame
+  | About
+  | Quit
+  deriving (Eq, Ord, Show, Enum)
 
 -- TODO: change to Just
 data State = State {
   selected :: Maybe Choice
   }
   deriving (Generic)
+
+makeFieldLabels ''State
 
 instance Responder State where
   translate (Vty.EvKey k _) _ = case k of
@@ -60,11 +69,6 @@ adjust i s = case i of
   Input.Down -> moveDown s
   _ -> s
 
-data Choice
-  = NewGame
-  | About
-  | Quit
-  deriving (Eq, Ord, Show, Enum)
 
 -- >>> moveUp NewGame
 moveUp :: Choice -> Choice

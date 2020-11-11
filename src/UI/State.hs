@@ -7,16 +7,14 @@
 
 module UI.State
   ( State (State),
-    mainMenu,
     mode,
     gamePort,
     gameThread,
     responders,
+    firstResponder,
     Mode (..),
     _Looking,
     initial,
-    send,
-    sendMaybe,
   )
 where
 
@@ -51,8 +49,6 @@ _Looking = _Ctor @"Looking"
 
 data State = State
   { _mode :: Mode,
-    _mainMenu :: MainMenu.State,
-    _game :: InGame.InGame,
     _gamePort :: MVar (Game.Action 'Game.Game),
     _gameThread :: ThreadId,
     _responders :: Responder.Chain
@@ -62,15 +58,15 @@ data State = State
 responders :: Lens' State Responder.Chain
 responders = typed
 
-mainMenu :: Lens' State MainMenu.State
-mainMenu = typed
+firstResponder :: Lens' State Responder.SomeResponder
+firstResponder = typed % Responder.first
 
 mode :: Lens' State Mode
 mode = typed
 
-
 gamePort :: Lens' State (MVar (Game.Action 'Game.Game))
 gamePort = typed
+
 gameThread :: Lens' State ThreadId
 gameThread = typed
 
@@ -78,34 +74,9 @@ initial :: MVar (Game.Action 'Game.Game) -> ThreadId -> State
 initial gp tid =
   State
     { _mode = MainMenu,
-      _mainMenu = MainMenu.initial,
-      _game = InGame.initial,
       _gamePort = gp,
       _gameThread = tid,
       _responders = Responder.Chain [ Responder.SomeResponder MainMenu.initial
                                     , Responder.SomeResponder InGame.initial
                                     ]
     }
-
-send :: Input -> State -> State
-send i s = case (i, s ^. mode) of
-  (Up, MainMenu) -> go Up
-  (Down, MainMenu) -> go Down
-  (Up, Looking _) ->
-    s & mode % _Looking % _2 %~ pred
-  (Down, Looking _) ->
-    s & mode % _Looking % _2 %~ succ
-  (Left, Looking _) ->
-    s & mode % _Looking % _1 %~ pred
-  (Right, Looking _) ->
-    s & mode % _Looking % _1 %~ succ
-  (Menu, InGame) -> s & mode .~ MainMenu
-  -- (Look, InGame) -> s & mode .~ Looking (s ^. game % InGame.sidebar % field @"info" % playerPosition % non 0)
-  _ -> s
-  where
-    go x = s & selection %~ MainMenu.adjust x
-    selection = mainMenu % field @"selected" % _Just
-
-sendMaybe :: State -> Input -> Maybe State
-sendMaybe _ Quit = Nothing
-sendMaybe s i = Just (send i s)

@@ -1,40 +1,35 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE OverloadedLabels #-}
 
 module UI.App (app) where
 
 import Brick qualified
 import Brick.AttrMap qualified as Brick.AttrMap
-import Brick.Widgets.Border qualified as Brick
 import Control.Concurrent (killThread)
 import Control.Effect.Broker qualified as Broker
+import Data.Generics.Product
 import Control.Monad.IO.Class
-import Data.Generics.Product.Fields
-import Data.Maybe
 import Data.Message
-import Data.Position (components)
-import Data.Position qualified as Position
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Action
 import Graphics.Vty qualified as Vty
 import Optics
-import UI.Attributes qualified as Attributes
-import UI.Input qualified as Input
-import UI.MainMenu qualified as MainMenu
+import UI.Responder (castTo)
 import UI.Render
-import UI.Resource qualified as Resource
 import UI.Resource qualified as UI (Resource)
-import UI.Sidebar qualified as Sidebar
 import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
 import UI.Responder qualified as Responder
+import UI.InGame (InGame)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = s ^. State.responders % Responder.first % to renderMany
@@ -75,9 +70,14 @@ event s evt = case evt of
     case act of
       Responder.Nil ->
         Brick.continue s
-      Responder.Push r ->
+      Responder.Push r -> do
+        liftIO
+          . Broker.runBroker (error "no queue") (s ^. State.gamePort)
+          . Broker.pushAction
+          $ Action.NoOp
+
         Brick.continue (s & State.responders %~ Responder.push r)
-      Responder.Pop ->
+      Responder.Pop -> do
         Brick.continue (s & State.responders %~ Responder.pop)
       Responder.Update a ->
         Brick.continue (s & State.responders % Responder.first .~ a)
@@ -92,14 +92,14 @@ event s evt = case evt of
 
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s
-    -- Action.Redraw canv -> s & State.canvas .~ canv
-    -- Action.Update inf -> s & sidebar % field @"info" .~ inf
-    -- Action.Notify msg -> do
-    --   let previous = s ^? modeline % messages % _last % contents
-    --   let shouldCoalesce = previous == Just (msg ^. contents)
-    --   case (previous, shouldCoalesce) of
-    --     (Just _, True) -> s & modeline % Modeline.messages % _last % times %~ succ
-    --     _ -> s & modeline %~ Modeline.update msg
+    Action.Redraw canv -> s & State.responders %~ Responder.propagate @InGame (#canvas .~ canv)
+    Action.Update info -> s & State.responders %~ Responder.propagate @InGame (#sidebar % typed .~ info)
+    Action.Notify msg -> do
+      let previous = s ^? State.firstResponder % castTo @InGame % #modeline % messages % _last % contents
+      let shouldCoalesce = previous == Just (msg ^. contents)
+      case (previous, shouldCoalesce) of
+        (Just _, True) -> s & State.firstResponder % castTo @InGame % #modeline % Modeline.messages % _last % times %~ succ
+        _ -> s & State.firstResponder %~ castTo @InGame % #modeline %~ Modeline.update msg
     _ -> s
   _ -> Brick.continue s
 
@@ -115,5 +115,10 @@ app =
       Brick.appChooseCursor = Brick.showFirstCursor,
       Brick.appHandleEvent = event,
       Brick.appAttrMap = const (Brick.AttrMap.attrMap Vty.defAttr []),
-      Brick.appStartEvent = pure
+      Brick.appStartEvent = \s -> do
+        liftIO
+          . Broker.runBroker (error "no queue") (s ^. State.gamePort)
+          . Broker.pushAction
+          $ Action.NoOp
+        pure s
     }

@@ -123,7 +123,6 @@ loop ::
   ) =>
   Apecs.SystemT Game.World m ()
 loop = forever do
-  trace "Starting game loop"
   next <- Broker.popAction
   debug <- use Game.State.debugMode
 
