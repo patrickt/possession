@@ -16,7 +16,6 @@ import Control.Concurrent (killThread)
 import Control.Effect.Broker qualified as Broker
 import Control.Monad.IO.Class
 import Data.Generics.Product
-import Data.Message
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Action
 import Graphics.Vty qualified as Vty
@@ -28,11 +27,10 @@ import UI.Responder (castTo)
 import UI.Responder qualified as Responder
 import UI.State qualified as State
 import UI.State qualified as UI (State)
-import UI.Widgets.Modeline (messages)
 import UI.Widgets.Modeline qualified as Modeline
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
-draw s = s ^. State.responders % Responder.first % to renderMany
+draw s = s ^. #responders % Responder.first % to renderMany
 
 -- let curPos p = view components (p + offset)
 --     offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
@@ -51,7 +49,7 @@ draw s = s ^. State.responders % Responder.first % to renderMany
 event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
   Brick.VtyEvent vty -> do
-    let first = s ^. State.responders % Responder.first
+    let first = s ^. #responders % Responder.first
     let inp = Responder.translate vty first
     let act = Responder.onSend inp first
 
@@ -60,39 +58,39 @@ event s evt = case evt of
         Brick.continue s
       Responder.Push r -> do
         liftIO
-          . Broker.runBroker (error "no queue") (s ^. State.gamePort)
+          . Broker.runBroker (error "no queue") (s ^. #gamePort)
           . Broker.pushAction
           $ Action.NoOp
 
-        Brick.continue (s & State.responders %~ Responder.push r)
+        Brick.continue (s & #responders %~ Responder.push r)
       Responder.Pop -> do
-        Brick.continue (s & State.responders %~ Responder.pop)
+        Brick.continue (s & #responders %~ Responder.pop)
       Responder.Update a ->
-        Brick.continue (s & State.responders % Responder.first .~ a)
-      Responder.Broadcast act -> do
+        Brick.continue (s & #responders % Responder.first .~ a)
+      Responder.Broadcast go -> do
         liftIO
-          . Broker.runBroker (error "no queue") (s ^. State.gamePort)
+          . Broker.runBroker (error "no queue") (s ^. #gamePort)
           . Broker.pushAction
-          $ act
+          $ go
         Brick.continue s
       Responder.Terminate ->
         shutdown s
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s
-    Action.Redraw canv -> s & State.responders %~ Responder.propagate @InGame (#canvas .~ canv)
-    Action.Update info -> s & State.responders %~ Responder.propagate @InGame (#sidebar % typed .~ info)
+    Action.Redraw canv -> s & #responders %~ Responder.propagate @InGame (#canvas .~ canv)
+    Action.Update info -> s & #responders %~ Responder.propagate @InGame (#sidebar % typed .~ info)
     Action.Notify msg -> do
-      let previous = s ^? State.firstResponder % castTo @InGame % #modeline % messages % _last % contents
-      let shouldCoalesce = previous == Just (msg ^. contents)
+      let previous = s ^? State.firstResponder % castTo @InGame % #modeline % #messages % _last % #contents
+      let shouldCoalesce = previous == Just (msg ^. #contents)
       case (previous, shouldCoalesce) of
-        (Just _, True) -> s & State.firstResponder % castTo @InGame % #modeline % Modeline.messages % _last % times %~ succ
+        (Just _, True) -> s & State.firstResponder % castTo @InGame % #modeline % #messages % _last % #times %~ (+ 1)
         _ -> s & State.firstResponder %~ castTo @InGame % #modeline %~ Modeline.update msg
     _ -> s
   _ -> Brick.continue s
 
 shutdown :: UI.State -> Brick.EventM a (Brick.Next UI.State)
 shutdown s = do
-  liftIO (killThread (s ^. State.gameThread))
+  liftIO (killThread (s ^. #gameThread))
   Brick.halt s
 
 app :: Brick.App UI.State (Action 'UI) UI.Resource
@@ -104,7 +102,7 @@ app =
       Brick.appAttrMap = const (Brick.AttrMap.attrMap Vty.defAttr []),
       Brick.appStartEvent = \s -> do
         liftIO
-          . Broker.runBroker (error "no queue") (s ^. State.gamePort)
+          . Broker.runBroker (error "no queue") (s ^. #gamePort)
           . Broker.pushAction
           $ Action.NoOp
         pure s

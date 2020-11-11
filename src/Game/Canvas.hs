@@ -8,7 +8,16 @@
 -- trigger a redraw.
 --
 -- TODO: this does not use sharing very well.
-module Game.Canvas where
+module Game.Canvas
+  ( Canvas (Canvas),
+    empty,
+    update,
+    borders,
+    at,
+    size,
+    Sprite (Sprite),
+  )
+where
 
 import Data.Array (Array, array, (!), (//))
 import Data.Color
@@ -41,7 +50,7 @@ borders = up <> down <> left <> right
     horizontal = [0 .. size]
     vertical = [1 .. size -1]
 
-newtype Canvas = Canvas {unCanvas :: Array Position Sprite}
+newtype Canvas = Canvas (Array Position Sprite)
   deriving newtype (Show)
 
 empty :: Canvas

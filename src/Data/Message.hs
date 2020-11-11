@@ -3,7 +3,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | A message that should be passed to the rendering system,
 -- with an associated urgency. Records the number of times
@@ -12,15 +17,11 @@
 module Data.Message
   ( Message (Message),
     fromText,
-    contents,
-    urgency,
-    times,
     Urgency (..),
   )
 where
 
 import Data.Aeson.Exts
-import Data.Generics.Product
 import Data.Semigroup
 import Data.Semigroup.Generic
 import Data.String
@@ -32,7 +33,11 @@ data Urgency = Info | Warning | Danger
   deriving stock (Eq, Show, Ord, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-data Message = Message {_contents :: Data.Semigroup.Last Text, _urgency :: Max Urgency, _times :: Sum Int}
+data Message = Message
+  { contents :: Data.Semigroup.Last Text,
+    urgency :: Max Urgency,
+    times :: Sum Int
+  }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
   deriving (Semigroup) via GenericSemigroup Message
@@ -40,14 +45,7 @@ data Message = Message {_contents :: Data.Semigroup.Last Text, _urgency :: Max U
 instance IsString Message where
   fromString s = Message (pure (fromString s)) (pure Info) 1
 
+makeFieldLabelsWith noPrefixFieldLabels ''Message
+
 fromText :: Text -> Message
 fromText t = Message (pure t) (pure Info) 1
-
-contents :: Lens' Message Text
-contents = field @"_contents" % coerced
-
-urgency :: Lens' Message Urgency
-urgency = field @"_urgency" % coerced
-
-times :: Lens' Message Int
-times = field @"_times" % coerced

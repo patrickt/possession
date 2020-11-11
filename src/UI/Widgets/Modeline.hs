@@ -1,8 +1,14 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module UI.Widgets.Modeline
   ( Modeline,
@@ -15,7 +21,6 @@ where
 
 import Brick qualified
 import Brick.Widgets.List qualified as Brick
-import Data.Generics.Product
 import Data.Message
 import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
@@ -24,11 +29,12 @@ import Optics
 import UI.Render
 import UI.Resource qualified as Resource
 
-newtype Modeline = Modeline (Seq Message)
+newtype Modeline = Modeline
+  { messages :: Seq Message
+  }
   deriving (Generic)
 
-messages :: Lens' Modeline (Seq Message)
-messages = typed
+makeFieldLabelsWith noPrefixFieldLabels ''Modeline
 
 initial :: Modeline
 initial = Modeline mempty

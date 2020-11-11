@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLabels #-}
 
 module UI.Render (Renderable (..)) where
 
@@ -9,6 +10,7 @@ import Brick.Markup
 import Data.Color qualified as Color
 import Data.Glyph
 import Data.Message
+import Data.Semigroup
 import Data.Position qualified as Position
 import Data.Text.Markup qualified as Markup
 import Game.Canvas qualified as Canvas
@@ -27,14 +29,14 @@ class Renderable a where
 
 instance Renderable Message where
   render m =
-    let attr = case m ^. urgency of
+    let attr = case m ^. #urgency % coerced of
           Info -> ""
           Warning -> "yellow"
           Danger -> "red"
-        toAppend = case m ^. times of
+        toAppend = case m ^. #times of
           1 -> ""
-          n -> " (" <> showt n <> "x)"
-     in markup (((m ^. contents) @? attr) <> Markup.fromText toAppend)
+          n -> " (" <> showt (getSum n) <> "x)"
+     in markup (((m ^. #contents % coerced) @? attr) <> Markup.fromText toAppend)
 
 instance Renderable Game.Canvas where
   render canv =

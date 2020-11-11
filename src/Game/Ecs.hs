@@ -89,7 +89,7 @@ setup ::
 setup = do
   -- Create the player
   Apecs.newEntity (Player.initial ^. tupled)
-    >>= assign Game.State.player
+    >>= assign @GameState #player
 
   -- Fill in some enemies
   let mkEnemy e = do
@@ -125,7 +125,7 @@ loop ::
   Apecs.SystemT Game.World m ()
 loop = forever do
   next <- Broker.popAction
-  debug <- use Game.State.debugMode
+  debug <- use @GameState #debugMode
 
   case next of
     Move dir -> do
@@ -144,7 +144,7 @@ loop = forever do
 playerAttack :: (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) => Entity -> Apecs.SystemT Game.World m ()
 playerAttack ent = do
   (HP curr _, pos :: Position, canDrop, mXP, name) <- Apecs.get ent
-  play <- use Game.State.player
+  play <- use @GameState #player
   dam :: Int <- Random.uniformR (1, 5)
   Broker.notify (Message.fromText ("You attack for " <> showt dam <> " damage."))
   let new = fromIntegral curr - dam
@@ -169,7 +169,7 @@ playerAttack ent = do
 playerPickUp :: (Has (State GameState) sig m, Has Broker sig m, MonadIO m) => Entity -> Apecs.SystemT Game.World m ()
 playerPickUp ent = do
   (mValue, pos :: Position) <- Apecs.get ent
-  play <- use Game.State.player
+  play <- use @GameState #player
   case mValue :: Maybe Amount of
     Nothing -> pure ()
     Just x -> do
@@ -205,10 +205,10 @@ movePlayer ::
   V2 Int ->
   Apecs.SystemT Game.World m ()
 movePlayer dx = do
-  debug <- use Game.State.debugMode
+  debug <- use @GameState #debugMode
   offset <- (if debug then pure else offsetRandomly) dx
 
-  player <- use Game.State.player
+  player <- use @GameState #player
   Apecs.modify player \(Position p) -> Position (offset + p)
 
 currentInfo ::
@@ -217,7 +217,7 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (hp :: HP, gold, xp, pos) <- Apecs.get =<< use Game.State.player
+  (hp :: HP, gold, xp, pos) <- Apecs.get =<< use @GameState #player
   mempty @Info.Info
     & #hitpoints .~ pure @Last hp
     & #gold .~ pure gold
@@ -226,7 +226,7 @@ currentInfo = do
     & pure
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
-playerPosition = Apecs.get =<< use Game.State.player
+playerPosition = Apecs.get =<< use @GameState #player
 
 occupant :: MonadIO m => Position -> Apecs.SystemT Game.World m (Maybe Apecs.Entity)
 occupant p = fmap snd . getAlt <$> cfoldMap go
