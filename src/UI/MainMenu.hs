@@ -6,9 +6,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module UI.MainMenu
-  ( form,
-    Choice (..),
-    State (..),
+  ( MainMenu (MainMenu),
     initial,
   )
 where
@@ -18,7 +16,6 @@ import Brick.Forms qualified as Form
 import Brick.Widgets.Border qualified as Brick
 import Brick.Widgets.Center qualified as Brick
 import Data.Generics.Product.Typed as Optics (HasType (typed))
-import Data.Vector
 import GHC.Generics (Generic)
 import Graphics.Vty qualified as Vty
 import Optics
@@ -40,14 +37,14 @@ instance Renderable Choice where
       About -> "About"
       Quit -> "Quit"
 
-newtype State = State
+newtype MainMenu = MainMenu
   { selected :: Maybe Choice
   }
   deriving (Generic)
 
-makeFieldLabels ''State
+makeFieldLabels ''MainMenu
 
-instance Responder State where
+instance Responder MainMenu where
   translate (Vty.EvKey k _) _ = case k of
     Vty.KUp -> Input.Up
     Vty.KDown -> Input.Down
@@ -55,17 +52,17 @@ instance Responder State where
     _ -> Input.None
   translate _ _ = Input.None
 
-  onSend i (State s) = case (i, s) of
+  onSend i (MainMenu s) = case (i, s) of
     (Input.Up, Just NewGame) -> Nil
     (Input.Down, Just Quit) -> Nil
-    (Input.Up, Just x) -> Update (State (Just (pred x)))
-    (Input.Down, Just x) -> Update (State (Just (succ x)))
+    (Input.Up, Just x) -> Update (MainMenu (Just (pred x)))
+    (Input.Down, Just x) -> Update (MainMenu (Just (succ x)))
     (Input.Confirm, Just NewGame) -> Pop
     (Input.Confirm, Just Quit) -> Terminate
     _ -> Nil
 
-initial :: State
-initial = State (Just NewGame)
+initial :: MainMenu
+initial = MainMenu (Just NewGame)
 
 render' :: Bool -> Choice -> Brick.Widget Resource.Resource
 render' isOn =
@@ -73,7 +70,7 @@ render' isOn =
     . (if isOn then Brick.border else id)
     . render
 
-form :: State -> Form.Form State e Resource.Resource
+form :: MainMenu -> Form.Form MainMenu e Resource.Resource
 form = Form.newForm [theList]
   where
     theList =
@@ -84,4 +81,4 @@ form = Form.newForm [theList]
         8
         Resource.MainMenu
 
-instance Renderable State where render = Form.renderForm . form
+instance Renderable MainMenu where render = Form.renderForm . form

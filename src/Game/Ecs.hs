@@ -133,7 +133,9 @@ loop = forever do
       prospective <- Position.offset adjusted <$> playerPosition
       present <- occupant prospective
       maybe (movePlayer dir) collideWith present
+
     NoOp -> pure ()
+    Exit -> pure ()
 
   canv <- draw
   newinfo <- currentInfo
@@ -218,12 +220,16 @@ currentInfo ::
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
   (hp :: HP, gold, xp, pos) <- Apecs.get =<< use @GameState #player
+  -- use the info as the accumulator itself
+  -- when there's a Selection present, emit something other than mempty
   mempty @Info.Info
     & #hitpoints .~ pure @Last hp
     & #gold .~ pure gold
     & #xp .~ xp
     & #position .~ pure @Last @Position pos
     & pure
+
+
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = Apecs.get =<< use @GameState #player

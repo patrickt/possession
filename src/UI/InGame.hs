@@ -53,7 +53,7 @@ instance Responder InGame where
   translate (Vty.EvKey k mods) _ = fromMaybe Input.None (Input.fromVty k mods)
   translate _ _ = Input.None
 
-  onSend inp s =
+  onSend inp _s =
     let move (x, y) = Action.Move (V2 x y)
      in case inp of
           Input.Left -> Broadcast (move (-1, 0))
