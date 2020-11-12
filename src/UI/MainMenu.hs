@@ -2,6 +2,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module UI.MainMenu
@@ -9,7 +10,6 @@ module UI.MainMenu
     Choice (..),
     State (..),
     initial,
-    adjust,
   )
 where
 
@@ -20,13 +20,12 @@ import Brick.Widgets.Center qualified as Brick
 import Data.Generics.Product.Typed as Optics (HasType (typed))
 import Data.Vector
 import GHC.Generics (Generic)
+import Graphics.Vty qualified as Vty
 import Optics
 import UI.Input qualified as Input
 import UI.Render (Renderable (..))
-import UI.Responder
 import UI.Resource qualified as Resource
-import Graphics.Vty qualified as Vty
-
+import UI.Responder
 
 data Choice
   = NewGame
@@ -34,9 +33,15 @@ data Choice
   | Quit
   deriving (Eq, Ord, Show, Enum)
 
--- TODO: change to Just
-data State = State {
-  selected :: Maybe Choice
+instance Renderable Choice where
+  render =
+    Brick.txt . \case
+      NewGame -> "New Game"
+      About -> "About"
+      Quit -> "Quit"
+
+newtype State = State
+  { selected :: Maybe Choice
   }
   deriving (Generic)
 
@@ -57,51 +62,23 @@ instance Responder State where
     (Input.Down, Just x) -> Update (State (Just (succ x)))
     (Input.Confirm, Just NewGame) -> Pop
     (Input.Confirm, Just Quit) -> Terminate
-
     _ -> Nil
 
 initial :: State
 initial = State (Just NewGame)
 
-adjust :: Input.Input -> Choice -> Choice
-adjust i s = case i of
-  Input.Up -> moveUp s
-  Input.Down -> moveDown s
-  _ -> s
-
-
--- >>> moveUp NewGame
-moveUp :: Choice -> Choice
-moveUp = \case
-  NewGame -> NewGame
-  x -> pred x
-
-moveDown :: Choice -> Choice
-moveDown = \case
-  Quit -> Quit
-  x -> succ x
-
-renderChoice :: Choice -> String
-renderChoice = \case
-  NewGame -> "New Game"
-  x -> show x
-
-choices :: Vector Choice
-choices = [NewGame, About, Quit]
-
-render' :: Bool -> Choice -> Brick.Widget n
+render' :: Bool -> Choice -> Brick.Widget Resource.Resource
 render' isOn =
   Brick.hCenter
     . (if isOn then Brick.border else id)
-    . Brick.str
-    . renderChoice
+    . render
 
 form :: State -> Form.Form State e Resource.Resource
 form = Form.newForm [theList]
   where
     theList =
       Form.listField
-        (const choices)
+        (const [NewGame, About, Quit])
         (Optics.toLensVL Optics.typed)
         render'
         8

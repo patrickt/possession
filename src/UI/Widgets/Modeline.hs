@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -8,6 +9,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module UI.Widgets.Modeline
@@ -32,7 +34,8 @@ import UI.Resource qualified as Resource
 newtype Modeline = Modeline
   { messages :: Seq Message
   }
-  deriving (Generic)
+  deriving stock (Generic)
+  deriving newtype (Semigroup, Monoid)
 
 makeFieldLabelsWith noPrefixFieldLabels ''Modeline
 

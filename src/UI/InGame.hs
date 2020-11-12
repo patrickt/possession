@@ -62,6 +62,7 @@ instance Responder InGame where
           Input.Up -> Broadcast (move (0, -1))
           Input.Quit -> Terminate
           Input.Menu -> Push (SomeResponder MainMenu.initial)
+          Input.Look -> Push (error "unimplemented!")
           _ -> Nil
 
 instance Renderable InGame where

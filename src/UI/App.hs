@@ -35,16 +35,7 @@ draw s = s ^. #responders % Responder.first % to renderMany
 -- let curPos p = view components (p + offset)
 --     offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
 --  in case s ^. State.mode of
---       State.Looking pos ->
---         [ Brick.showCursor Resource.Look (pos ^. to curPos % to Brick.Location) . Attributes.withStandard . Brick.border . Brick.vBox $
---             [ Brick.hBox
---                 [ Brick.hLimit 25 . Brick.border . Sidebar.render . view State.sidebar $ s,
---                   Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . view State.canvas $ s
---                 ],
---               Brick.hBorder,
---               Brick.vLimit 3 . Modeline.render . view modeline $ s
---             ]
---         ]
+
 
 event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
@@ -73,8 +64,10 @@ event s evt = case evt of
           . Broker.pushAction
           $ go
         Brick.continue s
-      Responder.Terminate ->
-        shutdown s
+      Responder.Terminate -> do
+        liftIO (killThread (s ^. #gameThread))
+        Brick.halt s
+
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s
     Action.Redraw canv -> s & #responders %~ Responder.propagate @InGame (#canvas .~ canv)
@@ -87,11 +80,6 @@ event s evt = case evt of
         _ -> s & State.firstResponder %~ castTo @InGame % #modeline %~ Modeline.update msg
     _ -> s
   _ -> Brick.continue s
-
-shutdown :: UI.State -> Brick.EventM a (Brick.Next UI.State)
-shutdown s = do
-  liftIO (killThread (s ^. #gameThread))
-  Brick.halt s
 
 app :: Brick.App UI.State (Action 'UI) UI.Resource
 app =

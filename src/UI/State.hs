@@ -12,13 +12,8 @@
 
 module UI.State
   ( State (State),
-    mode,
-    gamePort,
-    gameThread,
-    responders,
     firstResponder,
     Mode (..),
-    _Looking,
     initial,
   )
 where
@@ -26,7 +21,6 @@ where
 import Control.Concurrent (ThreadId)
 import Control.Concurrent.MVar
 import Data.Generics.Product
-import Data.Generics.Sum
 import Data.Position
 import GHC.Generics (Generic)
 import Game.Action qualified as Game
@@ -42,27 +36,20 @@ data Mode
   | Looking Position
   deriving (Generic)
 
-_Looking :: Prism' Mode Position
-_Looking = _Ctor @"Looking"
-
 data State = State
-  { mode :: Mode,
+  { responders :: Responder.Chain,
     gamePort :: MVar (Game.Action 'Game.Game),
-    gameThread :: ThreadId,
-    responders :: Responder.Chain
+    gameThread :: ThreadId
   }
   deriving (Generic)
+
+makeFieldLabelsWith noPrefixFieldLabels ''State
 
 firstResponder :: Lens' State Responder.SomeResponder
 firstResponder = typed % Responder.first
 
-makeFieldLabelsWith noPrefixFieldLabels ''State
-
 initial :: MVar (Game.Action 'Game.Game) -> ThreadId -> State
-initial gp tid =
-  let chain =
-        Responder.Chain
-          [ Responder.SomeResponder MainMenu.initial,
-            Responder.SomeResponder InGame.initial
-          ]
-   in State MainMenu gp tid chain
+initial = State $ Responder.Chain
+  [ Responder.SomeResponder MainMenu.initial,
+    Responder.SomeResponder InGame.initial
+  ]
