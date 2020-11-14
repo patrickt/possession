@@ -25,11 +25,13 @@ where
 import Brick qualified
 import Brick.Widgets.Border qualified as Brick
 import Data.Maybe
+import Data.Message qualified as Message
 import Data.Position (Position)
 import Data.Position qualified as Position
 import GHC.Records
 import Game.Canvas (Canvas)
 import Game.Canvas qualified as Canvas
+import Game.Info (Info)
 import Graphics.Vty qualified as Vty
 import Linear (V2 (..))
 import Optics
@@ -40,6 +42,7 @@ import UI.Resource qualified as Resource
 import UI.Responder
 import UI.Sidebar (Sidebar)
 import UI.Widgets.Modeline (Modeline)
+import UI.Widgets.Modeline qualified as Modeline
 
 data Hud p = Hud
   { position :: Position,
@@ -80,11 +83,17 @@ instance
             ],
           Brick.hBorder,
           render @Modeline
+            . insertReadout (s ^. #position) (s & parent & getField @"sidebar" & view #info)
             . getField @"modeline"
             . parent
             $ s
         ]
     ]
+
+insertReadout :: Position -> Info -> Modeline -> Modeline
+insertReadout p i m = case i ^. #summary % at p of
+  Just n -> m & Modeline.update (Message.youSee n)
+  _ -> m
 
 instance Responder (Hud p) where
   translate (Vty.EvKey k mods) _ = fromMaybe Input.None (Input.fromVty k mods)

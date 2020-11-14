@@ -4,8 +4,10 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -18,10 +20,13 @@ module Data.Message
   ( Message (Message),
     fromText,
     Urgency (..),
+    youSee,
   )
 where
 
 import Data.Aeson.Exts
+import Data.Name (Name)
+import Data.Name qualified as Name
 import Data.Semigroup
 import Data.Semigroup.Generic
 import Data.String
@@ -49,3 +54,6 @@ makeFieldLabelsWith noPrefixFieldLabels ''Message
 
 fromText :: Text -> Message
 fromText t = Message (pure t) (pure Info) 1
+
+youSee :: Name -> Message
+youSee n = Message (pure ("You see " <> Name.definiteArticle n <> " " <> Name.text n <> ".")) (pure Info) 1

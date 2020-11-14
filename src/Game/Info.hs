@@ -23,12 +23,15 @@ import Data.Monoid.Generic
 import Data.Position
 import GHC.Generics (Generic)
 import Optics
+import Data.Name (Name)
+import Data.Map.Strict (Map)
 
 data Info = Info
   { hitpoints :: Last HP,
     gold :: Sum Amount,
     xp :: XP,
-    position :: Last Position
+    position :: Last Position,
+    summary :: Map Position Name
   }
   deriving stock (Generic)
   deriving (Semigroup) via GenericSemigroup Info

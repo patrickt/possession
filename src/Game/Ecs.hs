@@ -59,6 +59,7 @@ import Linear (V2 (..))
 import Optics hiding (assign, use)
 import Optics.Tupled
 import TextShow
+import Data.Name (Name)
 
 type GameState = Game.State.State
 
@@ -106,7 +107,7 @@ setup = do
 
   -- Build some walls
   for_ Canvas.borders \border -> do
-    Apecs.newEntity (border, Glyph '#', Color.White, Invalid)
+    Apecs.newEntity (border, Glyph '#', Color.White, Invalid, Name.Name "wall")
 
 -- | Renders a canvas from the current system, for passing back to the display thread.
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
@@ -228,9 +229,10 @@ currentInfo = do
         & #gold .~ pure gold
         & #xp .~ xp
         & #position .~ pure @Last @Position pos
-        & pure
 
-  info
+  let go inf (name :: Name, p :: Position) = inf & #summary % at p ?~ name
+
+  Apecs.cfold go info
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = Apecs.get =<< use @GameState #player
