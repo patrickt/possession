@@ -1,19 +1,19 @@
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module UI.Hud
   ( Hud,
@@ -21,29 +21,28 @@ module UI.Hud
   )
 where
 
-import qualified Brick
+import Brick qualified
 import Brick.Widgets.Border qualified as Brick
+import Data.Maybe
 import Data.Position (Position)
 import Data.Position qualified as Position
-import Game.Canvas (Canvas)
 import GHC.Records
-import Optics
-import UI.Attributes qualified as Attributes
-import UI.Render
-import UI.Resource qualified as Resource
-import UI.Widgets.Modeline (Modeline)
-import UI.Sidebar (Sidebar)
-import UI.Responder
-import UI.Widgets.Modeline qualified as Modeline
-import Data.Maybe
-import UI.Input qualified as Input
-
+import Game.Canvas (Canvas)
 import Graphics.Vty qualified as Vty
 import Linear (V2 (..))
+import Optics
+import UI.Attributes qualified as Attributes
+import UI.Input qualified as Input
+import UI.Render
+import UI.Resource qualified as Resource
+import UI.Responder
+import UI.Sidebar (Sidebar)
+import UI.Widgets.Modeline (Modeline)
+import UI.Widgets.Modeline qualified as Modeline
 
 data Hud p = Hud
-  { position :: Position
-  , parent :: p
+  { position :: Position,
+    parent :: p
   }
 
 makeFieldLabelsWith noPrefixFieldLabels ''Hud
@@ -57,7 +56,7 @@ getSidebar = getField @"sidebar" . parent
 initial :: a -> Hud a
 initial = Hud (Position.make 5 5)
 
-instance forall p . (HasField "canvas" p Canvas, HasField "sidebar" p Sidebar) => Renderable (Hud p) where
+instance forall p. (HasField "canvas" p Canvas, HasField "sidebar" p Sidebar) => Renderable (Hud p) where
   render _ = Brick.txt "error: needs renderMany"
   renderMany s =
     [ Brick.showCursor Resource.Look (s ^. #position % to Position.brickLocation) . Attributes.withStandard . Brick.border . Brick.vBox $

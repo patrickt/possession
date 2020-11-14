@@ -74,10 +74,11 @@ event s evt = case evt of
     Action.Redraw canv -> s & #responders %~ Responder.propagate @InGame (#canvas .~ canv)
     Action.Update info -> s & #responders %~ Responder.propagate @InGame (#sidebar % typed .~ info)
     Action.Notify msg -> do
-      let previous = s ^? State.firstResponder % castTo @InGame % #modeline % #messages % _last % #contents
+      let lastMessage = State.firstResponder % castTo @InGame % #modeline % #messages % _last
+      let previous = s ^? lastMessage % #contents
       let shouldCoalesce = previous == Just (msg ^. #contents)
       case (previous, shouldCoalesce) of
-        (Just _, True) -> s & State.firstResponder % castTo @InGame % #modeline % #messages % _last % #times %~ (+ 1)
+        (Just _, True) -> s & lastMessage % #times %~ (+ 1)
         _ -> s & #responders %~ Responder.propagate @InGame (#modeline %~ Modeline.update msg)
     _ -> s
   _ -> Brick.continue s
