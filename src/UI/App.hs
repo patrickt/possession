@@ -23,7 +23,8 @@ import Optics
 import UI.InGame (InGame)
 import UI.Render
 import UI.Resource qualified as UI (Resource)
-import UI.Responder (castTo)
+import UI.Responder.Chain (castTo)
+import UI.Responder.Chain qualified as Responder
 import UI.Responder qualified as Responder
 import UI.State qualified as State
 import UI.State qualified as UI (State)
@@ -77,7 +78,7 @@ event s evt = case evt of
       let shouldCoalesce = previous == Just (msg ^. #contents)
       case (previous, shouldCoalesce) of
         (Just _, True) -> s & State.firstResponder % castTo @InGame % #modeline % #messages % _last % #times %~ (+ 1)
-        _ -> s & State.firstResponder %~ castTo @InGame % #modeline %~ Modeline.update msg
+        _ -> s & #responders %~ Responder.propagate @InGame (#modeline %~ Modeline.update msg)
     _ -> s
   _ -> Brick.continue s
 

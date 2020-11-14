@@ -35,6 +35,7 @@ import UI.Responder
 import UI.Sidebar (Sidebar)
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
+import UI.Hud qualified as Hud
 
 data InGame = InGame
   { canvas :: Canvas,
@@ -50,10 +51,12 @@ initial =
   InGame Canvas.empty mempty Modeline.initial
 
 instance Responder InGame where
-  translate (Vty.EvKey k mods) _ = fromMaybe Input.None (Input.fromVty k mods)
+  translate (Vty.EvKey k mods) _ = case k of
+    Vty.KChar 'l' -> Input.Look
+    _ -> fromMaybe Input.None (Input.fromVty k mods)
   translate _ _ = Input.None
 
-  onSend inp _s =
+  onSend inp s =
     let move (x, y) = Action.Move (V2 x y)
      in case inp of
           Input.Left -> Broadcast (move (-1, 0))
@@ -62,7 +65,7 @@ instance Responder InGame where
           Input.Up -> Broadcast (move (0, -1))
           Input.Quit -> Terminate
           Input.Menu -> Push (SomeResponder MainMenu.initial)
-          Input.Look -> Push (error "unimplemented!")
+          Input.Look -> Push (SomeResponder (Hud.initial s))
           _ -> Nil
 
 instance Renderable InGame where

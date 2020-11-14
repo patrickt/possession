@@ -51,7 +51,7 @@ instance Renderable Sidebar where
         Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")
       boldhp = "HP: " @? "bold"
 
-      renderedGold = ("GP: " @? "bold") <> (showt (i ^. #gold) @? "yellow")
+      renderedGold = ("GP: " @? "bold") <> (showt (i ^. #gold % to getSum) @? "yellow")
 
       renderedXP = case i ^. #xp of
         XP (Sum curr) (Max next) -> ("XP: " @? "bold") <> showm curr <> " (next: " <> showm next <> ")"

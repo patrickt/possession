@@ -72,10 +72,12 @@ library
       UI.App
       UI.Input
       UI.InGame
+      UI.Hud
       UI.MainMenu
       UI.Resource
       UI.Render
       UI.Responder
+      UI.Responder.Chain
       UI.Sidebar
       UI.State
       UI.Widgets.Modeline

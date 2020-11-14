@@ -3,6 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications #-}
 
 -- A 2-tuple of integers for position on the world grid.
@@ -14,10 +15,12 @@ module Data.Position
     make,
     offset,
     randomIn,
+    brickLocation,
   )
 where
 
 import Control.Effect.Random
+import Brick qualified
 import Data.Generics.Product
 import Data.Ix
 import Linear.V2
@@ -35,6 +38,9 @@ instance Field1 Position Position Int Int where
 
 instance Field2 Position Position Int Int where
   _2 = _Position % lensVL _y
+
+brickLocation :: Position -> Brick.Location
+brickLocation (Position (V2 a b)) = Brick.Location (a, b)
 
 pos :: forall a. HasType Position a => Lens' a Position
 pos = typed

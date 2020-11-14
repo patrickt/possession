@@ -27,7 +27,7 @@ import Game.Action qualified as Game
 import Optics
 import UI.InGame qualified as InGame
 import UI.MainMenu qualified as MainMenu
-import UI.Responder qualified as Responder
+import UI.Responder.Chain qualified as Responder
 import Prelude hiding (Either (..))
 
 data Mode
