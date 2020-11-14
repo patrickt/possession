@@ -40,7 +40,7 @@ instance Field2 Position Position Int Int where
   _2 = _Position % lensVL _y
 
 brickLocation :: Position -> Brick.Location
-brickLocation (Position (V2 a b)) = Brick.Location (a, b)
+brickLocation (Position (V2 a b)) = Brick.Location (a + 1, b + 1)
 
 pos :: forall a. HasType Position a => Lens' a Position
 pos = typed

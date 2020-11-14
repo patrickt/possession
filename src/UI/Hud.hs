@@ -18,13 +18,11 @@
 
 module UI.Hud
   ( Hud (Hud),
-    initial,
   )
 where
 
 import Brick qualified
 import Brick.Widgets.Border qualified as Brick
-import Data.Maybe
 import Data.Message qualified as Message
 import Data.Position (Position)
 import Data.Position qualified as Position
@@ -32,7 +30,6 @@ import GHC.Records
 import Game.Canvas (Canvas)
 import Game.Canvas qualified as Canvas
 import Game.Info (Info)
-import Graphics.Vty qualified as Vty
 import Linear (V2 (..))
 import Optics
 import UI.Attributes qualified as Attributes
@@ -50,9 +47,6 @@ data Hud p = Hud
   }
 
 makeFieldLabelsWith noPrefixFieldLabels ''Hud
-
-initial :: a -> Hud a
-initial = Hud (Position.make 5 5)
 
 instance
   forall p.
@@ -72,7 +66,7 @@ instance
                 . getField @"sidebar"
                 . parent
                 $ s,
-              Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . (+ 1) . Canvas.clamp))
+              Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . Canvas.clamp))
                 . Brick.border
                 . Brick.padBottom Brick.Max
                 . Brick.reportExtent Resource.Canvas
@@ -96,9 +90,6 @@ insertReadout p i m = case i ^. #summary % at p of
   _ -> m
 
 instance Responder (Hud p) where
-  translate (Vty.EvKey k mods) _ = fromMaybe Input.None (Input.fromVty k mods)
-  translate _ _ = Input.None
-
   onSend inp s = case inp of
     Input.Left -> Update (s & #position %~ Position.offset (V2 (-1) 0))
     Input.Right -> Update (s & #position %~ Position.offset (V2 1 0))

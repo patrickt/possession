@@ -1,12 +1,12 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveFunctor #-}
 
 module UI.Responder
   ( Responder (..),
@@ -15,11 +15,13 @@ module UI.Responder
   )
 where
 
-import UI.Input (Input)
-import UI.Render (Renderable (..))
-import Game.Action
 import Data.Typeable
-import qualified Graphics.Vty as Vty
+import Game.Action
+import Graphics.Vty qualified as Vty
+import UI.Input (Input)
+import UI.Input qualified as Input
+import UI.Render (Renderable (..))
+import Data.Maybe (fromMaybe)
 
 data Response a
   = Push SomeResponder
@@ -28,10 +30,12 @@ data Response a
   | Nil
   | Pop
   | Terminate
-    deriving stock Functor
+  deriving stock (Functor)
 
 class Responder a where
   translate :: Vty.Event -> a -> Input
+  translate (Vty.EvKey k mods) _ = fromMaybe Input.None (Input.fromVty k mods)
+  translate _ _ = Input.None
 
   onSend :: Input -> a -> Response a
 

@@ -13,7 +13,6 @@ import Data.Message (Message)
 import Game.Canvas (Canvas)
 import Game.Info (Info)
 import Linear
-import Data.Position (Position)
 
 data Dest = Game | UI
 
@@ -25,7 +24,6 @@ data Action (dest :: Dest) where
   Exit :: Action a
   -- These are sent from UI to ECS
   Move :: V2 Int -> Action 'Game
-  Query :: Position -> Action 'Game
   -- These are sent from ECS to UI
   Redraw :: Canvas -> Action 'UI
   Update :: Info -> Action 'UI

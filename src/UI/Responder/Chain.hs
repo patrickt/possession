@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -37,7 +38,7 @@ pop x = x
 propagate :: forall a. (Renderable a, Responder a, Typeable a) => (a -> a) -> Chain -> Chain
 propagate fn (Chain xs) = runST $ do
   found <- newSTRef False
-  new <- for xs $ \x -> do
+  new <- for xs \x -> do
     present <- readSTRef found
     if present
       then pure x
