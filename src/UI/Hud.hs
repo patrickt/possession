@@ -29,16 +29,17 @@ import Data.Position (Position)
 import Data.Position qualified as Position
 import GHC.Records
 import Game.Canvas (Canvas)
+import Game.Canvas qualified as Canvas
 import Graphics.Vty qualified as Vty
 import Linear (V2 (..))
 import Optics
-import Game.Canvas qualified as Canvas
 import UI.Attributes qualified as Attributes
 import UI.Input qualified as Input
 import UI.Render
 import UI.Resource qualified as Resource
 import UI.Responder
 import UI.Sidebar (Sidebar)
+import UI.Widgets.Modeline (Modeline)
 
 data Hud p = Hud
   { position :: Position,
@@ -50,7 +51,14 @@ makeFieldLabelsWith noPrefixFieldLabels ''Hud
 initial :: a -> Hud a
 initial = Hud (Position.make 5 5)
 
-instance forall p. (HasField "canvas" p Canvas, HasField "sidebar" p Sidebar) => Renderable (Hud p) where
+instance
+  forall p.
+  ( HasField "canvas" p Canvas,
+    HasField "sidebar" p Sidebar,
+    HasField "modeline" p Modeline
+  ) =>
+  Renderable (Hud p)
+  where
   render _ = Brick.txt "error: needs renderMany"
   renderMany s =
     [ Attributes.withStandard . Brick.border . Brick.vBox $
@@ -70,7 +78,11 @@ instance forall p. (HasField "canvas" p Canvas, HasField "sidebar" p Sidebar) =>
                 . parent
                 $ s
             ],
-          Brick.hBorder
+          Brick.hBorder,
+          render @Modeline
+            . getField @"modeline"
+            . parent
+            $ s
         ]
     ]
 

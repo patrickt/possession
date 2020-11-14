@@ -78,6 +78,6 @@ instance Renderable InGame where
               Brick.border . Brick.padBottom Brick.Max . render . view #canvas $ s
             ],
           Brick.hBorder,
-          Brick.vLimit 3 . render . view #modeline $ s
+          render . view #modeline $ s
         ]
     ]

@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -9,7 +10,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module UI.Widgets.Modeline
@@ -47,7 +47,8 @@ update m (Modeline msgs) = Modeline (msgs |> m)
 
 instance Renderable Modeline where
   render (Modeline msgs) =
-    Brick.viewport Resource.Modeline Brick.Vertical
+    Brick.vLimit 3
+      . Brick.viewport Resource.Modeline Brick.Vertical
       . Brick.vLimit 3
       . Brick.renderList (const (render @Message)) False
       -- TODO: move this viewport appropriately rather than gyrating with drop
