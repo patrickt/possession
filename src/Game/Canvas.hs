@@ -13,6 +13,7 @@ module Game.Canvas
     empty,
     update,
     borders,
+    clamp,
     at,
     size,
     Sprite (Sprite),
@@ -20,7 +21,7 @@ module Game.Canvas
 where
 
 import Data.Array (Array, array, (!), (//))
-import Data.Position (Position)
+import Data.Position (Position (..), V2(..))
 import Data.Position qualified as Position
 import Game.Sprite
 
@@ -29,6 +30,14 @@ size = 16
 
 bounds :: (Position, Position)
 bounds = (0 :: Position, Position.make size size)
+
+clamp :: Position -> Position
+clamp (Position (V2 x y)) = Position (V2 (go x) (go y))
+  where
+    go n
+      | n <= 0 = 0
+      | n > size = size
+      | otherwise = n
 
 borders :: [Position]
 borders = up <> down <> left <> right

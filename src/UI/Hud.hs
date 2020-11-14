@@ -32,6 +32,7 @@ import Game.Canvas (Canvas)
 import Graphics.Vty qualified as Vty
 import Linear (V2 (..))
 import Optics
+import Game.Canvas qualified as Canvas
 import UI.Attributes qualified as Attributes
 import UI.Input qualified as Input
 import UI.Render
@@ -46,12 +47,6 @@ data Hud p = Hud
 
 makeFieldLabelsWith noPrefixFieldLabels ''Hud
 
-getCanvas :: HasField "canvas" p Canvas => Hud p -> Canvas
-getCanvas = getField @"canvas" . parent
-
-getSidebar :: HasField "sidebar" p Sidebar => Hud p -> Sidebar
-getSidebar = getField @"sidebar" . parent
-
 initial :: a -> Hud a
 initial = Hud (Position.make 5 5)
 
@@ -60,13 +55,19 @@ instance forall p. (HasField "canvas" p Canvas, HasField "sidebar" p Sidebar) =>
   renderMany s =
     [ Attributes.withStandard . Brick.border . Brick.vBox $
         [ Brick.hBox
-            [ Brick.hLimit 25 . Brick.border . render . getSidebar $ s,
-              Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . (+ 1)))
+            [ Brick.hLimit 25
+                . Brick.border
+                . render @Sidebar
+                . getField @"sidebar"
+                . parent
+                $ s,
+              Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . (+ 1) . Canvas.clamp))
                 . Brick.border
                 . Brick.padBottom Brick.Max
                 . Brick.reportExtent Resource.Canvas
-                . render
-                . getCanvas
+                . render @Canvas
+                . getField @"canvas"
+                . parent
                 $ s
             ],
           Brick.hBorder

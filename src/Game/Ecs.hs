@@ -222,14 +222,15 @@ currentInfo = do
   (hp :: HP, gold, xp, pos) <- Apecs.get =<< use @GameState #player
   -- use the info as the accumulator itself
   -- when there's a Selection present, emit something other than mempty
-  mempty @Info.Info
-    & #hitpoints .~ pure @Last hp
-    & #gold .~ pure gold
-    & #xp .~ xp
-    & #position .~ pure @Last @Position pos
-    & pure
+  let info =
+        mempty @Info.Info
+        & #hitpoints .~ pure @Last hp
+        & #gold .~ pure gold
+        & #xp .~ xp
+        & #position .~ pure @Last @Position pos
+        & pure
 
-
+  info
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
 playerPosition = Apecs.get =<< use @GameState #player
