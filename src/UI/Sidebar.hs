@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
@@ -5,6 +6,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module UI.Sidebar
   ( Sidebar (Sidebar),
@@ -28,12 +34,14 @@ import Optics
 import TextShow (showt)
 import UI.Render
 
-data Sidebar = Sidebar
+newtype Sidebar = Sidebar
   { info :: Info
   }
   deriving (Generic)
   deriving (Semigroup) via GenericSemigroup Sidebar
   deriving (Monoid) via GenericMonoid Sidebar
+
+makeFieldLabelsWith noPrefixFieldLabels ''Sidebar
 
 instance Renderable Sidebar where
   render (Sidebar i) =

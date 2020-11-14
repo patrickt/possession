@@ -32,6 +32,7 @@ import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
 import UI.Render
 import UI.Responder
+import Data.Monoid
 import UI.Sidebar (Sidebar)
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
@@ -65,7 +66,7 @@ instance Responder InGame where
           Input.Up -> Broadcast (move (0, -1))
           Input.Quit -> Terminate
           Input.Menu -> Push (SomeResponder MainMenu.initial)
-          Input.Look -> Push (SomeResponder (Hud.initial s))
+          Input.Look -> Push (SomeResponder (Hud.Hud (s ^. #sidebar % #info % #position % to getLast % non 0) s))
           _ -> Nil
 
 instance Renderable InGame where

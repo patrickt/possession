@@ -33,11 +33,6 @@ import UI.Widgets.Modeline qualified as Modeline
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = s ^. #responders % Responder.first % to renderMany
 
--- let curPos p = view components (p + offset)
---     offset = Position.make 21 3 -- TODO: figure out how to query for the offset information of the sidebar
---  in case s ^. State.mode of
-
-
 event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 event s evt = case evt of
   Brick.VtyEvent vty -> do

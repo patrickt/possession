@@ -14,9 +14,10 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module UI.Hud
-  ( Hud,
+  ( Hud (Hud),
     initial,
   )
 where
@@ -37,8 +38,6 @@ import UI.Render
 import UI.Resource qualified as Resource
 import UI.Responder
 import UI.Sidebar (Sidebar)
-import UI.Widgets.Modeline (Modeline)
-import UI.Widgets.Modeline qualified as Modeline
 
 data Hud p = Hud
   { position :: Position,
@@ -59,10 +58,16 @@ initial = Hud (Position.make 5 5)
 instance forall p. (HasField "canvas" p Canvas, HasField "sidebar" p Sidebar) => Renderable (Hud p) where
   render _ = Brick.txt "error: needs renderMany"
   renderMany s =
-    [ Brick.showCursor Resource.Look (s ^. #position % to Position.brickLocation) . Attributes.withStandard . Brick.border . Brick.vBox $
+    [ Attributes.withStandard . Brick.border . Brick.vBox $
         [ Brick.hBox
             [ Brick.hLimit 25 . Brick.border . render . getSidebar $ s,
-              Brick.border . Brick.padBottom Brick.Max . Brick.reportExtent Resource.Canvas . render . getCanvas $ s
+              Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . (+ 1)))
+                . Brick.border
+                . Brick.padBottom Brick.Max
+                . Brick.reportExtent Resource.Canvas
+                . render
+                . getCanvas
+                $ s
             ],
           Brick.hBorder
         ]

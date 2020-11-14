@@ -65,6 +65,7 @@ library
       Game.Entity.Player
       Game.Info
       Game.State
+      Game.Sprite
       Game.World
       Optics.Tupled
       System.Random.MWC.Exts

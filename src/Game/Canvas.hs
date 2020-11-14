@@ -20,19 +20,9 @@ module Game.Canvas
 where
 
 import Data.Array (Array, array, (!), (//))
-import Data.Color
-import Data.Glyph
 import Data.Position (Position)
 import Data.Position qualified as Position
-
-data Sprite = Sprite
-  { glyph :: !Glyph,
-    color :: !Color
-  }
-  deriving (Show)
-
-blankSprite :: Sprite
-blankSprite = Sprite (Glyph '.') White
+import Game.Sprite
 
 size :: Int
 size = 16
