@@ -1,24 +1,62 @@
 cabal-version:      3.4
 name:               possession
 version:            0.1.0.0
-synopsis:           An offbeat roguelike
-description:        A console-based roguelike inspired by ToME 2's "Lost Soul" mode.
-bug-reports:        github.com/patrickt/possession
 license:            AGPL-3.0-or-later
-author:             Patrick Thomson
-maintainer:         patrick.william.thomson@gmail.com
 copyright:          2020 Patrick Thomson
+maintainer:         patrick.william.thomson@gmail.com
+author:             Patrick Thomson
+bug-reports:        github.com/patrickt/possession
+synopsis:           An offbeat roguelike
+description:
+    A console-based roguelike inspired by ToME 2's "Lost Soul" mode.
+
 category:           Game
 extra-source-files: CHANGELOG.md
 
-common haskell
-   default-language: Haskell2010
-   ghc-options:
-     -Wall
-
 library
-    import: haskell
-    hs-source-dirs: src
+    exposed-modules:
+        Possession
+        Control.Effect.Broker
+        Data.Aeson.Exts
+        Data.Amount
+        Data.Color
+        Data.Experience
+        Data.Glyph
+        Data.Message
+        Data.Name
+        Data.Position
+        Data.Hitpoints
+        Dhall.Exts
+        Game.Action
+        Game.Canvas
+        Game.Behavior
+        Game.Ecs
+        Game.Entity.Enemy
+        Game.Entity.Player
+        Game.Info
+        Game.Save
+        Game.State
+        Game.Sprite
+        Game.World
+        Optics.Tupled
+        System.Random.MWC.Exts
+        UI.Attributes
+        UI.App
+        UI.Input
+        UI.InGame
+        UI.Hud
+        UI.MainMenu
+        UI.Resource
+        UI.Render
+        UI.Responder
+        UI.Responder.Chain
+        UI.Sidebar
+        UI.State
+        UI.Widgets.Modeline
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    ghc-options:      -Wall
     build-depends:
         aeson,
         apecs,
@@ -41,63 +79,26 @@ library
         optics-vl,
         text,
         text-show,
+        store,
         vector,
         vty,
         base ^>=4.14.1.0
-    exposed-modules:
-      Possession
-      Control.Effect.Broker
-      Data.Aeson.Exts
-      Data.Amount
-      Data.Color
-      Data.Experience
-      Data.Glyph
-      Data.Message
-      Data.Name
-      Data.Position
-      Data.Hitpoints
-      Dhall.Exts
-      Game.Action
-      Game.Canvas
-      Game.Behavior
-      Game.Ecs
-      Game.Entity.Enemy
-      Game.Entity.Player
-      Game.Info
-      Game.State
-      Game.Sprite
-      Game.World
-      Optics.Tupled
-      System.Random.MWC.Exts
-      UI.Attributes
-      UI.App
-      UI.Input
-      UI.InGame
-      UI.Hud
-      UI.MainMenu
-      UI.Resource
-      UI.Render
-      UI.Responder
-      UI.Responder.Chain
-      UI.Sidebar
-      UI.State
-      UI.Widgets.Modeline
-
-test-suite possession-test
-    import: haskell
-    type: exitcode-stdio-1.0
-    main-is:          Test.hs
-    build-depends:    base ^>=4.14.1.0
-                    , possession
-    hs-source-dirs:   test
-    ghc-options:
-      -threaded
 
 executable possession
-    import: haskell
     main-is:          Main.hs
-    build-depends:    base ^>=4.14.1.0
-                    , possession
     hs-source-dirs:   app
-    ghc-options:
-      -threaded
+    default-language: Haskell2010
+    ghc-options:      -Wall -threaded
+    build-depends:
+        base ^>=4.14.1.0,
+        possession
+
+test-suite possession-test
+    type:             exitcode-stdio-1.0
+    main-is:          Test.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -Wall -threaded
+    build-depends:
+        base ^>=4.14.1.0,
+        possession

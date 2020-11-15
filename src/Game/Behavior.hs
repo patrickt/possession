@@ -16,6 +16,7 @@ data Collision
   = Invalid
   | Attack
   | PickUp
+    deriving Show
 
 instance Dhall.FromDhall Collision where
   autoWith n = Dhall.strictText {Dhall.extract = extract}

@@ -22,7 +22,7 @@ import Optics.IxFold
 -- toNextLevel is dumb, it can be computed statically
 -- and then everything here gets simpler
 data XP = XP {_current :: Sum Natural, _toNextLevel :: Max Natural}
-  deriving stock (Generic)
+  deriving stock (Show, Generic)
   deriving (Semigroup) via GenericSemigroup XP
 
 instance Monoid XP where mempty = XP 0 0
