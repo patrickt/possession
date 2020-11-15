@@ -11,8 +11,10 @@ module Data.Glyph where
 
 import Data.Text qualified as Text
 import Dhall qualified
+import Data.Store (Store)
 
-newtype Glyph = Glyph Char deriving newtype (Show)
+newtype Glyph = Glyph Char
+  deriving newtype (Show, Store)
 
 instance Dhall.FromDhall Glyph where
   autoWith n = fmap (Glyph . Text.head) (Dhall.autoWith n)

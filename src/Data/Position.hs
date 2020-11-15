@@ -24,11 +24,12 @@ import Brick qualified
 import Data.Generics.Product
 import Data.Ix
 import Linear.V2
+import Data.Store.Exts (Store)
 import Optics
 
 newtype Position = Position (V2 Int)
   deriving stock (Eq, Ord, Show)
-  deriving newtype (Ix, Num)
+  deriving newtype (Ix, Num, Store)
 
 _Position :: Iso' Position (V2 Int)
 _Position = coerced

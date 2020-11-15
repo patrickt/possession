@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
@@ -7,13 +9,15 @@
 module Data.Color where
 
 import Data.Either.Validation
+import Data.Store (Store)
 import Data.Text (Text)
 import Dhall qualified
 import GHC.Generics (Generic)
 import Graphics.Vty qualified as Vty
 
 data Color = Black | Grey | White | Yellow | Brown
-  deriving (Show, Generic)
+  deriving stock (Show, Generic)
+  deriving anyclass (Store)
 
 toVty :: Color -> Vty.Color
 toVty = \case

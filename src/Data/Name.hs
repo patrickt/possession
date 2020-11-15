@@ -11,10 +11,11 @@ import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Dhall (FromDhall)
+import Data.Store (Store)
 
 newtype Name = Name {text :: Text}
   deriving stock (Eq, Ord)
-  deriving newtype (Show, IsString, FromDhall)
+  deriving newtype (Show, IsString, FromDhall, Store)
 
 definiteArticle :: Name -> Text
 definiteArticle (Name n)

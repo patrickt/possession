@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -11,12 +14,15 @@ where
 import Data.Either.Validation
 import Data.Text (Text)
 import Dhall qualified
+import GHC.Generics (Generic)
+import Data.Store (Store)
 
 data Collision
   = Invalid
   | Attack
   | PickUp
-    deriving Show
+  deriving stock (Show, Generic)
+  deriving anyclass (Store)
 
 instance Dhall.FromDhall Collision where
   autoWith n = Dhall.strictText {Dhall.extract = extract}

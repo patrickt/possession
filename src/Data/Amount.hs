@@ -7,6 +7,7 @@
 -- Used for things like value of gold pieces.
 module Data.Amount (Amount (..)) where
 
+import Data.Store.Exts (Store (..))
 import Dhall qualified
 import Numeric.Natural
 import System.Random.MWC.Exts (Variate (..))
@@ -14,7 +15,7 @@ import TextShow (TextShow)
 
 newtype Amount = Amount {natural :: Natural}
   deriving stock (Eq, Show, Ord)
-  deriving newtype (Enum, Real, Integral, Num, Dhall.FromDhall, Dhall.ToDhall, TextShow)
+  deriving newtype (Enum, Real, Integral, Num, Dhall.FromDhall, Dhall.ToDhall, TextShow, Store)
 
 -- 'coerce' isn't smart enough to let us derive this instance with the above
 -- newtype declaration.

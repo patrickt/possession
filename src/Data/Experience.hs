@@ -13,6 +13,7 @@ import Data.Maybe
 import Data.Monoid
 import Data.Monoid.Generic
 import Data.Semigroup (Max)
+import Data.Store.Exts (Store)
 import Dhall qualified
 import Dhall.Exts ()
 import GHC.Generics (Generic)
@@ -23,6 +24,7 @@ import Optics.IxFold
 -- and then everything here gets simpler
 data XP = XP {_current :: Sum Natural, _toNextLevel :: Max Natural}
   deriving stock (Show, Generic)
+  deriving anyclass (Store)
   deriving (Semigroup) via GenericSemigroup XP
 
 instance Monoid XP where mempty = XP 0 0

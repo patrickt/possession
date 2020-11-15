@@ -24,8 +24,8 @@ import Data.IORef
 import Data.IntMap.Strict qualified as I
 import Data.Name (Name)
 import Data.Position (Position)
-import
 import Game.Behavior (Collision)
+import Data.Store (Store)
 import Game.World (World (..))
 import Unsafe.Coerce
 
@@ -51,16 +51,18 @@ data Save = Save
 -- Concurrently here?
 save :: World -> IO Save
 save (World a b c d e f g h _counter) =
-  let r = readIORef . unMap
-   in Save
-        <$> r a
-        <*> r b
-        <*> r c
-        <*> r d
-        <*> r e
-        <*> r f
-        <*> r g
-        <*> r h
+  let
+    r = readIORef . unMap
+    it = Save
+         <$> r a
+         <*> r b
+         <*> r c
+         <*> r d
+         <*> r e
+         <*> r f
+         <*> r g
+         <*> r h
+   in it
 
 load :: forall m. MonadIO m => Save -> Apecs.SystemT World m ()
 load (Save a b c d e f g h) =

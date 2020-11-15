@@ -25,6 +25,7 @@ library
         Data.Message
         Data.Name
         Data.Position
+        Data.Store.Exts
         Data.Hitpoints
         Dhall.Exts
         Game.Action
