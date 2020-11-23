@@ -12,20 +12,21 @@ import Apecs (Component (Storage))
 import Apecs qualified
 import Apecs.Core qualified as Apecs
 import Apecs.Stores qualified
+import Control.Concurrent.Async
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO)
 import Data.Amount (Amount)
 import Data.Color (Color)
 import Data.Experience (XP)
-import GHC.Generics (Generic)
 import Data.Glyph (Glyph)
 import Data.Hitpoints (HP)
 import Data.IORef
 import Data.IntMap.Strict qualified as I
 import Data.Name (Name)
 import Data.Position (Position)
-import Game.Behavior (Collision)
 import Data.Store (Store)
+import GHC.Generics (Generic)
+import Game.Behavior (Collision)
 import Game.World (World (..))
 import Unsafe.Coerce
 
@@ -46,23 +47,23 @@ data Save = Save
     _pos :: IM Position
   }
   deriving stock (Show, Generic)
-  deriving anyclass Store
+  deriving anyclass (Store)
 
 -- Concurrently here?
 save :: World -> IO Save
 save (World a b c d e f g h _counter) =
-  let
-    r = readIORef . unMap
-    it = Save
-         <$> r a
-         <*> r b
-         <*> r c
-         <*> r d
-         <*> r e
-         <*> r f
-         <*> r g
-         <*> r h
-   in it
+  let r = Concurrently . readIORef . unMap
+      it =
+        Save
+          <$> r a
+          <*> r b
+          <*> r c
+          <*> r d
+          <*> r e
+          <*> r f
+          <*> r g
+          <*> r h
+   in runConcurrently it
 
 load :: forall m. MonadIO m => Save -> Apecs.SystemT World m ()
 load (Save a b c d e f g h) =

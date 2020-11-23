@@ -33,3 +33,6 @@ Confusing method dispatch (got a little better)
 Resume menu item, persist save game information
 Template Haskell for writing Impl implementations
 Alert when a level is gained (need to figure out where this logic lives)
+third dimension
+dungeon generation
+switch to Grid instead of array

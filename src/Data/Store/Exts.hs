@@ -16,9 +16,9 @@ import Data.Semigroup
 import Linear
 
 instance Store Natural where
-  size = contramap (fromIntegral @Natural @Integer) size
+  size = contramap fromIntegral (size :: Size Integer)
   poke = poke . toInteger
-  peek = fmap (fromIntegral @Integer @Natural) peek
+  peek = fmap fromIntegral (peek :: Peek Integer)
 
 deriving newtype instance Store a => Store (Max a)
 deriving anyclass instance Store a => Store (V2 a)
