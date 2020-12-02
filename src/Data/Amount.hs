@@ -7,10 +7,10 @@
 -- Used for things like value of gold pieces.
 module Data.Amount (Amount (..)) where
 
-import Data.Store.Exts (Store (..))
 import Dhall qualified
 import Numeric.Natural
 import System.Random.MWC.Exts (Variate (..))
+import Data.Store (Store)
 import TextShow (TextShow)
 
 newtype Amount = Amount {natural :: Natural}

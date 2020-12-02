@@ -1,8 +1,11 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module UI.Responder.Chain
   ( Chain (..),
@@ -25,8 +28,14 @@ import Data.Typeable
 import Optics
 import UI.Render (Renderable (..))
 import UI.Responder
+import GHC.Exts
 
-newtype Chain = Chain (NonEmpty SomeResponder)
+newtype Chain = Chain { unChain :: NonEmpty SomeResponder }
+
+instance IsList Chain where
+  type Item Chain = SomeResponder
+  fromList = Chain . fromList
+  toList = toList . unChain
 
 push :: SomeResponder -> Chain -> Chain
 push = coerce (NonEmpty.cons @SomeResponder)
