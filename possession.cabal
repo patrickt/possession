@@ -27,7 +27,6 @@ library
         Data.Position
         Data.Store.Exts
         Data.Hitpoints
-        Data.Vector.Zipper
         Dhall.Exts
         Game.Action
         Game.Canvas
@@ -107,4 +106,5 @@ test-suite possession-test
     ghc-options:      -Wall -threaded
     build-depends:
         base ^>=4.14.1.0,
-        possession
+        possession,
+        hedgehog
