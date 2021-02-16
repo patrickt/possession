@@ -1,5 +1,7 @@
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -13,8 +15,9 @@ import Apecs qualified
 import Apecs.Core qualified as Apecs
 import Apecs.Stores qualified
 import Control.Concurrent.Async
+import Control.Effect.Reader (Algebra, ask)
 import Control.Monad
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Amount (Amount)
 import Data.Color (Color)
 import Data.Experience (XP)
@@ -29,6 +32,8 @@ import GHC.Generics (Generic)
 import Game.Behavior (Collision)
 import Game.World (World (..))
 import Unsafe.Coerce
+import Apecs.Util (EntityCounter(EntityCounter), global)
+import Apecs.Stores
 
 type IM = I.IntMap
 
@@ -44,15 +49,17 @@ data Save = Save
     _hps :: IM HP,
     _xps :: IM XP,
     _nam :: IM Name,
-    _pos :: IM Position
+    _pos :: IM Position,
+    _ent :: EntityCounter
   }
   deriving stock (Show, Generic)
   deriving anyclass (Store)
 
 -- Concurrently here?
-save :: World -> IO Save
-save (World a b c d e f g h _counter) =
+save :: MonadIO m => World -> m Save
+save (World a b c d e f g h counter) =
   let r = Concurrently . readIORef . unMap
+      r' = Concurrently . readIORef . unsafeCoerce @_ @(IORef EntityCounter)
       it =
         Save
           <$> r a
@@ -63,10 +70,25 @@ save (World a b c d e f g h _counter) =
           <*> r f
           <*> r g
           <*> r h
-   in runConcurrently it
+          <*> r' counter
+   in liftIO (runConcurrently it)
 
-load :: forall m. MonadIO m => Save -> Apecs.SystemT World m ()
-load (Save a b c d e f g h) =
+clear :: forall m . MonadIO m => World -> Apecs.SystemT World m ()
+clear (World a b c d e f g h _counter) =
+  let go :: Apecs.Stores.Map a -> Concurrently ()
+      go im = Concurrently (writeIORef (unMap im) I.empty)
+   in liftIO $ runConcurrently (
+        go a *>
+        go b *>
+        go c *>
+        go d *>
+        go e *>
+        go f *>
+        go g *>
+        go h)
+
+load :: forall m sig . (MonadIO m, Algebra sig m) => Save -> Apecs.SystemT World m ()
+load (Save a b c d e f g h (EntityCounter count)) =
   let go ::
         ( Apecs.ExplSet m (Storage a),
           Apecs.Has World m a
@@ -75,6 +97,7 @@ load (Save a b c d e f g h) =
         Apecs.SystemT World m ()
       go = void . I.traverseWithKey (Apecs.set . Apecs.Entity)
    in do
+        ask >>= clear
         go a
         go b
         go c
@@ -83,3 +106,4 @@ load (Save a b c d e f g h) =
         go f
         go g
         go h
+        setReadOnly global (EntityCounter (count + 1))

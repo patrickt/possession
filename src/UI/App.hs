@@ -38,31 +38,33 @@ event s evt = case evt of
   Brick.VtyEvent vty -> do
     let first = s ^. #responders % Responder.first
     let inp = Responder.translate vty first
-    let act = Responder.onSend inp first
 
-    case act of
-      Responder.Nil ->
-        Brick.continue s
-      Responder.Push r -> do
-        liftIO
-          . Broker.runBroker (error "no queue") (s ^. #gamePort)
-          . Broker.pushAction
-          $ Action.NoOp
+    let go act = case act of
+          Responder.Nil ->
+            Brick.continue s
+          a `Responder.Then` b -> go a *> go b
+          Responder.Push r -> do
+            liftIO
+              . Broker.runBroker (error "no queue") (s ^. #gamePort)
+              . Broker.pushAction
+              $ Action.NoOp
 
-        Brick.continue (s & #responders %~ Responder.push r)
-      Responder.Pop -> do
-        Brick.continue (s & #responders %~ Responder.pop)
-      Responder.Update a ->
-        Brick.continue (s & #responders % Responder.first .~ a)
-      Responder.Broadcast go -> do
-        liftIO
-          . Broker.runBroker (error "no queue") (s ^. #gamePort)
-          . Broker.pushAction
-          $ go
-        Brick.continue s
-      Responder.Terminate -> do
-        liftIO (killThread (s ^. #gameThread))
-        Brick.halt s
+            Brick.continue (s & #responders %~ Responder.push r)
+          Responder.Pop -> do
+            Brick.continue (s & #responders %~ Responder.pop)
+          Responder.Update a ->
+            Brick.continue (s & #responders % Responder.first .~ a)
+          Responder.Broadcast it -> do
+            liftIO
+              . Broker.runBroker (error "no queue") (s ^. #gamePort)
+              . Broker.pushAction
+              $ it
+            Brick.continue s
+          Responder.Terminate -> do
+            liftIO (killThread (s ^. #gameThread))
+            Brick.halt s
+
+    go (Responder.onSend inp first)
 
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s

@@ -7,7 +7,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 
 -- | Provides the high-level constructs associated with the
@@ -30,6 +29,7 @@ import Control.Effect.Random (Random)
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Amount (Amount)
+import Data.ByteString qualified as ByteString
 import Data.Color qualified as Color
 import Data.Experience (XP (..))
 import Data.Foldable (for_)
@@ -39,9 +39,11 @@ import Data.Hitpoints
 import Data.Maybe (isJust)
 import Data.Message qualified as Message
 import Data.Monoid
+import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position (..))
 import Data.Position qualified as Position
+import Data.Store qualified as Store
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Dhall qualified
@@ -53,13 +55,15 @@ import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Info qualified as Game (Info)
 import Game.Info qualified as Info
+import Game.Save qualified as Save
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
 import Optics hiding (assign, use)
 import Optics.Tupled
+import System.FilePath((</>))
+import System.Directory (createDirectoryIfMissing, getHomeDirectory)
 import TextShow
-import Data.Name (Name)
 
 type GameState = Game.State.State
 
@@ -134,7 +138,20 @@ loop = forever do
       prospective <- Position.offset adjusted <$> playerPosition
       present <- occupant prospective
       maybe (movePlayer dir) collideWith present
-
+    SaveState -> do
+      save <- ask >>= Save.save
+      liftIO do
+        home <- liftIO getHomeDirectory
+        let path = home </> ".possession"
+        createDirectoryIfMissing False path
+        ByteString.writeFile (path </> "save") (Store.encode save)
+      Broker.notify "Game saved."
+    LoadState -> do
+      home <- liftIO getHomeDirectory
+      let path = home </> ".possession"
+      onDisk <- liftIO (ByteString.readFile (path </> "save"))
+      Save.load (Store.decodeEx onDisk)
+      Broker.notify "Game loaded."
     NoOp -> pure ()
     Exit -> pure ()
 
@@ -225,10 +242,10 @@ currentInfo = do
   -- when there's a Selection present, emit something other than mempty
   let info =
         mempty @Info.Info
-        & #hitpoints .~ pure @Last hp
-        & #gold .~ pure gold
-        & #xp .~ xp
-        & #position .~ pure @Last @Position pos
+          & #hitpoints .~ pure @Last hp
+          & #gold .~ pure gold
+          & #xp .~ xp
+          & #position .~ pure @Last @Position pos
 
   let go inf (name :: Name, p :: Position) = inf & #summary % at p ?~ name
 

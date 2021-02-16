@@ -27,6 +27,7 @@ data Response a
   = Push SomeResponder
   | Update a
   | Broadcast (Action 'Game)
+  | Response a `Then` Response a
   | Nil
   | Pop
   | Terminate

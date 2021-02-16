@@ -26,6 +26,7 @@ import Brick.Widgets.Center qualified as Brick
 import Data.List.Pointed (PointedList)
 import Data.List.Pointed qualified as Pointed
 import Data.String
+import Game.Action (Action (SaveState, LoadState))
 import GHC.Generics (Generic)
 import GHC.Exts (fromList, toList)
 import Graphics.Vty qualified as Vty
@@ -37,6 +38,7 @@ import UI.Responder
 
 data Choice
   = NewGame
+  | Resume
   | Load
   | Save
   | About
@@ -71,17 +73,20 @@ instance Responder MainMenu where
     case i of
       Input.Up -> Update (s & #choices %~ Pointed.previous)
       Input.Down -> Update (s & #choices %~ Pointed.next)
-      Input.Confirm
-        | s ^. selected == NewGame -> Pop
-        | s ^. selected == Quit -> Terminate
-        | otherwise -> Nil
+      Input.Confirm -> case s ^. selected of
+        NewGame -> Pop
+        Quit -> Terminate
+        Save -> Broadcast SaveState `Then` Pop
+        Load -> Broadcast LoadState `Then` Pop
+        Resume -> Pop
+        _ -> Nil
       _ -> Nil
 
 initial :: MainMenu
 initial = MainMenu [NewGame, About, Quit]
 
 inGame :: MainMenu
-inGame = MainMenu [Load, Save, About, Quit]
+inGame = MainMenu [Resume, Save, Load, About, Quit]
 
 render' :: Bool -> Choice -> Brick.Widget Resource.Resource
 render' isOn =
@@ -92,13 +97,10 @@ render' isOn =
 form :: MainMenu -> Form.Form MainMenu e Resource.Resource
 form = Form.newForm [theList]
   where
-    setSelected :: MainMenu -> Maybe Choice -> MainMenu
-    setSelected m c =
-      maybe (m & #choices %~ Pointed.moveTo 0) (\v -> set selected v m) c
     theList =
       Form.listField
         (fromList . toList . view #choices)
-        (toLensVL (Optics.lens (Just . view selected) setSelected))
+        (toLensVL (selected % re (non NewGame)))
         render'
         8
         Resource.MainMenu

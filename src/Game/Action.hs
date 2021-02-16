@@ -24,6 +24,8 @@ data Action (dest :: Dest) where
   Exit :: Action a
   -- These are sent from UI to ECS
   Move :: V2 Int -> Action 'Game
+  SaveState :: Action 'Game
+  LoadState :: Action 'Game -- Should be Save -> Action Game
   -- These are sent from ECS to UI
   Redraw :: Canvas -> Action 'UI
   Update :: Info -> Action 'UI

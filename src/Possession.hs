@@ -8,7 +8,6 @@ import Control.Concurrent.MVar
 import Control.Monad
 import Game.Ecs qualified as Ecs
 import Game.World qualified as Game
-import Game.Save qualified as Save
 import Graphics.Vty qualified as Vty
 import UI.App qualified as App
 import UI.State qualified
