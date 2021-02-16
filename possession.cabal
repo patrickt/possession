@@ -22,6 +22,7 @@ library
         Data.Color
         Data.Experience
         Data.Glyph
+        Data.List.Pointed
         Data.Message
         Data.Name
         Data.Position

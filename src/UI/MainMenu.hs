@@ -1,8 +1,15 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module UI.MainMenu
@@ -15,7 +22,6 @@ import Brick qualified
 import Brick.Forms qualified as Form
 import Brick.Widgets.Border qualified as Brick
 import Brick.Widgets.Center qualified as Brick
-import Data.Generics.Product.Typed as Optics (HasType (typed))
 import GHC.Generics (Generic)
 import Graphics.Vty qualified as Vty
 import Optics
@@ -23,6 +29,8 @@ import UI.Input qualified as Input
 import UI.Render (Renderable (..))
 import UI.Resource qualified as Resource
 import UI.Responder
+import Data.List.Pointed (PointedList)
+import Data.List.Pointed qualified as Pointed
 
 data Choice
   = NewGame
@@ -38,11 +46,14 @@ instance Renderable Choice where
       Quit -> "Quit"
 
 newtype MainMenu = MainMenu
-  { selected :: Maybe Choice
+  { choices :: PointedList Choice
   }
   deriving (Generic)
 
-makeFieldLabels ''MainMenu
+makeFieldLabelsWith noPrefixFieldLabels ''MainMenu
+
+selected :: Lens' MainMenu Choice
+selected = #choices % Pointed.focus
 
 instance Responder MainMenu where
   translate (Vty.EvKey k _) _ = case k of
@@ -52,17 +63,18 @@ instance Responder MainMenu where
     _ -> Input.None
   translate _ _ = Input.None
 
-  onSend i (MainMenu s) = case (i, s) of
-    (Input.Up, Just NewGame) -> Nil
-    (Input.Down, Just Quit) -> Nil
-    (Input.Up, Just x) -> Update (MainMenu (Just (pred x)))
-    (Input.Down, Just x) -> Update (MainMenu (Just (succ x)))
-    (Input.Confirm, Just NewGame) -> Pop
-    (Input.Confirm, Just Quit) -> Terminate
-    _ -> Nil
+  onSend i s =
+    case i of
+      Input.Up -> Update (s & #choices %~ Pointed.previous)
+      Input.Down -> Update (s & #choices %~ Pointed.next)
+      Input.Confirm
+        | s ^. selected == NewGame -> Pop
+        | s ^. selected == Quit -> Terminate
+        | otherwise -> Nil
+      _ -> Nil
 
 initial :: MainMenu
-initial = MainMenu (Just NewGame)
+initial = MainMenu [NewGame, About, Quit]
 
 render' :: Bool -> Choice -> Brick.Widget Resource.Resource
 render' isOn =
@@ -73,10 +85,13 @@ render' isOn =
 form :: MainMenu -> Form.Form MainMenu e Resource.Resource
 form = Form.newForm [theList]
   where
+    setSelected :: MainMenu -> Maybe Choice -> MainMenu
+    setSelected m c
+      = maybe (m & #choices %~ Pointed.moveTo 0) (\v -> set selected v m) c
     theList =
       Form.listField
         (const [NewGame, About, Quit])
-        (Optics.toLensVL Optics.typed)
+        (toLensVL (Optics.lens (Just . view selected) setSelected))
         render'
         8
         Resource.MainMenu
