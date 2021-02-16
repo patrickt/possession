@@ -68,7 +68,7 @@ type GameState = Game.State.State
 -- record.
 start :: BChan (Action 'UI) -> MVar (Action 'Game) -> Game.World -> IO ThreadId
 start cmds acts world = do
-  let initialState = (Game.State.State (Apecs.Entity 0) True)
+  let initialState = Game.State.State (Apecs.Entity 0) True
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
   forkIO
     . Random.runRandomSystem

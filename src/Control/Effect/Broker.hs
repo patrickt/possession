@@ -3,11 +3,18 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+-- An effect that provides bidirectional communication between the
+-- game and its Brick UI. Brick itself reads @Action 'UI@ values from
+-- a BChan and then invokes the event loop itself; we have to do a
+-- little more work, but it works on the same principle.
+--
+-- TODO: should the game channel be a chan rather than an mvar?
 module Control.Effect.Broker
   ( Broker,
     pushAction,
@@ -27,11 +34,11 @@ import Control.Monad.IO.Class
 import Data.Kind (Type)
 import Data.Message (Message)
 import Game.Action (Action, Dest (..))
-import qualified Game.Action as Game
+import Game.Action qualified as Game
 
 data Brokerage = Brokerage
   { _toBrick :: BChan (Action 'UI),
-    _currentAction :: MVar (Action 'Game)
+    _toGame :: MVar (Action 'Game)
   }
 
 data Broker (m :: Type -> Type) k where
