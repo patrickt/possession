@@ -65,7 +65,7 @@ instance Responder InGame where
           Input.Down -> Broadcast (move (0, 1))
           Input.Up -> Broadcast (move (0, -1))
           Input.Quit -> Terminate
-          Input.Menu -> Push (SomeResponder MainMenu.initial)
+          Input.Menu -> Push (SomeResponder MainMenu.inGame)
           Input.Look -> Push (SomeResponder (Hud.Hud (s ^. #sidebar % #info % #position % to getLast % non 0) s))
           _ -> Nil
 
