@@ -78,6 +78,7 @@ library
         grid,
         linear,
         mwc-random,
+        pointedlist,
         optics,
         optics-th,
         optics-vl,

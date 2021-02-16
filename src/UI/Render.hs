@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -48,9 +50,17 @@ instance Renderable Game.Canvas where
 drawSprite :: Canvas.Sprite -> Vty.Image
 drawSprite (Canvas.Sprite (Glyph chr) color) = Vty.char attr chr
   where
-    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (Color.toVty color)}
+    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (colorToVty color)}
 
 scanline :: Game.Canvas -> Int -> Vty.Image
 scanline canv idx = Vty.horizCat do
   x <- [0 .. Canvas.size]
   pure . drawSprite . Canvas.at canv $ Position.make x idx
+
+colorToVty :: Color.Color -> Vty.Color
+colorToVty = \case
+  Color.Black -> Vty.black
+  Color.Grey -> Vty.rgbColor 221 221 (221 :: Int)
+  Color.White -> Vty.white
+  Color.Yellow -> Vty.brightYellow
+  Color.Brown -> Vty.rgbColor @Int 0x78 0x58 0x32

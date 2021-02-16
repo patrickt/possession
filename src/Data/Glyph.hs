@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- | A character used to hint the rendering system as to how to render
--- a given entity. We'll have to reexamine this when a GL background lands.
+-- a given entity. We'll have to reexamine this when a GL backend lands.
 module Data.Glyph where
 
 import Data.Text qualified as Text

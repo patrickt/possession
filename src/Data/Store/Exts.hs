@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+-- Instances not provided by Store.
 module Data.Store.Exts
   ( module Data.Store
   ) where
