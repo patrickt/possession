@@ -42,6 +42,9 @@ instance Foldable Zipper where
         foldMap f (after `using` parTraversable rseq)
       ]
 
+  length Zipper {..} = length before + 1 + length after
+
+
 instance Comonad Zipper where
   -- O(1)
   extract = focus
@@ -56,9 +59,6 @@ instance Comonad Zipper where
     where
       before' = Vector.reverse (Vector.iterateN (Vector.length before) shiftLeft (shiftLeft z))
       after' = Vector.iterateN (Vector.length after) shiftRight (shiftRight z)
-
-length :: Zipper a -> Int
-length Zipper {..} = Vector.length before + 1 + Vector.length after
 
 focusIndex :: Zipper a -> Int
 focusIndex = Vector.length . before

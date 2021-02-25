@@ -17,6 +17,8 @@ module Data.Vector.Universe
     neighbors,
     generateM,
     generate,
+    draw,
+    drawIO
   )
 where
 
@@ -38,7 +40,7 @@ newtype Univ a = Univ (Zipper (Zipper a))
 instance Show a => Show (Univ a) where
   show (Univ Z.Zipper {..}) = " " <> showLines before <> showCenterLine focus <> showLines after
     where
-      showLines l = foldl' (\str z -> str <> "\n" <> (show z)) "" l
+      showLines l = foldl' (\str z -> str <> "\n" <> show z) "" l
       showCenterLine = \x -> "\n(" <> show x <> ")\n "
 
 instance Comonad Univ where
@@ -53,8 +55,8 @@ instance Comonad Univ where
     where
       innerPos = Z.focusIndex (extract u)
       outerPos = Z.focusIndex u
-      innerLen = Z.length (extract u)
-      outerLen = Z.length u
+      innerLen = length (extract u)
+      outerLen = length u
       before' = V.reverse (V.iterateN outerPos (fmap shiftUp) (fmap shiftUp focus'))
       after' = V.iterateN (outerLen - outerPos - 1) (fmap shiftDown) (fmap shiftDown focus')
       focus' =
@@ -89,3 +91,10 @@ generateM n f = Univ <$> Z.generateM n (\m -> Z.generateM n (f . P.make m))
 
 generate :: Int -> (P.Position -> a) -> Univ a
 generate n f = coerce (generateM n (Identity . f))
+
+
+drawIO :: Show a => Univ a -> IO ()
+drawIO = putStrLn . draw
+
+draw :: Show a => Univ a -> String
+draw (Univ g) = unlines . V.toList . fmap (foldMap show) . Z.toVector $ g

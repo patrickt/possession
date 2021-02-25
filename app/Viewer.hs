@@ -7,11 +7,12 @@ module Main (main) where
 import Game.Dungeon
 import Control.Comonad
 import Control.Monad
+import Data.Vector.Universe (drawIO)
 
 main :: IO ()
 main = do
   let go x = do
-        putStrLn (render x)
+        drawIO x
         putStrLn "****"
         void getLine
         go (extend step x)

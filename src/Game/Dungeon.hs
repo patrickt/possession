@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -12,14 +13,9 @@ module Game.Dungeon where
 
 import Control.Comonad
 import Control.DeepSeq
-import Control.Monad
-import Data.Bool (bool)
-import Data.Foldable
 import Data.Monoid
 import Data.Vector qualified as V
 import Data.Vector.Universe qualified as U
-import Data.Vector.Zipper qualified as Z
-import Debug.Trace
 import GHC.Generics (Generic)
 import System.Random.Stateful (Uniform (..))
 import System.Random.Stateful qualified as R
@@ -30,8 +26,8 @@ data Cell = Off | On
 
 instance Uniform Cell where
   uniformM g = do
-    x <- R.uniformRM @Int (1, 4) g
-    pure (if x == 1 then On else Off)
+    x <- R.uniformRM @Double (0, 1) g
+    pure (if x <= 0.4 then On else Off)
 
 instance Show Cell where
   show = \case
@@ -40,30 +36,26 @@ instance Show Cell where
 
 type Game = U.Univ Cell
 
-renderIO :: Show a => U.Univ a -> IO ()
-renderIO = putStrLn . render
-
-render :: Show a => U.Univ a -> String
-render (U.Univ g) = unlines cols
-  where
-    cols :: [String]
-    cols = toList . fmap (foldMap show) . Z.toVector $ g
-
 neighborCount :: Game -> Int
 neighborCount = getSum . foldMap (Sum . fromEnum) . V.filter (== On) . U.neighbors
 
 randomly :: IO (U.Univ Cell)
 randomly = do
   rand <- R.getStdGen >>= R.newIOGenM
-  U.generateM 15 (const (uniformM rand))
+  U.generateM 55 (const (uniformM rand))
+
+birthLimit, deathLimit :: Int
+birthLimit = 5
+deathLimit = 3
 
 step :: Game -> Cell
 step g = cell
   where
-    curr = extract g
     count = neighborCount g
-    cell
-      | count > 3 = Off
-      | count < 2 = Off
-      | curr == Off && count == 3 = On
-      | otherwise = curr
+    curr = extract g
+    isOn = curr == On
+    cell = if
+      | isOn && count < deathLimit -> Off
+      | isOn -> On
+      | count > birthLimit -> On
+      | otherwise -> Off
