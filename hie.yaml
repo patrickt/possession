@@ -2,7 +2,9 @@ cradle:
   cabal:
     - path: "./test"
       component: "test:possession-test"
-    - path: "./app"
+    - path: "./app/Main.hs"
       component: "exe:possession"
+    - path: "./app/Viewer.hs"
+      component: "exe:automata-viewer"
     - path: "./src"
       component: "lib:possession"

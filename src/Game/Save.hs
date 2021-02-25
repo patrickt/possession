@@ -13,7 +13,6 @@ module Game.Save (save, load) where
 import Apecs (Component (Storage))
 import Apecs qualified
 import Apecs.Core qualified as Apecs
-import Apecs.Stores qualified
 import Control.Concurrent.Async
 import Control.Effect.Reader (Algebra, ask)
 import Control.Monad

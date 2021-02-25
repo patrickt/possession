@@ -1,115 +1,138 @@
 cabal-version:      3.4
 name:               possession
 version:            0.1.0.0
-license:            AGPL-3.0-or-later
+license:            AGPL-3.0-only
 copyright:          2020 Patrick Thomson
 maintainer:         patrick.william.thomson@gmail.com
 author:             Patrick Thomson
 bug-reports:        github.com/patrickt/possession
 synopsis:           An offbeat roguelike
 description:
-    A console-based roguelike inspired by ToME 2's "Lost Soul" mode.
+  A console-based roguelike inspired by ToME 2's "Lost Soul" mode.
 
 category:           Game
 extra-source-files: CHANGELOG.md
 
-library
-    exposed-modules:
-        Possession
-        Control.Effect.Broker
-        Data.Aeson.Exts
-        Data.Amount
-        Data.Color
-        Data.Experience
-        Data.Glyph
-        Data.List.Pointed
-        Data.Message
-        Data.Name
-        Data.Position
-        Data.Store.Exts
-        Data.Hitpoints
-        Dhall.Exts
-        Game.Action
-        Game.Canvas
-        Game.Behavior
-        Game.Ecs
-        Game.Entity.Enemy
-        Game.Entity.Player
-        Game.Info
-        Game.Save
-        Game.State
-        Game.Sprite
-        Game.World
-        Optics.Tupled
-        System.Random.MWC.Exts
-        UI.Attributes
-        UI.App
-        UI.Input
-        UI.InGame
-        UI.Hud
-        UI.MainMenu
-        UI.Resource
-        UI.Render
-        UI.Responder
-        UI.Responder.Chain
-        UI.Sidebar
-        UI.State
-        UI.Widgets.Modeline
+common shared
+  build-depends:    base
+  default-language: Haskell2010
+  ghc-options:      -Wall
 
-    hs-source-dirs:   src
-    default-language: Haskell2010
-    ghc-options:      -Wall
-    build-depends:
-        aeson,
-        apecs,
-        array,
-        async,
-        bytestring,
-        brick,
-        containers,
-        comonad,
-        dhall,
-        directory,
-        either,
-        filepath,
-        grid,
-        fused-effects,
-        fused-effects-mwc-random,
-        fused-effects-optics,
-        generic-lens-core,
-        generic-optics,
-        generic-monoid,
-        grid,
-        linear,
-        mwc-random,
-        pointedlist,
-        optics,
-        optics-th,
-        optics-vl,
-        text,
-        text-show,
-        transformers,
-        store,
-        vector,
-        vty,
-        base ^>=4.14.1.0
+library
+  import:          shared
+  exposed-modules:
+    Control.Effect.Broker
+    Data.Aeson.Exts
+    Data.Amount
+    Data.Color
+    Data.Experience
+    Data.Glyph
+    Data.Hitpoints
+    Data.List.Pointed
+    Data.Message
+    Data.Name
+    Data.Position
+    Data.Store.Exts
+    Data.Vector.Universe
+    Data.Vector.Zipper
+    Dhall.Exts
+    Game.Action
+    Game.Behavior
+    Game.Canvas
+    Game.Dungeon
+    Game.Ecs
+    Game.Entity.Enemy
+    Game.Entity.Player
+    Game.Info
+    Game.Save
+    Game.Sprite
+    Game.State
+    Game.World
+    Optics.Tupled
+    Possession
+    System.Random.MWC.Exts
+    UI.App
+    UI.Attributes
+    UI.Hud
+    UI.InGame
+    UI.Input
+    UI.MainMenu
+    UI.Render
+    UI.Resource
+    UI.Responder
+    UI.Responder.Chain
+    UI.Sidebar
+    UI.State
+    UI.Widgets.Modeline
+
+  hs-source-dirs:  src
+  build-depends:
+    , aeson
+    , apecs
+    , array
+    , async
+    , base
+    , brick
+    , bytestring
+    , comonad
+    , containers
+    , dhall
+    , directory
+    , either
+    , filepath
+    , fused-effects
+    , fused-effects-mwc-random
+    , fused-effects-optics
+    , generic-lens-core
+    , generic-monoid
+    , generic-optics
+    , grid
+    , linear
+    , mwc-random
+    , optics
+    , optics-th
+    , optics-vl
+    , parallel
+    , pointedlist
+    , store
+    , text
+    , text-show
+    , transformers
+    , vector
+    , vty
+
+executable automata-viewer
+  import:         shared
+  hs-source-dirs: app
+  main-is:        Viewer.hs
+  build-depends:
+    , comonad
+    , possession
+    , random
+    , vector
 
 executable possession
-    main-is:          Main.hs
-    hs-source-dirs:   app
-    default-language: Haskell2010
-    ghc-options:      -Wall -threaded
-    build-depends:
-        base ^>=4.14.1.0,
-        possession
+  import:         shared
+  main-is:        Main.hs
+  hs-source-dirs: app
+  build-depends:  possession
+
+benchmark possession-benchmark
+  import:         shared
+  type:           exitcode-stdio-1.0
+  main-is:        Bench.hs
+  hs-source-dirs: app
+  build-depends:
+    , deepseq
+    , possession
+    , tasty-bench
 
 test-suite possession-test
-    type:             exitcode-stdio-1.0
-    main-is:          Test.hs
-    hs-source-dirs:   test
-    default-language: Haskell2010
-    ghc-options:      -Wall -threaded
-    build-depends:
-        base ^>=4.14.1.0,
-        possession,
-        hedgehog
+  import:         shared
+  type:           exitcode-stdio-1.0
+  main-is:        Test.hs
+  hs-source-dirs: test
+  ghc-options:    -Wall -threaded
+  build-depends:
+    , hedgehog
+    , possession

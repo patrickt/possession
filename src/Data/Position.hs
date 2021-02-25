@@ -5,11 +5,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- A 2-tuple of integers for position on the world grid.
 module Data.Position
   ( Position (..),
     V2 (..),
+    pattern Pos,
     pos,
     components,
     make,
@@ -39,6 +41,9 @@ instance Field1 Position Position Int Int where
 
 instance Field2 Position Position Int Int where
   _2 = _Position % lensVL _y
+
+pattern Pos :: Int -> Int -> Position
+pattern Pos a b = Position (V2 a b)
 
 brickLocation :: Position -> Brick.Location
 brickLocation (Position (V2 a b)) = Brick.Location (a + 1, b + 1)

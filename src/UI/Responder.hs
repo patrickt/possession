@@ -33,6 +33,12 @@ data Response a
   | Terminate
   deriving stock (Functor)
 
+instance Semigroup (Response a) where
+  (<>) = Then
+
+instance Monoid (Response a) where
+  mempty = Nil
+
 class Responder a where
   translate :: Vty.Event -> a -> Input
   translate (Vty.EvKey k mods) _ = fromMaybe Input.None (Input.fromVty k mods)
