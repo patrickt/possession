@@ -127,7 +127,7 @@ benchmark possession-benchmark
   build-depends:
     , deepseq
     , possession
-    , tasty-bench
+    , gauge
     , comonad
 
 test-suite possession-test
