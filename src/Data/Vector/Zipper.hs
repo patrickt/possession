@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -7,17 +10,20 @@ module Data.Vector.Zipper
 where
 
 import Control.Comonad
+import Control.DeepSeq
 import Control.Parallel.Strategies
 import Data.Functor.Identity
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import GHC.Generics (Generic)
 
 data Zipper a = Zipper
   { before :: Vector a,
     focus :: a,
     after :: Vector a
   }
-  deriving (Show, Eq)
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (NFData)
 
 -- TODO: Check to see if this actually is meaningfully faster
 instance Functor Zipper where
@@ -29,11 +35,12 @@ instance Functor Zipper where
       }
 
 instance Foldable Zipper where
-  foldMap f Zipper {..} = mconcat
-    [ foldMap f (before `using` parTraversable rseq)
-    , f focus
-    , foldMap f (after `using` parTraversable rseq)
-    ]
+  foldMap f Zipper {..} =
+    mconcat
+      [ foldMap f (before `using` parTraversable rseq),
+        f focus,
+        foldMap f (after `using` parTraversable rseq)
+      ]
 
 instance Comonad Zipper where
   -- O(1)

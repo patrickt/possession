@@ -76,6 +76,7 @@ library
     , bytestring
     , comonad
     , containers
+    , deepseq
     , dhall
     , directory
     , either
@@ -89,6 +90,7 @@ library
     , grid
     , linear
     , mwc-random
+    , random
     , optics
     , optics-th
     , optics-vl
@@ -126,6 +128,7 @@ benchmark possession-benchmark
     , deepseq
     , possession
     , tasty-bench
+    , comonad
 
 test-suite possession-test
   import:         shared

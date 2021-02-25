@@ -1,9 +1,12 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Data.Vector.Universe
   ( Univ (..),
@@ -18,16 +21,19 @@ module Data.Vector.Universe
 where
 
 import Control.Comonad
+import Control.DeepSeq
 import Data.Coerce
 import Data.Functor.Identity
-import Data.Position qualified as P
 import Data.List (foldl')
+import Data.Position qualified as P
 import Data.Vector qualified as V
 import Data.Vector.Zipper (Zipper (Zipper))
 import Data.Vector.Zipper qualified as Z
+import GHC.Generics (Generic)
 
 newtype Univ a = Univ (Zipper (Zipper a))
-  deriving (Eq, Functor)
+  deriving stock (Eq, Functor, Generic)
+  deriving anyclass (NFData)
 
 instance Show a => Show (Univ a) where
   show (Univ Z.Zipper {..}) = " " <> showLines before <> showCenterLine focus <> showLines after

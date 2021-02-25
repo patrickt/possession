@@ -1,58 +1,69 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Game.Dungeon where
 
 import Control.Comonad
-import Data.Bits
-import Data.Word
+import Control.DeepSeq
+import Control.Monad
+import Data.Bool (bool)
+import Data.Foldable
+import Data.Monoid
+import Data.Vector qualified as V
+import Data.Vector.Universe qualified as U
+import Data.Vector.Zipper qualified as Z
+import Debug.Trace
+import GHC.Generics (Generic)
+import System.Random.Stateful (Uniform (..))
+import System.Random.Stateful qualified as R
 
--- | A @Store s a@ describes some "test" that takes a configuration @s@
--- and will produce a value of type @a@, where we also have some ambient
--- initial configuration of type @s@ that is known with which we could
--- start the experiment.
-data Store s a = Store (s -> a) s
-  deriving (Functor)
+data Cell = Off | On
+  deriving stock (Eq, Enum, Generic)
+  deriving anyclass (NFData)
 
-instance Comonad (Store s) where
-  extract (Store f s) = f s
-  duplicate (Store f s) = Store (Store f) s
+instance Uniform Cell where
+  uniformM g = do
+    x <- R.uniformRM @Int (1, 4) g
+    pure (if x == 1 then On else Off)
 
--- | The 'experiment' combinator describes a 'Store' completely. It lets us
--- explore variations on the initial conditions of our test, by providing
--- a functorial preprocessing step applied before the extraction process
--- takes place.
---
--- >>> experiment @[] :: (s -> [s]) -> Store s a -> [a]
--- >>> experiment @Maybe :: (s -> Maybe s) -> Store s a -> Maybe a
--- >>> experiment @IO :: (s -> IO s) -> Store s a -> IO a
-experiment :: Functor f => (s -> f s) -> Store s a -> f a
-experiment f (Store g s) = fmap g (f s)
+instance Show Cell where
+  show = \case
+    On -> "#"
+    Off -> "."
 
-seek :: (s -> s) -> Store s a -> Store s a
-seek f = experiment (Store f)
+type Game = U.Univ Cell
 
-rule :: Num s => Word8 -> Store s Bool -> Bool
-rule w (Store f s) =
-  let b2i x = if x then 1 else 0
-   in testBit w $
-        setBit (b2i (f (s + 1))) $
-          setBit (b2i (f s)) $
-            setBit (b2i (f (s - 1))) 0
+renderIO :: Show a => U.Univ a -> IO ()
+renderIO = putStrLn . render
 
-slowLoop :: (Store s a -> a) -> Store s a -> [Store s a]
-slowLoop f = iterate (extend f)
+render :: Show a => U.Univ a -> String
+render (U.Univ g) = unlines cols
+  where
+    cols :: [String]
+    cols = toList . fmap (foldMap show) . Z.toVector $ g
 
--- show
-window :: (Enum s, Num s) => s -> s -> Store s a -> [a]
-window l h = experiment $ \s -> [s - l .. s + h]
+neighborCount :: Game -> Int
+neighborCount = getSum . foldMap (Sum . fromEnum) . V.filter (== On) . U.neighbors
 
-xo :: Bool -> Char
-xo True = 'X'
-xo False = ' '
+randomly :: IO (U.Univ Cell)
+randomly = do
+  rand <- R.getStdGen >>= R.newIOGenM
+  U.generateM 15 (const (uniformM rand))
 
-main =
-  mapM_ (putStrLn . map xo . window 50 0) $
-    take 50 $ slowLoop (rule 110) $ Store (== 0) 12
+step :: Game -> Cell
+step g = cell
+  where
+    curr = extract g
+    count = neighborCount g
+    cell
+      | count > 3 = Off
+      | count < 2 = Off
+      | curr == Off && count == 3 = On
+      | otherwise = curr
