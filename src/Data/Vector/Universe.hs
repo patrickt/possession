@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Data.Vector.Universe
   ( Univ (..),
@@ -18,7 +19,7 @@ module Data.Vector.Universe
     generateM,
     generate,
     draw,
-    drawIO
+    drawIO,
   )
 where
 
@@ -28,9 +29,10 @@ import Data.Coerce
 import Data.Functor.Identity
 import Data.List (foldl')
 import Data.Position qualified as P
-import Data.Vector qualified as V
+import Data.Vector qualified as V (Vector, iterateN, reverse)
 import Data.Vector.Zipper (Zipper (Zipper))
 import Data.Vector.Zipper qualified as Z
+import GHC.Exts (IsList (..))
 import GHC.Generics (Generic)
 
 newtype Univ a = Univ (Zipper (Zipper a))
@@ -92,9 +94,8 @@ generateM n f = Univ <$> Z.generateM n (\m -> Z.generateM n (f . P.make m))
 generate :: Int -> (P.Position -> a) -> Univ a
 generate n f = coerce (generateM n (Identity . f))
 
-
 drawIO :: Show a => Univ a -> IO ()
 drawIO = putStrLn . draw
 
 draw :: Show a => Univ a -> String
-draw (Univ g) = unlines . V.toList . fmap (foldMap show) . Z.toVector $ g
+draw (Univ g) = unlines . toList . fmap (foldMap show) . Z.toVector $ g

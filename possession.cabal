@@ -118,6 +118,7 @@ executable possession
   main-is:        Main.hs
   hs-source-dirs: app
   build-depends:  possession
+  ghc-options:    -threaded
 
 benchmark possession-benchmark
   import:         shared

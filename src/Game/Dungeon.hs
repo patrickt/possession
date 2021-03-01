@@ -42,19 +42,20 @@ neighborCount = getSum . foldMap (Sum . fromEnum) . V.filter (== On) . U.neighbo
 randomly :: IO (U.Univ Cell)
 randomly = do
   rand <- R.getStdGen >>= R.newIOGenM
-  U.generateM 55 (const (uniformM rand))
-
-birthLimit, deathLimit :: Int
-birthLimit = 5
-deathLimit = 3
+  U.generateM 35 (const (uniformM rand))
 
 step :: Game -> Cell
-step g = cell
+step g = result
   where
+    -- Prevent death of cells with 5 or more neighbors
+    deathLimit = 5
+    -- Prevent birth of cells with 3 or fewer neighbors
+    birthLimit = 3
     count = neighborCount g
-    curr = extract g
-    isOn = curr == On
-    cell = if
+    -- Is the current cell marked as on? (i.e. is there a wall there)
+    isOn = extract g == On
+    -- Truth table
+    result = if
       | isOn && count < deathLimit -> Off
       | isOn -> On
       | count > birthLimit -> On
