@@ -99,6 +99,7 @@ library
     , parallel
     , pointedlist
     , store
+    , stm
     , text
     , text-show
     , transformers

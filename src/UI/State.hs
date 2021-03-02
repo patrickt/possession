@@ -29,6 +29,7 @@ import UI.InGame qualified as InGame
 import UI.MainMenu qualified as MainMenu
 import UI.Responder.Chain qualified as Responder
 import Prelude hiding (Either (..))
+import Control.Concurrent.STM (TBQueue)
 
 data Mode
   = MainMenu
@@ -38,7 +39,7 @@ data Mode
 
 data State = State
   { responders :: Responder.Chain,
-    gamePort :: MVar (Game.Action 'Game.Game),
+    gamePort :: TBQueue (Game.Action 'Game.Game),
     gameThread :: ThreadId
   }
   deriving (Generic)
@@ -48,7 +49,7 @@ makeFieldLabelsWith noPrefixFieldLabels ''State
 firstResponder :: Lens' State Responder.SomeResponder
 firstResponder = typed % Responder.first
 
-initial :: MVar (Game.Action 'Game.Game) -> ThreadId -> State
+initial :: TBQueue (Game.Action 'Game.Game) -> ThreadId -> State
 initial = State $ Responder.Chain
   [ Responder.SomeResponder MainMenu.initial,
     Responder.SomeResponder InGame.initial

@@ -29,16 +29,17 @@ import Brick.BChan
 import Control.Algebra
 import Control.Carrier.Lift
 import Control.Carrier.Reader
-import Control.Concurrent
 import Control.Monad.IO.Class
 import Data.Kind (Type)
 import Data.Message (Message)
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Game
+import Control.Concurrent.STM.TBQueue
+import Control.Concurrent.STM (atomically)
 
 data Brokerage = Brokerage
   { _toBrick :: BChan (Action 'UI),
-    _toGame :: MVar (Action 'Game)
+    _toGame :: TBQueue (Action 'Game)
   }
 
 data Broker (m :: Type -> Type) k where
@@ -62,14 +63,14 @@ notify = sendCommand . Game.Notify
 newtype BrokerC m a = BrokerC {runBrokerC :: ReaderC Brokerage m a}
   deriving newtype (Functor, Applicative, Monad, MonadIO)
 
-runBroker :: BChan (Action 'UI) -> MVar (Action 'Game) -> BrokerC m a -> m a
+runBroker :: BChan (Action 'UI) -> TBQueue (Action 'Game) -> BrokerC m a -> m a
 runBroker to curr = runReader (Brokerage to curr) . runBrokerC
 
 instance Has (Lift IO) sig m => Algebra (Broker :+: sig) (BrokerC m) where
   alg hdl sig ctx = do
     Brokerage to curr <- BrokerC ask
     case sig of
-      L (Push a) -> ctx <$ (sendM . putMVar curr $ a)
+      L (Push a) -> ctx <$ (sendM . atomically . writeTBQueue curr $ a)
       L (Cmd a) -> ctx <$ (sendM . writeBChan to $ a)
-      L Pop -> (<$ ctx) <$> (sendM . takeMVar $ curr)
+      L Pop -> (<$ ctx) <$> (sendM . atomically . readTBQueue $ curr)
       R other -> BrokerC (alg (runBrokerC . hdl) (R other) ctx)

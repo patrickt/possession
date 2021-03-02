@@ -22,6 +22,7 @@ import Control.Carrier.Reader
 import Control.Carrier.State.Strict
 import Control.Carrier.Trace.Ignoring
 import Control.Concurrent
+import Control.Concurrent.STM.TBQueue (TBQueue)
 import Control.Effect.Broker
 import Control.Effect.Broker qualified as Broker
 import Control.Effect.Optics
@@ -48,11 +49,11 @@ import Data.Store qualified as Store
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Dhall qualified
-import Game.Dungeon qualified as Dungeon
 import Game.Action
 import Game.Behavior
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
+import Game.Dungeon qualified as Dungeon
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Info qualified as Game (Info)
@@ -63,8 +64,8 @@ import Game.World qualified as Game (World)
 import Linear (V2 (..))
 import Optics hiding (assign, use)
 import Optics.Tupled
-import System.FilePath((</>))
 import System.Directory (createDirectoryIfMissing, getHomeDirectory)
+import System.FilePath ((</>))
 import TextShow
 
 type GameState = Game.State.State
@@ -72,7 +73,7 @@ type GameState = Game.State.State
 -- | Kick off the ECS with provided channels and inputs. If we get
 -- more channels/mvars, we should pull those out into their own
 -- record.
-start :: BChan (Action 'UI) -> MVar (Action 'Game) -> Game.World -> IO ThreadId
+start :: BChan (Action 'UI) -> TBQueue (Action 'Game) -> Game.World -> IO ThreadId
 start cmds acts world = do
   let initialState = Game.State.State (Apecs.Entity 0) True
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
@@ -101,8 +102,8 @@ setup = do
   map' <- liftIO Dungeon.makeDungeon
   iforM_ map' $ \pos cell ->
     if cell == Dungeon.On
-       then void (Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall"))
-       else pure ()
+      then void (Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall"))
+      else pure ()
 
   start <- findUnoccupied
   let play = Player.initial & #position .~ start

@@ -4,7 +4,7 @@ module Possession (main) where
 
 import Brick qualified
 import Brick.BChan
-import Control.Concurrent.MVar
+import Control.Concurrent.STM.TBQueue
 import Control.Monad
 import Game.Ecs qualified as Ecs
 import Game.World qualified as Game
@@ -15,7 +15,7 @@ import UI.State qualified
 main :: IO ()
 main = do
   brickEvLoop <- newBChan 1
-  actionBox <- newEmptyMVar
+  actionBox <- newTBQueueIO 100
   vty <- Vty.standardIOConfig >>= Vty.mkVty
   w <- Game.initWorld
   thread <- Ecs.start brickEvLoop actionBox w
