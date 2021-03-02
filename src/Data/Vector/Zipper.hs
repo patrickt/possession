@@ -4,6 +4,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Vector.Zipper
   ( module Data.Vector.Zipper,
   )
@@ -15,6 +16,8 @@ import Control.Parallel.Strategies
 import Data.Functor.Identity
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Data.Foldable.WithIndex
+import Data.Functor.WithIndex.Instances ()
 import GHC.Generics (Generic)
 
 data Zipper a = Zipper
@@ -59,6 +62,9 @@ instance Comonad Zipper where
     where
       before' = Vector.reverse (Vector.iterateN (Vector.length before) shiftLeft (shiftLeft z))
       after' = Vector.iterateN (Vector.length after) shiftRight (shiftRight z)
+
+instance FoldableWithIndex Int Zipper where
+  ifoldMap f = ifoldMap f . toVector
 
 focusIndex :: Zipper a -> Int
 focusIndex = Vector.length . before

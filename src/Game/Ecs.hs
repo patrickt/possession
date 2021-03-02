@@ -33,6 +33,7 @@ import Data.ByteString qualified as ByteString
 import Data.Color qualified as Color
 import Data.Experience (XP (..))
 import Data.Foldable (for_)
+import Data.Foldable.WithIndex (iforM_)
 import Data.Function
 import Data.Glyph
 import Data.Hitpoints
@@ -47,6 +48,7 @@ import Data.Store qualified as Store
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Dhall qualified
+import Game.Dungeon qualified as Dungeon
 import Game.Action
 import Game.Behavior
 import Game.Canvas qualified as Canvas
@@ -92,8 +94,21 @@ setup ::
   ) =>
   Apecs.SystemT Game.World m ()
 setup = do
+  -- Build some walls
+  for_ Canvas.borders \border -> do
+    Apecs.newEntity (border, Glyph '#', Color.White, Invalid, Name.Name "wall")
+
+  map' <- liftIO Dungeon.makeDungeon
+  iforM_ map' $ \pos cell ->
+    if cell == Dungeon.On
+       then void (Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall"))
+       else pure ()
+
+  start <- findUnoccupied
+  let play = Player.initial & #position .~ start
+
   -- Create the player
-  Apecs.newEntity (Player.initial ^. tupled)
+  Apecs.newEntity (play ^. tupled)
     >>= assign @GameState #player
 
   -- Fill in some enemies
@@ -109,9 +124,11 @@ setup = do
 
   ask @(Vector Enemy.Enemy) >>= Vector.mapM_ mkEnemy
 
-  -- Build some walls
-  for_ Canvas.borders \border -> do
-    Apecs.newEntity (border, Glyph '#', Color.White, Invalid, Name.Name "wall")
+findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
+findUnoccupied = do
+  pos <- Position.randomIn 1 50
+  occ <- occupied pos
+  if occ then findUnoccupied else pure pos
 
 -- | Renders a canvas from the current system, for passing back to the display thread.
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas

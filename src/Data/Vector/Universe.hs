@@ -9,6 +9,8 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Vector.Universe
   ( Univ (..),
     shiftRight,
@@ -26,6 +28,7 @@ where
 import Control.Comonad
 import Control.DeepSeq
 import Data.Coerce
+import Data.Foldable.WithIndex
 import Data.Functor.Identity
 import Data.List (foldl')
 import Data.Position qualified as P
@@ -36,7 +39,7 @@ import GHC.Exts (IsList (..))
 import GHC.Generics (Generic)
 
 newtype Univ a = Univ (Zipper (Zipper a))
-  deriving stock (Eq, Functor, Generic)
+  deriving stock (Eq, Functor, Foldable, Generic)
   deriving anyclass (NFData)
 
 instance Show a => Show (Univ a) where
@@ -67,6 +70,9 @@ instance Comonad Univ where
             Z.focus = parent,
             Z.after = V.iterateN (innerLen - innerPos - 1) shiftRight (shiftRight parent)
           }
+
+instance FoldableWithIndex P.Position Univ where
+  ifoldMap f (Univ a) = ifoldMap (\x -> ifoldMap (f . P.Pos x)) a
 
 shiftRight, shiftLeft, shiftUp, shiftDown :: Univ a -> Univ a
 shiftRight (Univ u) = Univ (fmap Z.shiftRight u)

@@ -88,6 +88,8 @@ library
     , generic-monoid
     , generic-optics
     , grid
+    , indexed-traversable
+    , indexed-traversable-instances
     , linear
     , mwc-random
     , random

@@ -26,7 +26,7 @@ import Data.Position qualified as Position
 import Game.Sprite
 
 size :: Int
-size = 16
+size = 60
 
 bounds :: (Position, Position)
 bounds = (0 :: Position, Position.make size size)
