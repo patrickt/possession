@@ -53,6 +53,7 @@ library
     System.Random.MWC.Exts
     UI.App
     UI.Attributes
+    UI.GameOver
     UI.Hud
     UI.InGame
     UI.Input
