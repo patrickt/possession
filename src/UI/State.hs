@@ -19,17 +19,15 @@ module UI.State
 where
 
 import Control.Concurrent (ThreadId)
-import Control.Concurrent.MVar
+import Control.Effect.Broker (GameQueue)
 import Data.Generics.Product
 import Data.Position
 import GHC.Generics (Generic)
-import Game.Action qualified as Game
 import Optics
 import UI.InGame qualified as InGame
 import UI.MainMenu qualified as MainMenu
 import UI.Responder.Chain qualified as Responder
 import Prelude hiding (Either (..))
-import Control.Concurrent.STM (TBQueue)
 
 data Mode
   = MainMenu
@@ -39,7 +37,7 @@ data Mode
 
 data State = State
   { responders :: Responder.Chain,
-    gamePort :: TBQueue (Game.Action 'Game.Game),
+    gamePort :: GameQueue,
     gameThread :: ThreadId
   }
   deriving (Generic)
@@ -49,7 +47,7 @@ makeFieldLabelsWith noPrefixFieldLabels ''State
 firstResponder :: Lens' State Responder.SomeResponder
 firstResponder = typed % Responder.first
 
-initial :: TBQueue (Game.Action 'Game.Game) -> ThreadId -> State
+initial :: GameQueue -> ThreadId -> State
 initial = State $ Responder.Chain
   [ Responder.SomeResponder MainMenu.initial,
     Responder.SomeResponder InGame.initial

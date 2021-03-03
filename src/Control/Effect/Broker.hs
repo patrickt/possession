@@ -17,6 +17,8 @@
 -- TODO: should the game channel be a chan rather than an mvar?
 module Control.Effect.Broker
   ( Broker,
+    BrickQueue,
+    GameQueue,
     pushAction,
     popAction,
     sendCommand,
@@ -29,17 +31,21 @@ import Brick.BChan
 import Control.Algebra
 import Control.Carrier.Lift
 import Control.Carrier.Reader
+import Control.Concurrent.STM (atomically)
+import Control.Concurrent.STM.TBQueue
 import Control.Monad.IO.Class
 import Data.Kind (Type)
 import Data.Message (Message)
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Game
-import Control.Concurrent.STM.TBQueue
-import Control.Concurrent.STM (atomically)
+
+type BrickQueue = BChan (Action 'UI)
+
+type GameQueue = TBQueue (Action 'Game)
 
 data Brokerage = Brokerage
-  { _toBrick :: BChan (Action 'UI),
-    _toGame :: TBQueue (Action 'Game)
+  { _toBrick :: BrickQueue,
+    _toGame :: GameQueue
   }
 
 data Broker (m :: Type -> Type) k where
@@ -63,7 +69,7 @@ notify = sendCommand . Game.Notify
 newtype BrokerC m a = BrokerC {runBrokerC :: ReaderC Brokerage m a}
   deriving newtype (Functor, Applicative, Monad, MonadIO)
 
-runBroker :: BChan (Action 'UI) -> TBQueue (Action 'Game) -> BrokerC m a -> m a
+runBroker :: BrickQueue -> GameQueue -> BrokerC m a -> m a
 runBroker to curr = runReader (Brokerage to curr) . runBrokerC
 
 instance Has (Lift IO) sig m => Algebra (Broker :+: sig) (BrokerC m) where

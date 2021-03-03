@@ -16,13 +16,11 @@ module Game.Ecs (start, cfoldMap) where
 
 import Apecs (Entity)
 import Apecs qualified
-import Brick.BChan
 import Control.Carrier.Random.Lifted qualified as Random
 import Control.Carrier.Reader
 import Control.Carrier.State.Strict
 import Control.Carrier.Trace.Ignoring
 import Control.Concurrent
-import Control.Concurrent.STM.TBQueue (TBQueue)
 import Control.Effect.Broker
 import Control.Effect.Broker qualified as Broker
 import Control.Effect.Optics
@@ -73,7 +71,7 @@ type GameState = Game.State.State
 -- | Kick off the ECS with provided channels and inputs. If we get
 -- more channels/mvars, we should pull those out into their own
 -- record.
-start :: BChan (Action 'UI) -> TBQueue (Action 'Game) -> Game.World -> IO ThreadId
+start :: BrickQueue -> GameQueue -> Game.World -> IO ThreadId
 start cmds acts world = do
   let initialState = Game.State.State (Apecs.Entity 0) True
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
@@ -105,8 +103,8 @@ setup = do
       then void (Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall"))
       else pure ()
 
-  start <- findUnoccupied
-  let play = Player.initial & #position .~ start
+  playerStart <- findUnoccupied
+  let play = Player.initial & #position .~ playerStart
 
   -- Create the player
   Apecs.newEntity (play ^. tupled)
