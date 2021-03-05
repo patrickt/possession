@@ -43,6 +43,7 @@ library
     Game.Ecs
     Game.Entity.Enemy
     Game.Entity.Player
+    Game.Flag
     Game.Info
     Game.Save
     Game.Sprite
