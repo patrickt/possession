@@ -1,19 +1,19 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
-module UI.Render (Renderable (..)) where
+module UI.Render (Renderable (..), colorToVty, withForeground) where
 
 import Brick qualified
 import Brick.Markup
 import Data.Color qualified as Color
 import Data.Glyph
 import Data.Message
-import Data.Semigroup
 import Data.Position qualified as Position
+import Data.Semigroup
 import Data.Text.Markup qualified as Markup
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
@@ -56,6 +56,11 @@ scanline :: Game.Canvas -> Int -> Vty.Image
 scanline canv idx = Vty.horizCat do
   x <- [0 .. Canvas.size]
   pure . drawSprite . Canvas.at canv $ Position.make x idx
+
+withForeground :: Color.Color -> Brick.Widget a -> Brick.Widget a
+withForeground color = Brick.modifyDefAttr attr
+  where
+    attr a = a {Attr.attrForeColor = Attr.SetTo (colorToVty color)}
 
 colorToVty :: Color.Color -> Vty.Color
 colorToVty = \case
