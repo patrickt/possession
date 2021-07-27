@@ -71,15 +71,15 @@ type GameState = Game.State.State
 -- | Kick off the ECS with provided channels and inputs. If we get
 -- more channels/mvars, we should pull those out into their own
 -- record.
-start :: BrickQueue -> GameQueue -> Game.World -> IO ThreadId
-start cmds acts world = do
+start :: Brokerage -> Game.World -> IO ThreadId
+start broker world = do
   let initialState = Game.State.State (Apecs.Entity 0) True
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
   forkIO
     . Random.runRandomSystem
     . runTrace
     . runReader @(Vector Enemy.Enemy) values
-    . runBroker cmds acts
+    . runBroker broker
     . evalState initialState
     . Apecs.runWith world
     $ setup *> loop
@@ -169,7 +169,6 @@ loop = forever do
       Save.load (Store.decodeEx onDisk)
       Broker.notify "Game loaded."
     NoOp -> pure ()
-    Exit -> pure ()
 
   canv <- draw
   newinfo <- currentInfo

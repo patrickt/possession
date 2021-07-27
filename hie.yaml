@@ -1,10 +1,12 @@
 cradle:
   cabal:
-    - path: "./test"
+    - path: "test"
       component: "test:possession-test"
-    - path: "./app/Main.hs"
+    - path: "app/Main.hs"
       component: "exe:possession"
+    - path: "app/Bench.hs"
+      component: "benchmark:possession-benchmark"
     - path: "./app/Viewer.hs"
       component: "exe:automata-viewer"
-    - path: "./src"
+    - path: "src"
       component: "lib:possession"

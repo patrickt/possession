@@ -19,7 +19,6 @@ module UI.Responder.Chain
 where
 
 import Control.Monad.ST
-import Data.Coerce (coerce)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.STRef

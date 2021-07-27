@@ -6,8 +6,10 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 -- An effect that provides bidirectional communication between the
 -- game and its Brick UI. Brick itself reads @Action 'UI@ values from
@@ -24,6 +26,7 @@ module Control.Effect.Broker
     sendCommand,
     runBroker,
     notify,
+    Brokerage (Brokerage),
   )
 where
 
@@ -38,15 +41,18 @@ import Data.Kind (Type)
 import Data.Message (Message)
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Game
+import Optics.TH
 
 type BrickQueue = BChan (Action 'UI)
 
 type GameQueue = TBQueue (Action 'Game)
 
 data Brokerage = Brokerage
-  { _toBrick :: BrickQueue,
-    _toGame :: GameQueue
+  { brickQueue :: BrickQueue,
+    gameQueue :: GameQueue
   }
+
+makeFieldLabelsWith noPrefixFieldLabels ''Brokerage
 
 data Broker (m :: Type -> Type) k where
   Push :: Action 'Game -> Broker m ()
@@ -69,8 +75,8 @@ notify = sendCommand . Game.Notify
 newtype BrokerC m a = BrokerC {runBrokerC :: ReaderC Brokerage m a}
   deriving newtype (Functor, Applicative, Monad, MonadIO)
 
-runBroker :: BrickQueue -> GameQueue -> BrokerC m a -> m a
-runBroker to curr = runReader (Brokerage to curr) . runBrokerC
+runBroker :: Brokerage -> BrokerC m a -> m a
+runBroker b = runReader b . runBrokerC
 
 instance Has (Lift IO) sig m => Algebra (Broker :+: sig) (BrokerC m) where
   alg hdl sig ctx = do

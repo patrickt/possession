@@ -58,12 +58,16 @@ instance Responder InGame where
   translate _ _ = Input.None
 
   onSend inp s =
-    let move (x, y) = Action.Move (V2 x y)
+    let move (x, y) = Broadcast (Action.Move (V2 x y))
+        left = move (-1, 0)
+        right = move (1, 0)
+        down = move (0, 1)
+        up = move (0, -1)
      in case inp of
-          Input.Left -> Broadcast (move (-1, 0))
-          Input.Right -> Broadcast (move (1, 0))
-          Input.Down -> Broadcast (move (0, 1))
-          Input.Up -> Broadcast (move (0, -1))
+          Input.Left  -> left
+          Input.Right -> right
+          Input.Down  -> down
+          Input.Up    -> up
           Input.Quit -> Terminate
           Input.Menu -> Push (SomeResponder MainMenu.inGame)
           Input.Look -> Push (SomeResponder (Hud.Hud (s ^. #sidebar % #info % #position % to getLast % non 0) s))

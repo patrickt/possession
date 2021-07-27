@@ -19,7 +19,7 @@ module UI.State
 where
 
 import Control.Concurrent (ThreadId)
-import Control.Effect.Broker (GameQueue)
+import Control.Effect.Broker (Brokerage)
 import Data.Generics.Product
 import Data.Position
 import GHC.Generics (Generic)
@@ -37,7 +37,7 @@ data Mode
 
 data State = State
   { responders :: Responder.Chain,
-    gamePort :: GameQueue,
+    brokerage :: Brokerage,
     gameThread :: ThreadId
   }
   deriving (Generic)
@@ -47,7 +47,7 @@ makeFieldLabelsWith noPrefixFieldLabels ''State
 firstResponder :: Lens' State Responder.SomeResponder
 firstResponder = typed % Responder.first
 
-initial :: GameQueue -> ThreadId -> State
+initial :: Brokerage -> ThreadId -> State
 initial = State $ Responder.Chain
   [ Responder.SomeResponder MainMenu.initial,
     Responder.SomeResponder InGame.initial

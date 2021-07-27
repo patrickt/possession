@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-overlapping-patterns #-}
 
 module UI.App (app) where
 
@@ -43,12 +44,7 @@ event s evt = case evt of
           Responder.Nil ->
             Brick.continue s
           a `Responder.Then` b -> go a *> go b
-          Responder.Push r -> do
-            liftIO
-              . Broker.runBroker (error "no queue") (s ^. #gamePort)
-              . Broker.pushAction
-              $ Action.NoOp
-
+          Responder.Push r ->
             Brick.continue (s & #responders %~ Responder.push r)
           Responder.Pop -> do
             Brick.continue (s & #responders %~ Responder.pop)
@@ -56,7 +52,7 @@ event s evt = case evt of
             Brick.continue (s & #responders % Responder.first .~ a)
           Responder.Broadcast it -> do
             liftIO
-              . Broker.runBroker (error "no queue") (s ^. #gamePort)
+              . Broker.runBroker (s ^. #brokerage)
               . Broker.pushAction
               $ it
             Brick.continue s
@@ -77,7 +73,6 @@ event s evt = case evt of
       case (previous, shouldCoalesce) of
         (Just _, True) -> s & lastMessage % #times %~ (+ 1)
         _ -> s & #responders %~ Responder.propagate @InGame (#modeline %~ Modeline.update msg)
-    _ -> s
   _ -> Brick.continue s
 
 app :: Brick.App UI.State (Action 'UI) UI.Resource
@@ -89,7 +84,7 @@ app =
       Brick.appAttrMap = const (Brick.AttrMap.attrMap Vty.defAttr []),
       Brick.appStartEvent = \s -> do
         liftIO
-          . Broker.runBroker (error "no queue") (s ^. #gamePort)
+          . Broker.runBroker (s ^. #brokerage)
           . Broker.pushAction
           $ Action.NoOp
         pure s
