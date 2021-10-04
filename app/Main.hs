@@ -1,3 +1,3 @@
-module Main (main) where
+module Main (Possession.main) where
 
 import Possession (main)

@@ -5,6 +5,9 @@
 {-# LANGUAGE RecordWildCards #-}
 
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Data.Vector.Zipper
   ( module Data.Vector.Zipper,
   )
@@ -66,6 +69,12 @@ instance Comonad Zipper where
 instance FoldableWithIndex Int Zipper where
   ifoldMap f = ifoldMap f . toVector
 
+fromVector :: Vector a -> Int -> Zipper a
+fromVector v idx
+  | null v = error "Zipper.fromVector: tried to create a zipper over an empty vector"
+  | length v == 1 = Zipper mempty (Vector.unsafeHead v) mempty
+  | otherwise = let (fore, aft) = Vector.splitAt idx v in Zipper fore (v Vector.! idx) (Vector.drop 1 aft)
+
 focusIndex :: Zipper a -> Int
 focusIndex = Vector.length . before
 
@@ -79,20 +88,22 @@ neighbors z = Vector.fromList [focus (shiftLeft z), focus (shiftRight z)]
 -- ([1, 2], 3, [])
 
 shiftLeft :: Zipper a -> Zipper a
-shiftLeft Zipper {..} = case Vector.unsnoc before of
-  Nothing ->
-    -- wrap around
-    Zipper
-      { before = Vector.cons focus (Vector.init after),
-        focus = Vector.last after,
-        after = Vector.empty
-      }
-  Just (init', last') ->
-    Zipper
-      { before = init',
-        focus = last',
-        after = Vector.cons focus after
-      }
+shiftLeft z@Zipper {..}
+  | singular z = z
+  | otherwise = case Vector.unsnoc before of
+      Nothing ->
+        -- wrap around
+        Zipper
+          { before = Vector.cons focus (Vector.init after),
+            focus = Vector.last after,
+            after = Vector.empty
+          }
+      Just (init', last') ->
+        Zipper
+          { before = init',
+            focus = last',
+            after = Vector.cons focus after
+          }
 
 -- ([1, 2], 3, [])
 -- ([], 1, [2, 3])
@@ -100,19 +111,21 @@ shiftLeft Zipper {..} = case Vector.unsnoc before of
 -- ([1,2], 3, [4, 5])
 -- ([1,2,3], 4, [5])
 shiftRight :: Zipper a -> Zipper a
-shiftRight Zipper {..} = case Vector.uncons after of
-  Nothing ->
-    Zipper
-      { before = Vector.empty,
-        focus = Vector.head before,
-        after = Vector.snoc (Vector.tail before) focus
-      }
-  Just (head', tail') ->
-    Zipper
-      { before = Vector.snoc before focus,
-        focus = head',
-        after = tail'
-      }
+shiftRight z@Zipper {..}
+  | singular z = z
+  | otherwise = case Vector.uncons after of
+      Nothing ->
+        Zipper
+          { before = Vector.empty,
+            focus = Vector.head before,
+            after = Vector.snoc (Vector.tail before) focus
+          }
+      Just (head', tail') ->
+        Zipper
+          { before = Vector.snoc before focus,
+            focus = head',
+            after = tail'
+          }
 
 generateM :: Monad m => Int -> (Int -> m a) -> m (Zipper a)
 generateM count fn =
@@ -124,3 +137,6 @@ generateM count fn =
 
 generate :: Int -> (Int -> a) -> Zipper a
 generate count fn = runIdentity (generateM count (Identity . fn))
+
+singular :: Zipper a -> Bool
+singular (Zipper a _ b) = null a && null b
