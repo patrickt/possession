@@ -156,7 +156,7 @@ loop = forever do
       onDisk <- liftIO (ByteString.readFile (path </> "save"))
       Save.load (Store.decodeEx onDisk)
       Broker.notify "Game loaded."
-    NoOp -> pure ()
+    Start -> pure ()
 
   canv <- draw
   newinfo <- currentInfo

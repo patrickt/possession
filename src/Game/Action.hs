@@ -22,7 +22,7 @@ data Dest = Game | UI
 -- in which this request can flow. NoOp is bidirectional.
 data Action (dest :: Dest) where
   -- These can be sent either way
-  NoOp :: Action a
+  Start :: Action a
   -- These are sent from UI to ECS
   Move :: V2 Int -> Action 'Game
   SaveState :: Action 'Game

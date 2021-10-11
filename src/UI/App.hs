@@ -56,7 +56,7 @@ handleEvent s evt = case evt of
 
     go (Responder.onSend inp (s ^. #latestInfo) first)
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
-    Action.NoOp -> s
+    Action.Start -> s
     Action.Redraw canv -> s & #responders %~ Responder.propagate @Toplevel (#canvas .~ canv)
     Action.Update info ->
       -- TODO: I don't like this double-info thing; can we make the sidebar not store it?
@@ -83,6 +83,6 @@ app =
         liftIO
           . Broker.runBroker (s ^. #brokerage)
           . Broker.pushAction
-          $ Action.NoOp
+          $ Action.Start
         pure s
     }
