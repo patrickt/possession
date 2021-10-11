@@ -12,20 +12,19 @@ import Brick.AttrMap qualified
 import Control.Concurrent (killThread)
 import Control.Effect.Broker qualified as Broker
 import Control.Monad.IO.Class
-import Data.Generics.Product
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Action
 import Graphics.Vty qualified as Vty
 import Optics
-import UI.InGame (InGame)
 import UI.Render
 import UI.Resource qualified as UI (Resource)
+import UI.Responder qualified as Responder
 import UI.Responder.Chain (castTo)
 import UI.Responder.Chain qualified as Responder
-import UI.Responder qualified as Responder
 import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline qualified as Modeline
+import UI.Widgets.Toplevel (Toplevel)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = s ^. #responders % Responder.first % to renderMany
@@ -52,22 +51,25 @@ handleEvent s evt = case evt of
               $ it
             Brick.continue s
           Responder.Terminate -> do
-            liftIO (killThread (s ^. #gameThread))
+            liftIO . killThread . view #gameThread $ s
             Brick.halt s
 
-    go (Responder.onSend inp first)
-
+    go (Responder.onSend inp (s ^. #latestInfo) first)
   Brick.AppEvent cmd -> Brick.continue $ case cmd of
     Action.NoOp -> s
-    Action.Redraw canv -> s & #responders %~ Responder.propagate @InGame (#canvas .~ canv)
-    Action.Update info -> s & #responders %~ Responder.propagate @InGame (#sidebar % typed .~ info)
+    Action.Redraw canv -> s & #responders %~ Responder.propagate @Toplevel (#canvas .~ canv)
+    Action.Update info ->
+      -- TODO: I don't like this double-info thing; can we make the sidebar not store it?
+      -- Yes, I think we can, since we pass in the info in onSend now.
+      s & #latestInfo .~ info
+        & #responders %~ Responder.propagate @Toplevel (#sidebar % #info .~ info)
     Action.Notify msg -> do
-      let lastMessage = State.firstResponder % castTo @InGame % #modeline % #messages % _last
+      let lastMessage = State.firstResponder % castTo @Toplevel % #modeline % #messages % _last
       let previous = s ^? lastMessage % #contents
       let shouldCoalesce = previous == Just (msg ^. #contents)
       case (previous, shouldCoalesce) of
         (Just _, True) -> s & lastMessage % #times %~ (+ 1)
-        _ -> s & #responders %~ Responder.propagate @InGame (#modeline %~ Modeline.update msg)
+        _ -> s & #responders %~ Responder.propagate @Toplevel (#modeline %~ Modeline.update msg)
   _ -> Brick.continue s
 
 app :: Brick.App UI.State (Action 'UI) UI.Resource

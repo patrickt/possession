@@ -1,10 +1,11 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
 
+-- | Top-level state container used by the Brick app.
 module UI.State
   ( State (State),
     firstResponder,
@@ -16,14 +17,16 @@ import Control.Concurrent (ThreadId)
 import Control.Effect.Broker (Brokerage)
 import Data.Generics.Product
 import GHC.Generics (Generic)
+import Game.Info qualified as Game (Info)
 import Optics
-import UI.InGame qualified as InGame
 import UI.MainMenu qualified as MainMenu
 import UI.Responder.Chain qualified as Responder
+import UI.Widgets.Toplevel qualified as Toplevel
 import Prelude hiding (Either (..))
 
 data State = State
-  { stateResponders :: Responder.Chain,
+  { stateLatestInfo :: Game.Info,
+    stateResponders :: Responder.Chain,
     stateBrokerage :: Brokerage,
     stateGameThread :: ThreadId
   }
@@ -35,7 +38,9 @@ firstResponder :: Lens' State Responder.SomeResponder
 firstResponder = typed % Responder.first
 
 initial :: Brokerage -> ThreadId -> State
-initial = State $ Responder.Chain
-  [ Responder.SomeResponder MainMenu.initial,
-    Responder.SomeResponder InGame.initial
-  ]
+initial =
+  State mempty $
+    Responder.Chain
+      [ Responder.SomeResponder MainMenu.initial,
+        Responder.SomeResponder Toplevel.initial
+      ]

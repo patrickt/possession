@@ -69,8 +69,8 @@ instance Responder MainMenu where
     _ -> Input.None
   translate _ _ = Input.None
 
-  onSend i s =
-    case i of
+  onSend inp _inf s =
+    case inp of
       Input.Up -> Update (s & #choices %~ Pointed.previous)
       Input.Down -> Update (s & #choices %~ Pointed.next)
       Input.Confirm -> case s ^. selected of

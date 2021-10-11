@@ -29,6 +29,7 @@ common shared
       GeneralizedNewtypeDeriving
       ImportQualifiedPost
       KindSignatures
+      LambdaCase
       MultiParamTypeClasses
       OverloadedLabels
       RankNTypes
@@ -74,15 +75,15 @@ library
     UI.Attributes
     UI.GameOver
     UI.Hud
-    UI.InGame
     UI.Input
     UI.MainMenu
     UI.Render
     UI.Resource
     UI.Responder
     UI.Responder.Chain
-    UI.Sidebar
     UI.State
+    UI.Widgets.Sidebar
+    UI.Widgets.Toplevel
     UI.Widgets.Modeline
 
   hs-source-dirs:  src

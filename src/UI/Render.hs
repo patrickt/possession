@@ -1,9 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
 module UI.Render (Renderable (..), colorToVty, withForeground) where
 

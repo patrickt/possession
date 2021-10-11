@@ -37,7 +37,7 @@ import UI.Input qualified as Input
 import UI.Render
 import UI.Resource qualified as Resource
 import UI.Responder
-import UI.Sidebar (Sidebar)
+import UI.Widgets.Sidebar (Sidebar)
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 
@@ -90,7 +90,7 @@ insertReadout p i m = case i ^. #summary % at p of
   _ -> m
 
 instance Responder (Hud p) where
-  onSend inp s = case inp of
+  onSend inp inf s = case inp of
     Input.Left -> Update (s & #position %~ Position.offset (V2 (-1) 0))
     Input.Right -> Update (s & #position %~ Position.offset (V2 1 0))
     Input.Up -> Update (s & #position %~ Position.offset (V2 0 (-1)))

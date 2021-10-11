@@ -7,12 +7,10 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
 
-module UI.Sidebar
+module UI.Widgets.Sidebar
   ( Sidebar (Sidebar),
     render,
   )
@@ -35,13 +33,13 @@ import TextShow (showt)
 import UI.Render
 
 newtype Sidebar = Sidebar
-  { info :: Info
+  { sidebarInfo :: Info
   }
   deriving (Generic)
   deriving (Semigroup) via GenericSemigroup Sidebar
   deriving (Monoid) via GenericMonoid Sidebar
 
-makeFieldLabelsWith noPrefixFieldLabels ''Sidebar
+makeFieldLabels ''Sidebar
 
 instance Renderable Sidebar where
   render (Sidebar i) =

@@ -13,9 +13,11 @@ import Data.Typeable
 import Game.Action (GameAction)
 import Graphics.Vty qualified as Vty
 import Optics
+import Game.Info qualified as Game (Info)
 import UI.Input (Input)
 import UI.Input qualified as Input
 import UI.Render (Renderable (..))
+import Game.Info (Info)
 
 -- | 'Responder's take in 'Input' events and turn them
 -- into 'Response's, which the UI then handles as needed.
@@ -51,7 +53,8 @@ class Responder a where
   translate _ _ = Input.None
 
   -- | Handle an 'Input' and turn it into a 'Response'.
-  onSend :: Input -> a -> Response a
+  -- I think this needs to have the most recent 'UI.State' passed in, too.
+  onSend :: Input -> Info -> a -> Response a
 
 -- | Existential constructor that enables the heterogenous nature of the responder chain.
 data SomeResponder = forall x. (Renderable x, Responder x, Typeable x) => SomeResponder x
@@ -62,7 +65,7 @@ instance Renderable SomeResponder where
 
 instance Responder SomeResponder where
   translate e (SomeResponder r) = translate e r
-  onSend i (SomeResponder r) = fmap SomeResponder (onSend i r)
+  onSend inp inf (SomeResponder r) = fmap SomeResponder (onSend inp inf r)
 
 -- | Attempt to access the contents of a 'SomeResponder' as a given type, failing if inapplicable.
 castTo :: forall a. (Renderable a, Responder a, Typeable a) => AffineTraversal' SomeResponder a
