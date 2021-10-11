@@ -3,11 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# OPTIONS_GHC -Wno-overlapping-patterns #-}
 
 module UI.App (app) where
 
@@ -34,12 +30,11 @@ import UI.Widgets.Modeline qualified as Modeline
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = s ^. #responders % Responder.first % to renderMany
 
-event :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
-event s evt = case evt of
+handleEvent :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
+handleEvent s evt = case evt of
   Brick.VtyEvent vty -> do
     let first = s ^. #responders % Responder.first
     let inp = Responder.translate vty first
-
     let go act = case act of
           Responder.Nil ->
             Brick.continue s
@@ -80,7 +75,7 @@ app =
   Brick.App
     { Brick.appDraw = draw,
       Brick.appChooseCursor = Brick.showFirstCursor,
-      Brick.appHandleEvent = event,
+      Brick.appHandleEvent = handleEvent,
       Brick.appAttrMap = const (Brick.AttrMap.attrMap Vty.defAttr []),
       Brick.appStartEvent = \s -> do
         liftIO

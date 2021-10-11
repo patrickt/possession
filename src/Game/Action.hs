@@ -6,6 +6,8 @@
 module Game.Action
   ( Action (..),
     Dest (..),
+    GameAction,
+    UIAction,
   )
 where
 
@@ -29,3 +31,6 @@ data Action (dest :: Dest) where
   Redraw :: Canvas -> Action 'UI
   Update :: Info -> Action 'UI
   Notify :: Message -> Action 'UI
+
+type GameAction = Action 'Game
+type UIAction = Action 'UI

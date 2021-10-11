@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE RankNTypes #-}
@@ -36,15 +34,20 @@ instance IsList Chain where
   fromList = Chain . fromList
   toList = toList . unChain
 
+-- | Add a new element.
 push :: SomeResponder -> Chain -> Chain
 push = coerce (NonEmpty.cons @SomeResponder)
 
+-- | Pop an element. No-op if there is only one item on the chain.
 pop :: Chain -> Chain
 pop (Chain (_ :| (y : z))) = Chain (y :| z)
 pop x = x
 
+-- | Given a function on some type implementing 'Responder', walk down the chain
+-- and try to apply it, using dynamic casting.
 propagate :: forall a. (Renderable a, Responder a, Typeable a) => (a -> a) -> Chain -> Chain
-propagate fn (Chain xs) = runST $ do
+propagate fn (Chain xs) = runST do
+  -- I could perhaps write this with callCC but it sounds even harder.
   found <- newSTRef False
   new <- for xs \x -> do
     present <- readSTRef found
@@ -55,11 +58,7 @@ propagate fn (Chain xs) = runST $ do
         Nothing -> pure x
   pure (Chain new)
 
-castTo :: forall a. (Renderable a, Responder a, Typeable a) => AffineTraversal' SomeResponder a
-castTo = atraversal go (const SomeResponder)
-  where
-    go s@(SomeResponder r) = maybe (Left s) Right (cast r)
-
+-- | Access the first element of the responder chain.
 first :: Lens' Chain SomeResponder
 first = lens g s
   where

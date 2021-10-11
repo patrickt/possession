@@ -17,6 +17,23 @@ common shared
   build-depends:    base
                   , vector
   default-language: Haskell2010
+  default-extensions:
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      GADTSyntax
+      GeneralizedNewtypeDeriving
+      ImportQualifiedPost
+      KindSignatures
+      MultiParamTypeClasses
+      OverloadedLabels
+      RankNTypes
+      ScopedTypeVariables
+      TypeApplications
   ghc-options:      -Wall
 
 library
@@ -95,6 +112,7 @@ library
     , indexed-traversable-instances
     , linear
     , mwc-random
+    , motor
     , random
     , optics
     , optics-th

@@ -1,14 +1,9 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module UI.State
   ( State (State),
@@ -28,13 +23,13 @@ import UI.Responder.Chain qualified as Responder
 import Prelude hiding (Either (..))
 
 data State = State
-  { responders :: Responder.Chain,
-    brokerage :: Brokerage,
-    gameThread :: ThreadId
+  { stateResponders :: Responder.Chain,
+    stateBrokerage :: Brokerage,
+    stateGameThread :: ThreadId
   }
   deriving (Generic)
 
-makeFieldLabelsWith noPrefixFieldLabels ''State
+makeFieldLabels ''State
 
 firstResponder :: Lens' State Responder.SomeResponder
 firstResponder = typed % Responder.first

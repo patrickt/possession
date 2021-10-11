@@ -1,22 +1,14 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 -- An effect that provides bidirectional communication between the
 -- game and its Brick UI. Brick itself reads @Action 'UI@ values from
 -- a BChan and then invokes the event loop itself; we have to do a
 -- little more work, but it works on the same principle.
---
--- TODO: should the game channel be a chan rather than an mvar?
 module Control.Effect.Broker
   ( Broker,
     BrickQueue,
@@ -48,11 +40,11 @@ type BrickQueue = BChan (Action 'UI)
 type GameQueue = TBQueue (Action 'Game)
 
 data Brokerage = Brokerage
-  { brickQueue :: BrickQueue,
-    gameQueue :: GameQueue
+  { _brokerageBrickQueue :: BrickQueue,
+    _brokarageGameQueue :: GameQueue
   }
 
-makeFieldLabelsWith noPrefixFieldLabels ''Brokerage
+makeFieldLabels ''Brokerage
 
 data Broker (m :: Type -> Type) k where
   Push :: Action 'Game -> Broker m ()

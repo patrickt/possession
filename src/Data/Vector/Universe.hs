@@ -1,16 +1,8 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Vector.Universe
   ( Univ (..),
     shiftRight,
@@ -45,8 +37,8 @@ newtype Univ a = Univ (Zipper (Zipper a))
 instance Show a => Show (Univ a) where
   show (Univ Z.Zipper {..}) = " " <> showLines before <> showCenterLine focus <> showLines after
     where
-      showLines l = foldl' (\str z -> str <> "\n" <> show z) "" l
-      showCenterLine = \x -> "\n(" <> show x <> ")\n "
+      showLines = foldl' (\str z -> str <> "\n" <> show z) ""
+      showCenterLine x = "\n(" <> show x <> ")\n "
 
 instance Comonad Univ where
   extract (Univ u) = extract (extract u)

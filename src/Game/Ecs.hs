@@ -1,13 +1,8 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 -- | Provides the high-level constructs associated with the
 -- game thread. Receives 'Action' values from the UI and sends
@@ -99,9 +94,8 @@ setup = do
 
   map' <- liftIO Dungeon.makeDungeon
   iforM_ map' $ \pos cell ->
-    if cell == Dungeon.On
-      then void (Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall"))
-      else pure ()
+    when (cell == Dungeon.On) . void $
+      Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall")
 
   playerStart <- findUnoccupied
   let play = Player.initial & #position .~ playerStart
@@ -112,13 +106,7 @@ setup = do
 
   -- Fill in some enemies
   let mkEnemy e = do
-        -- This function could be pulled out into
-        -- findUnoccupied :: m Position
-        pos <- fix $ \f -> do
-          pos <- Position.randomIn 1 10
-          occ <- occupied pos
-          if occ then f else pure pos
-
+        pos <- findUnoccupied
         Apecs.newEntity (e ^. tupled, HP 5 5, pos)
 
   ask @(Vector Enemy.Enemy) >>= Vector.mapM_ mkEnemy
