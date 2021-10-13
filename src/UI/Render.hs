@@ -21,13 +21,11 @@ import TextShow
 import UI.Resource
 
 class Renderable a where
-  render :: a -> Brick.Widget Resource
+  render :: a -> [Brick.Widget Resource] -> [Brick.Widget Resource]
 
-  renderMany :: a -> [Brick.Widget Resource]
-  renderMany = pure . render
 
 instance Renderable Message where
-  render m =
+  render m stack =
     let attr = case m ^. #urgency % coerced of
           Info -> ""
           Warning -> "yellow"
@@ -35,14 +33,19 @@ instance Renderable Message where
         toAppend = case m ^. #times of
           1 -> ""
           n -> " (" <> showt (getSum n) <> "x)"
-     in markup (((m ^. #contents % coerced) @? attr) <> Markup.fromText toAppend)
+        final = markup (((m ^. #contents % coerced) @? attr) <> Markup.fromText toAppend)
+     in final : stack
 
 instance Renderable Game.Canvas where
-  render canv =
+  render canv stack =
     let allLines = scanline canv <$> [0 .. Canvas.size]
-     in Brick.viewport UI.Resource.Canvas Brick.Both
-          . Brick.raw
-          $ Vty.vertCat allLines
+        final =
+          Brick.viewport UI.Resource.Canvas Brick.Both
+            . Brick.raw
+            $ Vty.vertCat allLines
+     in final : stack
+
+
 
 drawSprite :: Canvas.Sprite -> Vty.Image
 drawSprite (Canvas.Sprite (Glyph chr) color) = Vty.char attr chr

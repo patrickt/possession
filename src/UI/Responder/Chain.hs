@@ -29,6 +29,9 @@ import GHC.Exts
 
 newtype Chain = Chain { unChain :: NonEmpty SomeResponder }
 
+instance Renderable Chain where
+  render (Chain c) stack = foldr render stack c
+
 instance IsList Chain where
   type Item Chain = SomeResponder
   fromList = Chain . fromList

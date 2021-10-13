@@ -28,7 +28,7 @@ import Data.List.Pointed qualified as Pointed
 import Data.String
 import Game.Action (Action (SaveState, LoadState))
 import GHC.Generics (Generic)
-import GHC.Exts (fromList, toList)
+import GHC.Exts (fromList, toList, the)
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Input qualified as Input
@@ -46,10 +46,11 @@ data Choice
   deriving (Eq, Ord, Show, Enum)
 
 instance Renderable Choice where
-  render =
-    Brick.txt . \case
-      NewGame -> "New Game"
-      x -> fromString (show x)
+  render x _ =
+    [ Brick.txt $ case x of
+        NewGame -> "New Game"
+        _ -> fromString (show x)
+    ]
 
 newtype MainMenu = MainMenu
   { choices :: PointedList Choice
@@ -92,7 +93,8 @@ render' :: Bool -> Choice -> Brick.Widget Resource.Resource
 render' isOn =
   Brick.hCenter
     . (if isOn then Brick.border else id)
-    . render
+    . head
+    . flip render []
 
 form :: MainMenu -> Form.Form MainMenu e Resource.Resource
 form = Form.newForm [theList]
@@ -105,4 +107,4 @@ form = Form.newForm [theList]
         8
         Resource.MainMenu
 
-instance Renderable MainMenu where render = Form.renderForm . form
+instance Renderable MainMenu where render s stack = Form.renderForm (form s) : stack

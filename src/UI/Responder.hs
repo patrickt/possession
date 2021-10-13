@@ -13,7 +13,6 @@ import Data.Typeable
 import Game.Action (GameAction)
 import Graphics.Vty qualified as Vty
 import Optics
-import Game.Info qualified as Game (Info)
 import UI.Input (Input)
 import UI.Input qualified as Input
 import UI.Render (Renderable (..))
@@ -61,7 +60,6 @@ data SomeResponder = forall x. (Renderable x, Responder x, Typeable x) => SomeRe
 
 instance Renderable SomeResponder where
   render (SomeResponder x) = render x
-  renderMany (SomeResponder x) = renderMany x
 
 instance Responder SomeResponder where
   translate e (SomeResponder r) = translate e r

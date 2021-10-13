@@ -4,6 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module UI.Widgets.Toplevel
   ( Toplevel (Toplevel),
@@ -68,12 +69,13 @@ instance Responder Toplevel where
           _ -> Nil
 
 instance Renderable Toplevel where
-  render s =
-    Attributes.withStandard . Brick.border . Brick.vBox $
-      [ Brick.hBox
-          [ Brick.hLimit 25 . Brick.border . render . view #sidebar $ s,
-            Brick.border . Brick.padBottom Brick.Max . render . view #canvas $ s
-          ],
-        Brick.hBorder,
-        render . view #modeline $ s
-      ]
+  render Toplevel{..} =
+    render modeline . render sidebar . render canvas
+
+      -- [ Brick.hBox
+      --     [ Brick.hLimit 25 . Brick.border . render . view #sidebar $ s,
+      --       Brick.border . Brick.padBottom Brick.Max . render . view #canvas $ s
+      --     ],
+      --   Brick.hBorder,
+      --   render [] . view #modeline $ s
+      -- ]) : stack

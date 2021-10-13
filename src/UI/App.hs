@@ -27,7 +27,7 @@ import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Toplevel (Toplevel)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
-draw s = s ^. #responders % Responder.first % to renderMany
+draw s = render (s ^. #responders) []
 
 handleEvent :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 handleEvent s evt = case evt of

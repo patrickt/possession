@@ -42,16 +42,17 @@ newtype Sidebar = Sidebar
 makeFieldLabels ''Sidebar
 
 instance Renderable Sidebar where
-  render (Sidebar i) =
-    Brick.vBox $
-      fmap
-        Markup.markup
-        [ renderedHP,
-          renderedGold,
-          renderedLevel,
-          renderedXP
-        ]
+  render (Sidebar i) stack = boxed : stack
     where
+      boxed = Brick.vBox $
+        fmap
+          Markup.markup
+          [ renderedHP,
+            renderedGold,
+            renderedLevel,
+            renderedXP
+          ]
+
       renderedHP = case i ^. #hitpoints % coerced of
         Nothing -> boldhp <> "- / -"
         Just (HP curr max') -> boldhp <> (showt curr @? "green") <> " / " <> (showt max' @? "green")

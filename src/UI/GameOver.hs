@@ -20,4 +20,4 @@ instance Responder GameOver where
   onSend _ _ _ = Nil
 
 instance Renderable GameOver where
-  render _ = Brick.center (Brick.txt "You have died. Press Enter to return to the main menu.")
+  render _ stack = Brick.center (Brick.txt "You have died. Press Enter to return to the main menu.") : stack

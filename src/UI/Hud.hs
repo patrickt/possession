@@ -56,33 +56,33 @@ instance
   ) =>
   Renderable (Hud p)
   where
-  render _ = Brick.txt "error: needs renderMany"
-  renderMany s =
-    [ Attributes.withStandard . Brick.border . Brick.vBox $
-        [ Brick.hBox
-            [ Brick.hLimit 25
-                . Brick.border
-                . render @Sidebar
-                . getField @"sidebar"
-                . parent
-                $ s,
-              Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . Canvas.clamp))
-                . Brick.border
-                . Brick.padBottom Brick.Max
-                . Brick.reportExtent Resource.Canvas
-                . render @Canvas
-                . getField @"canvas"
-                . parent
-                $ s
-            ],
-          Brick.hBorder,
-          render @Modeline
-            . insertReadout (s ^. #position) (s & parent & getField @"sidebar" & view #info)
-            . getField @"modeline"
-            . parent
-            $ s
-        ]
-    ]
+  render = error "not implemented"
+  -- render stack s =
+  --   [ Attributes.withStandard . Brick.border . Brick.vBox $
+  --       [ Brick.hBox
+  --           [ Brick.hLimit 25
+  --               . Brick.border
+  --               . render @Sidebar
+  --               . getField @"sidebar"
+  --               . parent
+  --               $ s,
+  --             Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . Canvas.clamp))
+  --               . Brick.border
+  --               . Brick.padBottom Brick.Max
+  --               . Brick.reportExtent Resource.Canvas
+  --               . render @Canvas
+  --               . getField @"canvas"
+  --               . parent
+  --               $ s
+  --           ],
+  --         Brick.hBorder,
+  --         render @Modeline
+  --           . insertReadout (s ^. #position) (s & parent & getField @"sidebar" & view #info)
+  --           . getField @"modeline"
+  --           . parent
+  --           $ s
+  --       ] <> stack
+  --   ]
 
 insertReadout :: Position -> Info -> Modeline -> Modeline
 insertReadout p i m = case i ^. #summary % at p of
