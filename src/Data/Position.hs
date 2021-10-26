@@ -44,6 +44,7 @@ instance Field2 Position Position Int Int where
 
 pattern Pos :: Int -> Int -> Position
 pattern Pos a b = Position (V2 a b)
+{-# COMPLETE Pos #-}
 
 brickLocation :: Position -> Brick.Location
 brickLocation (Position (V2 a b)) = Brick.Location (a + 1, b + 1)

@@ -57,8 +57,7 @@ handleVty s vty =
           next (#renderStack % Responder.first .~ a)
         Responder.Broadcast it -> do
           liftIO
-            . Broker.runBroker (s ^. #brokerage)
-            . Broker.pushAction
+            . Broker.enqueueGameAction (s ^. #brokerage)
             $ it
           next id
         Responder.Terminate -> do
@@ -96,9 +95,6 @@ app =
       Brick.appHandleEvent = handleEvent,
       Brick.appAttrMap = const (Brick.AttrMap.attrMap Vty.defAttr []),
       Brick.appStartEvent = \s -> do
-        liftIO
-          . Broker.runBroker (s ^. #brokerage)
-          . Broker.pushAction
-          $ Action.Start
+        liftIO $ Broker.enqueueGameAction (s ^. #brokerage) Action.Start
         pure s
     }

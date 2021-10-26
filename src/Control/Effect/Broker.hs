@@ -17,6 +17,7 @@ module Control.Effect.Broker
     runBroker,
     notify,
     Brokerage (Brokerage),
+    enqueueGameAction,
   )
 where
 
@@ -37,6 +38,9 @@ data Brokerage = Brokerage
   { _brokerageBrickQueue :: BChan (Action 'UI),
     _brokerageGameQueue :: TBQueue (Action 'Game)
   }
+
+enqueueGameAction :: Brokerage -> Action 'Game -> IO ()
+enqueueGameAction (Brokerage _ q) act = atomically (writeTBQueue q act)
 
 makeFieldLabels ''Brokerage
 

@@ -119,9 +119,9 @@ findUnoccupied = do
 
 -- | Renders a canvas from the current system, for passing back to the display thread.
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
-draw = Apecs.cfold (flip go) Canvas.empty
+draw = Apecs.cfold go Canvas.empty
   where
-    go (pos, chr, color) = flip Canvas.update [(pos, Canvas.Sprite chr color)]
+    go c (pos, chr, color) = Canvas.update c (pos, Canvas.Sprite chr color)
 
 -- The main game loop.
 loop ::

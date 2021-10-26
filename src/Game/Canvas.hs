@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- | A UI-agnostic representation of the current state of the
 -- displayable world. Sent over the wire to the UI in a 'Command' to
@@ -13,6 +14,7 @@ module Game.Canvas
     empty,
     update,
     borders,
+    bounds,
     clamp,
     at,
     size,
@@ -20,26 +22,33 @@ module Game.Canvas
   )
 where
 
-import Data.Array (Array, array, (!), (//))
-import Data.Position (Position (..), V2(..))
+import Data.Position (Position (..), V2(..), pattern Pos)
 import Data.Position qualified as Position
 import Game.Sprite
+import Data.IntMap.Strict (IntMap)
+import Data.IntMap qualified as IntMap
 
-newtype Canvas = Canvas (Array Position Sprite)
+newtype Canvas = Canvas (IntMap Sprite)
   deriving newtype (Show)
 
 empty :: Canvas
-empty = Canvas $ array bounds do
+empty = Canvas $ IntMap.fromList do
   x <- [0 .. size]
   y <- [0 .. size]
-  pure (Position.make x y, blankSprite)
+  pure (locate x y, blankSprite)
 
-update :: Canvas -> [(Position, Sprite)] -> Canvas
-update (Canvas arr) assocs = Canvas (arr // assocs)
+update :: Canvas -> (Position, Sprite) -> Canvas
+update (Canvas arr) (pos, spr) = Canvas (IntMap.insert (locatePos pos) spr arr)
 
 -- This calls 'error' when given an invalid position.
 at :: Canvas -> Position -> Sprite
-at (Canvas canv) = (canv !)
+at (Canvas canv) pos = canv IntMap.! locatePos pos
+
+locate :: Int -> Int -> Int
+locate x y = (x * size) + y
+
+locatePos :: Position -> Int
+locatePos (Pos x y) = (x * size) + y
 
 size :: Int
 size = 60
