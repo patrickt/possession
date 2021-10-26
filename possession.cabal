@@ -34,7 +34,10 @@ common shared
       OverloadedLabels
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
+      PatternSynonyms
       TypeApplications
+      TypeSynonymInstances
   ghc-options:      -Wall
 
 library

@@ -45,4 +45,4 @@ instance Tupled Player Impl where
   tupled = iso (^?! _Ctor @"Player") (_Ctor @"Player" #)
 
 initial :: Player
-initial = tupled # (Position 3, Glyph '@', White, HP 100 100, 0 :: Amount, XP 0 100)
+initial = tupled # (3, Glyph '@', White, HP 100 100, 0 :: Amount, XP 0 100)

@@ -42,9 +42,9 @@ insertReadout p i m = case i ^. #summary % at p of
 
 instance Responder Hud where
   onSend inp _inf s = case inp of
-    Input.Left -> Update (s & #position %~ Position.offset (V2 (-1) 0))
-    Input.Right -> Update (s & #position %~ Position.offset (V2 1 0))
-    Input.Up -> Update (s & #position %~ Position.offset (V2 0 (-1)))
-    Input.Down -> Update (s & #position %~ Position.offset (V2 0 1))
+    Input.Left -> Update (s & #position %~ Position.offset (-1) 0)
+    Input.Right -> Update (s & #position %~ Position.offset 1 0)
+    Input.Up -> Update (s & #position %~ Position.offset 0 (-1))
+    Input.Down -> Update (s & #position %~ Position.offset 0 1)
     Input.Quit -> Pop
     _ -> Nil

@@ -22,7 +22,7 @@ module Game.Canvas
   )
 where
 
-import Data.Position (Position (..), V2(..), pattern Pos)
+import Data.Position (Position, pattern (:-))
 import Data.Position qualified as Position
 import Game.Sprite
 import Data.IntMap.Strict (IntMap)
@@ -48,16 +48,16 @@ locate :: Int -> Int -> Int
 locate x y = (x * size) + y
 
 locatePos :: Position -> Int
-locatePos (Pos x y) = (x * size) + y
+locatePos (x :- y) = (x * size) + y
 
 size :: Int
 size = 60
 
 bounds :: (Position, Position)
-bounds = (0 :: Position, Position.make size size)
+bounds = (0 :: Position, fromIntegral size)
 
 clamp :: Position -> Position
-clamp (Position (V2 x y)) = Position (V2 (go x) (go y))
+clamp (x :- y) = go x :- go y
   where
     go n
       | n <= 0 = 0
@@ -67,9 +67,9 @@ clamp (Position (V2 x y)) = Position (V2 (go x) (go y))
 borders :: [Position]
 borders = up <> down <> left <> right
   where
-    up = Position.make <$> horizontal <*> pure 0
-    down = Position.make <$> horizontal <*> pure size
-    left = Position.make 0 <$> vertical
-    right = Position.make size <$> vertical
+    up = Position.V2 <$> horizontal <*> pure 0
+    down = Position.V2 <$> horizontal <*> pure size
+    left = Position.V2 0 <$> vertical
+    right = Position.V2 size <$> vertical
     horizontal = [0 .. size]
     vertical = [1 .. size -1]

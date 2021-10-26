@@ -64,7 +64,7 @@ instance Comonad Univ where
           }
 
 instance FoldableWithIndex P.Position Univ where
-  ifoldMap f (Univ a) = ifoldMap (\x -> ifoldMap (f . P.Pos x)) a
+  ifoldMap f (Univ a) = ifoldMap (\x -> ifoldMap (f . P.V2 x)) a
 
 shiftRight, shiftLeft, shiftUp, shiftDown :: Univ a -> Univ a
 shiftRight (Univ u) = Univ (fmap Z.shiftRight u)
@@ -87,7 +87,7 @@ neighbors u =
     go f = extract . f $ u
 
 generateM :: Monad m => Int -> (P.Position -> m a) -> m (Univ a)
-generateM n f = Univ <$> Z.generateM n (\m -> Z.generateM n (f . P.make m))
+generateM n f = Univ <$> Z.generateM n (\m -> Z.generateM n (f . P.V2 m))
 
 generate :: Int -> (P.Position -> a) -> Univ a
 generate n f = coerce (generateM n (Identity . f))

@@ -13,7 +13,7 @@ module UI.Canvas
 where
 
 import Brick qualified
-import Data.Position qualified as Position
+import Data.Position
 import Game.Canvas qualified
 import Game.Canvas qualified as Game (Canvas)
 import Graphics.Vty qualified as Vty
@@ -47,7 +47,7 @@ instance Renderable Canvas where
 scanline :: Canvas -> Int -> Vty.Image
 scanline (Canvas canv _) idx = Vty.horizCat do
   x <- [0 .. Game.Canvas.size]
-  pure . drawSprite . Game.Canvas.at canv $ Position.make x idx
+  pure . drawSprite . Game.Canvas.at canv $ x :- idx
 
 drawSprite :: Sprite -> Vty.Image
 drawSprite (Sprite (Glyph chr) color) = Vty.char attr chr

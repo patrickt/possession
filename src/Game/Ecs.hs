@@ -36,7 +36,7 @@ import Data.Message qualified as Message
 import Data.Monoid
 import Data.Name (Name)
 import Data.Name qualified as Name
-import Data.Position (Position (..))
+import Data.Position (Position)
 import Data.Position qualified as Position
 import Data.Store qualified as Store
 import Data.Vector (Vector)
@@ -139,7 +139,7 @@ loop = forever do
   case next of
     Move dir -> do
       adjusted <- (if not debug then offsetRandomly else pure) dir
-      prospective <- Position.offset adjusted <$> playerPosition
+      prospective <- (adjusted +) <$> playerPosition
       present <- occupant prospective
       maybe (movePlayer dir) collideWith present
     SaveState -> do
@@ -232,7 +232,7 @@ movePlayer dx = do
   offset <- (if debug then pure else offsetRandomly) dx
 
   player <- use @GameState #player
-  Apecs.modify player \(Position p) -> Position (offset + p)
+  Apecs.modify player (offset +)
 
 currentInfo ::
   ( MonadIO m,
