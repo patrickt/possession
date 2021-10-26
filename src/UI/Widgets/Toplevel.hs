@@ -12,9 +12,7 @@ module UI.Widgets.Toplevel
   )
 where
 
-import Brick qualified
 import Brick.Widgets.Border qualified as Brick
-import Brick.Widgets.Center qualified as Brick
 import Brick.Widgets.Core ((<=>), (<+>))
 import Data.Maybe
 import Data.Monoid
@@ -25,7 +23,6 @@ import Game.Canvas qualified as Canvas
 import Graphics.Vty as Vty
 import Linear (V2 (..))
 import Optics
-import UI.Attributes qualified as Attributes
 import UI.Hud qualified as Hud
 import UI.Input qualified as Input
 import UI.MainMenu qualified as MainMenu
@@ -36,13 +33,13 @@ import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Sidebar (Sidebar)
 
 data Toplevel = Toplevel
-  { canvas :: Canvas,
-    sidebar :: Sidebar,
-    modeline :: Modeline
+  { toplevelCanvas :: Canvas,
+    toplevelSidebar :: Sidebar,
+    toplevelModeline :: Modeline
   }
   deriving stock (Generic)
 
-makeFieldLabelsWith noPrefixFieldLabels ''Toplevel
+makeFieldLabels ''Toplevel
 
 initial :: Toplevel
 initial =
@@ -67,9 +64,9 @@ instance Responder Toplevel where
           Input.Up -> up
           Input.Quit -> Terminate
           Input.Menu -> Push (SomeResponder MainMenu.inGame)
-          Input.Look -> Push (SomeResponder (Hud.Hud (inf ^. #position % coerced % non 0) s))
+          Input.Look -> Push (SomeResponder (Hud.Hud (inf ^. #position % coerced % non 0)))
           _ -> Nil
 
 instance Renderable Toplevel where
-  render Toplevel{..} stack =
+  render (Toplevel canvas sidebar modeline) stack =
     renderOne sidebar <+> Brick.vBorder <+> (renderOne canvas <=> renderOne modeline) : stack

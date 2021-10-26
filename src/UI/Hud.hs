@@ -1,17 +1,7 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
@@ -41,56 +31,27 @@ import UI.Widgets.Sidebar (Sidebar)
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 
-data Hud p = Hud
-  { position :: Position,
-    parent :: p
+newtype Hud = Hud
+  { hudPosition :: Position
   }
 
-makeFieldLabelsWith noPrefixFieldLabels ''Hud
+makeFieldLabels ''Hud
 
-instance
-  forall p.
-  ( HasField "canvas" p Canvas,
-    HasField "sidebar" p Sidebar,
-    HasField "modeline" p Modeline
-  ) =>
-  Renderable (Hud p)
+instance Renderable Hud
   where
-  render = error "not implemented"
-  -- render stack s =
-  --   [ Attributes.withStandard . Brick.border . Brick.vBox $
-  --       [ Brick.hBox
-  --           [ Brick.hLimit 25
-  --               . Brick.border
-  --               . render @Sidebar
-  --               . getField @"sidebar"
-  --               . parent
-  --               $ s,
-  --             Brick.showCursor Resource.Look (s ^. #position % to (Position.brickLocation . Canvas.clamp))
-  --               . Brick.border
-  --               . Brick.padBottom Brick.Max
-  --               . Brick.reportExtent Resource.Canvas
-  --               . render @Canvas
-  --               . getField @"canvas"
-  --               . parent
-  --               $ s
-  --           ],
-  --         Brick.hBorder,
-  --         render @Modeline
-  --           . insertReadout (s ^. #position) (s & parent & getField @"sidebar" & view #info)
-  --           . getField @"modeline"
-  --           . parent
-  --           $ s
-  --       ] <> stack
-  --   ]
+  render s stack = do
+    let loc = s ^. #position % to (Position.brickLocation . Canvas.clamp)
+    stack & _head %~ Brick.showCursor Resource.Look loc
+
+
 
 insertReadout :: Position -> Info -> Modeline -> Modeline
 insertReadout p i m = case i ^. #summary % at p of
   Just n -> m & Modeline.update (Message.youSee n)
   _ -> m
 
-instance Responder (Hud p) where
-  onSend inp inf s = case inp of
+instance Responder Hud where
+  onSend inp _inf s = case inp of
     Input.Left -> Update (s & #position %~ Position.offset (V2 (-1) 0))
     Input.Right -> Update (s & #position %~ Position.offset (V2 1 0))
     Input.Up -> Update (s & #position %~ Position.offset (V2 0 (-1)))
