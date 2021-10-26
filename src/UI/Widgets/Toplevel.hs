@@ -18,8 +18,8 @@ import Data.Maybe
 import Data.Monoid
 import GHC.Generics (Generic)
 import Game.Action qualified as Action
-import Game.Canvas (Canvas)
-import Game.Canvas qualified as Canvas
+import UI.Canvas (Canvas)
+import UI.Canvas qualified as Canvas
 import Graphics.Vty as Vty
 import Linear (V2 (..))
 import Optics
@@ -43,7 +43,7 @@ makeFieldLabels ''Toplevel
 
 initial :: Toplevel
 initial =
-  Toplevel Canvas.empty mempty Modeline.initial
+  Toplevel Canvas.initial mempty Modeline.initial
 
 instance Responder Toplevel where
   translate (Vty.EvKey k mods) _ = case k of

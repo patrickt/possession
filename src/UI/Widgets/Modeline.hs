@@ -25,13 +25,10 @@ where
 import Brick qualified
 import Brick.Widgets.List qualified as Brick
 import Brick.Widgets.Center qualified as Brick
-import Data.Color (Color)
-import Data.Foldable (toList)
 import Data.Message
 import Data.Monoid.Generic
 import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
-import Data.Text (Text)
 import GHC.Generics (Generic)
 import Optics
 import UI.Render

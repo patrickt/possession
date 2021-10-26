@@ -11,23 +11,15 @@ module UI.Hud
   )
 where
 
-import Brick qualified
-import Brick.Widgets.Border qualified as Brick
 import Data.Message qualified as Message
 import Data.Position (Position)
 import Data.Position qualified as Position
-import GHC.Records
-import Game.Canvas (Canvas)
-import Game.Canvas qualified as Canvas
 import Game.Info (Info)
 import Linear (V2 (..))
 import Optics
-import UI.Attributes qualified as Attributes
 import UI.Input qualified as Input
 import UI.Render
-import UI.Resource qualified as Resource
 import UI.Responder
-import UI.Widgets.Sidebar (Sidebar)
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 
@@ -39,9 +31,7 @@ makeFieldLabels ''Hud
 
 instance Renderable Hud
   where
-  render s stack = do
-    let loc = s ^. #position % to (Position.brickLocation . Canvas.clamp)
-    stack & _head %~ Brick.showCursor Resource.Look loc
+  render _ stack = stack
 
 
 

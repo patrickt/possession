@@ -7,13 +7,9 @@ module UI.Render (Renderable (..), renderOne, colorToVty, withForeground) where
 import Brick qualified
 import Brick.Markup
 import Data.Color qualified as Color
-import Data.Glyph
 import Data.Message
-import Data.Position qualified as Position
 import Data.Semigroup
 import Data.Text.Markup qualified as Markup
-import Game.Canvas qualified as Canvas
-import Game.Canvas qualified as Game (Canvas)
 import Graphics.Vty qualified as Vty
 import Graphics.Vty.Attributes qualified as Attr
 import Optics
@@ -37,27 +33,6 @@ instance Renderable Message where
           n -> " (" <> showt (getSum n) <> "x)"
         final = markup (((m ^. #contents % coerced) @? attr) <> Markup.fromText toAppend)
      in final : stack
-
-instance Renderable Game.Canvas where
-  render canv stack =
-    let allLines = scanline canv <$> [0 .. Canvas.size]
-        final =
-          Brick.viewport UI.Resource.Canvas Brick.Both
-            . Brick.raw
-            $ Vty.vertCat allLines
-     in final : stack
-
-
-
-drawSprite :: Canvas.Sprite -> Vty.Image
-drawSprite (Canvas.Sprite (Glyph chr) color) = Vty.char attr chr
-  where
-    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (colorToVty color)}
-
-scanline :: Game.Canvas -> Int -> Vty.Image
-scanline canv idx = Vty.horizCat do
-  x <- [0 .. Canvas.size]
-  pure . drawSprite . Canvas.at canv $ Position.make x idx
 
 withForeground :: Color.Color -> Brick.Widget a -> Brick.Widget a
 withForeground color = Brick.modifyDefAttr attr

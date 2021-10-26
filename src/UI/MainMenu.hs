@@ -28,7 +28,7 @@ import Data.List.Pointed qualified as Pointed
 import Data.String
 import Game.Action (Action (SaveState, LoadState))
 import GHC.Generics (Generic)
-import GHC.Exts (fromList, toList, the)
+import GHC.Exts (fromList, toList)
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Input qualified as Input

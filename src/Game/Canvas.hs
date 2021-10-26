@@ -25,6 +25,22 @@ import Data.Position (Position (..), V2(..))
 import Data.Position qualified as Position
 import Game.Sprite
 
+newtype Canvas = Canvas (Array Position Sprite)
+  deriving newtype (Show)
+
+empty :: Canvas
+empty = Canvas $ array bounds do
+  x <- [0 .. size]
+  y <- [0 .. size]
+  pure (Position.make x y, blankSprite)
+
+update :: Canvas -> [(Position, Sprite)] -> Canvas
+update (Canvas arr) assocs = Canvas (arr // assocs)
+
+-- This calls 'error' when given an invalid position.
+at :: Canvas -> Position -> Sprite
+at (Canvas canv) = (canv !)
+
 size :: Int
 size = 60
 
@@ -48,19 +64,3 @@ borders = up <> down <> left <> right
     right = Position.make size <$> vertical
     horizontal = [0 .. size]
     vertical = [1 .. size -1]
-
-newtype Canvas = Canvas (Array Position Sprite)
-  deriving newtype (Show)
-
-empty :: Canvas
-empty = Canvas $ array bounds do
-  x <- [0 .. size]
-  y <- [0 .. size]
-  pure (Position.make x y, blankSprite)
-
-update :: Canvas -> [(Position, Sprite)] -> Canvas
-update (Canvas arr) assocs = Canvas (arr // assocs)
-
--- This calls 'error' when given an invalid position.
-at :: Canvas -> Position -> Sprite
-at (Canvas canv) = (canv !)
