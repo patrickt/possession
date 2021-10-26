@@ -14,6 +14,8 @@ where
 
 import Brick qualified
 import Brick.Widgets.Border qualified as Brick
+import Brick.Widgets.Center qualified as Brick
+import Brick.Widgets.Core ((<=>), (<+>))
 import Data.Maybe
 import Data.Monoid
 import GHC.Generics (Generic)
@@ -69,13 +71,5 @@ instance Responder Toplevel where
           _ -> Nil
 
 instance Renderable Toplevel where
-  render Toplevel{..} =
-    render modeline . render sidebar . render canvas
-
-      -- [ Brick.hBox
-      --     [ Brick.hLimit 25 . Brick.border . render . view #sidebar $ s,
-      --       Brick.border . Brick.padBottom Brick.Max . render . view #canvas $ s
-      --     ],
-      --   Brick.hBorder,
-      --   render [] . view #modeline $ s
-      -- ]) : stack
+  render Toplevel{..} stack =
+    renderOne sidebar <+> Brick.vBorder <+> (renderOne canvas <=> renderOne modeline) : stack

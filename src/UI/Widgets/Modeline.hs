@@ -24,6 +24,7 @@ where
 
 import Brick qualified
 import Brick.Widgets.List qualified as Brick
+import Brick.Widgets.Center qualified as Brick
 import Data.Color (Color)
 import Data.Foldable (toList)
 import Data.Message
@@ -54,7 +55,8 @@ update m (Modeline msgs) = Modeline (msgs |> m)
 instance Renderable Modeline where
   render (Modeline msgs) stack =
     let readout =
-          Brick.renderList (const (head . flip (render @Message) [])) False
+          Brick.hCenter
+          . Brick.renderList (const (head . flip (render @Message) [])) False
           -- TODO: move this viewport appropriately rather than gyrating with drop
           $
             Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1

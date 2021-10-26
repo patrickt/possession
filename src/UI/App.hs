@@ -8,6 +8,7 @@
 module UI.App (app) where
 
 import Brick qualified
+import Brick.Widgets.Center qualified as Brick
 import Brick.AttrMap qualified
 import Control.Concurrent (killThread)
 import Control.Effect.Broker qualified as Broker
@@ -27,7 +28,7 @@ import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Toplevel (Toplevel)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
-draw s = render (s ^. #responders) []
+draw s = render (s ^. #responders) $ []
 
 handleEvent :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
 handleEvent s evt = case evt of
