@@ -26,7 +26,7 @@ import Prelude hiding (Either (..))
 
 data State = State
   { stateLatestInfo :: Game.Info,
-    stateResponders :: Responder.Chain,
+    stateRenderStack :: Responder.Chain,
     stateBrokerage :: Brokerage,
     stateGameThread :: ThreadId
   }

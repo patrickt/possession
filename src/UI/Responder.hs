@@ -11,12 +11,12 @@ where
 import Data.Maybe (fromMaybe)
 import Data.Typeable
 import Game.Action (GameAction)
+import Game.Info (Info)
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Input (Input)
 import UI.Input qualified as Input
 import UI.Render (Renderable (..))
-import Game.Info (Info)
 
 -- | 'Responder's take in 'Input' events and turn them
 -- into 'Response's, which the UI then handles as needed.

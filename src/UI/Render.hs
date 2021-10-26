@@ -2,7 +2,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module UI.Render (Renderable (..), renderOne, colorToVty, withForeground) where
+module UI.Render (Renderable (..), renderThe, colorToVty, withForeground) where
 
 import Brick qualified
 import Brick.Markup
@@ -19,8 +19,8 @@ import UI.Resource
 class Renderable a where
   render :: a -> [Brick.Widget Resource] -> [Brick.Widget Resource]
 
-renderOne :: Renderable a => a -> Brick.Widget Resource
-renderOne a = head (render a [])
+renderThe :: Renderable a => a -> Brick.Widget Resource
+renderThe a = head (render a [])
 
 instance Renderable Message where
   render m stack =

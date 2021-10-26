@@ -69,4 +69,4 @@ instance Responder Toplevel where
 
 instance Renderable Toplevel where
   render (Toplevel canvas sidebar modeline) stack =
-    renderOne sidebar <+> Brick.vBorder <+> (renderOne canvas <=> renderOne modeline) : stack
+    renderThe sidebar <+> Brick.vBorder <+> (renderThe canvas <=> renderThe modeline) : stack

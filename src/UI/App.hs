@@ -9,7 +9,6 @@ module UI.App (app) where
 
 import Brick qualified
 import Brick.AttrMap qualified
-import Brick.Widgets.Center qualified as Brick
 import Control.Concurrent (killThread)
 import Control.Effect.Broker qualified as Broker
 import Control.Monad.IO.Class
@@ -31,54 +30,63 @@ import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Toplevel (Toplevel)
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
-draw s = render (s ^. #responders) []
+draw s = render (s ^. #renderStack) []
 
-handleEvent :: UI.State -> Brick.BrickEvent UI.Resource (Action 'UI) -> Brick.EventM UI.Resource (Brick.Next UI.State)
+handleEvent ::
+  UI.State ->
+  Brick.BrickEvent UI.Resource (Action 'UI) ->
+  Brick.EventM UI.Resource (Brick.Next UI.State)
 handleEvent s evt = case evt of
-  Brick.VtyEvent vty -> do
-    let first = s ^. #responders % Responder.first
-    let inp = Responder.translate vty first
-    let go act = case act of
-          Responder.Nil ->
-            Brick.continue s
-          a `Responder.Then` b -> go a *> go b
-          Responder.Push r ->
-            Brick.continue (s & #responders %~ Responder.push r)
-          Responder.Pop -> do
-            Brick.continue (s & #responders %~ Responder.pop)
-          Responder.Update a ->
-            Brick.continue (s & #responders % Responder.first .~ a)
-          Responder.Broadcast it -> do
-            liftIO
-              . Broker.runBroker (s ^. #brokerage)
-              . Broker.pushAction
-              $ it
-            Brick.continue s
-          Responder.Terminate -> do
-            liftIO . killThread . view #gameThread $ s
-            Brick.halt s
-
-    go (Responder.onSend inp (s ^. #latestInfo) first)
-  Brick.AppEvent cmd -> Brick.continue $ case cmd of
-    Action.Start -> s
-    Action.Redraw canv ->
-      propagate @Toplevel (#canvas %~ Canvas.update canv) s
-    Action.Update info ->
-      -- TODO: I don't like this double-info thing; can we make the sidebar not store it?
-      -- Yes, I think we can, since we pass in the info in onSend now.
-      s & #latestInfo .~ info
-        & propagate @Toplevel (#sidebar % #info .~ info)
-    Action.Notify msg -> do
-      let lastMessage = State.firstResponder % castTo @Toplevel % #modeline % #messages % _last
-      let previous = s ^? lastMessage % #contents
-      let shouldCoalesce = previous == Just (msg ^. #contents)
-      case (previous, shouldCoalesce) of
-        (Just _, True) -> s & lastMessage % #times %~ (+ 1)
-        _ -> propagate @Toplevel (#modeline %~ Modeline.update msg) s
+  Brick.VtyEvent vty -> handleVty s vty
+  Brick.AppEvent cmd -> handleApp s cmd
   _ -> Brick.continue s
 
+handleVty :: UI.State -> Vty.Event -> Brick.EventM UI.Resource (Brick.Next UI.State)
+handleVty s vty =
+  let first = s ^. #renderStack % Responder.first
+      inp = Responder.translate vty first
+      next fn = Brick.continue (fn s)
+      go act = case act of
+        Responder.Nil -> next id
+        a `Responder.Then` b -> go a *> go b
+        Responder.Push r ->
+          next (#renderStack %~ Responder.push r)
+        Responder.Pop -> do
+          next (#renderStack %~ Responder.pop)
+        Responder.Update a ->
+          next (#renderStack % Responder.first .~ a)
+        Responder.Broadcast it -> do
+          liftIO
+            . Broker.runBroker (s ^. #brokerage)
+            . Broker.pushAction
+            $ it
+          next id
+        Responder.Terminate -> do
+          liftIO . killThread . view #gameThread $ s
+          Brick.halt s
+   in go (Responder.onSend inp (s ^. #latestInfo) first)
+
+handleApp :: UI.State -> Action dest -> Brick.EventM UI.Resource (Brick.Next UI.State)
+handleApp s cmd = Brick.continue $ case cmd of
+  Action.Start -> s
+  Action.Redraw canv ->
+    propagate @Toplevel (#canvas %~ Canvas.update canv) s
+  Action.Update info ->
+    -- TODO: I don't like this double-info thing; can we make the sidebar not store it?
+    -- Yes, I think we can, since we pass in the info in onSend now.
+    s & #latestInfo .~ info
+      & propagate @Toplevel (#sidebar % #info .~ info)
+  Action.Notify msg -> do
+    let lastMessage = State.firstResponder % castTo @Toplevel % #modeline % #messages % _last
+    let previous = s ^? lastMessage % #contents
+    let shouldCoalesce = previous == Just (msg ^. #contents)
+    case (previous, shouldCoalesce) of
+      (Just _, True) -> s & lastMessage % #times %~ (+ 1)
+      _ -> propagate @Toplevel (#modeline %~ Modeline.update msg) s
+  _ -> s
+
 propagate :: (Renderable a, Responder a, Typeable a) => (a -> a) -> UI.State -> UI.State
-propagate fn s = s & #responders %~ Responder.propagate fn
+propagate fn s = s & #renderStack %~ Responder.propagate fn
 
 app :: Brick.App UI.State (Action 'UI) UI.Resource
 app =
