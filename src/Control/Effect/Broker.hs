@@ -11,8 +11,6 @@
 -- little more work, but it works on the same principle.
 module Control.Effect.Broker
   ( Broker,
-    BrickQueue,
-    GameQueue,
     pushAction,
     popAction,
     sendCommand,
@@ -35,13 +33,9 @@ import Game.Action (Action, Dest (..))
 import Game.Action qualified as Game
 import Optics.TH
 
-type BrickQueue = BChan (Action 'UI)
-
-type GameQueue = TBQueue (Action 'Game)
-
 data Brokerage = Brokerage
-  { _brokerageBrickQueue :: BrickQueue,
-    _brokarageGameQueue :: GameQueue
+  { _brokerageBrickQueue :: BChan (Action 'UI),
+    _brokerageGameQueue :: TBQueue (Action 'Game)
   }
 
 makeFieldLabels ''Brokerage
