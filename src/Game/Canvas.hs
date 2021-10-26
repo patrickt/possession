@@ -37,8 +37,8 @@ empty = Canvas $ IntMap.fromList do
   y <- [0 .. size]
   pure (locate x y, blankSprite)
 
-update :: Canvas -> (Position, Sprite) -> Canvas
-update (Canvas arr) (pos, spr) = Canvas (IntMap.insert (locatePos pos) spr arr)
+update :: Canvas -> Position -> Sprite -> Canvas
+update (Canvas arr) pos spr = Canvas (IntMap.insert (locatePos pos) spr arr)
 
 -- This calls 'error' when given an invalid position.
 at :: Canvas -> Position -> Sprite

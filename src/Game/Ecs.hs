@@ -121,7 +121,7 @@ findUnoccupied = do
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = Apecs.cfold go Canvas.empty
   where
-    go c (pos, chr, color) = Canvas.update c (pos, Canvas.Sprite chr color)
+    go c (pos, chr, color) = Canvas.update c pos (Canvas.Sprite chr color)
 
 -- The main game loop.
 loop ::
