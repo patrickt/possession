@@ -77,8 +77,8 @@ instance Responder MainMenu where
       Input.Confirm -> case s ^. selected of
         NewGame -> Pop
         Quit -> Terminate
-        Save -> Broadcast SaveState `Then` Pop
-        Load -> Broadcast LoadState `Then` Pop
+        Save -> Broadcast SaveState <> Pop
+        Load -> Broadcast LoadState <> Pop
         Resume -> Pop
         _ -> Nil
       _ -> Nil
