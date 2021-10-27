@@ -1,8 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- Instances not provided by Store.
@@ -10,9 +5,9 @@ module Data.Store.Exts
   ( module Data.Store
   ) where
 
-import Data.Store
-import Data.Semigroup
-import Linear
+import Data.Store (Store)
+import Data.Semigroup (Max (..))
+import Linear (V2 (..))
 import Apecs.Util (EntityCounter (..))
 
 deriving newtype instance Store a => Store (Max a)
