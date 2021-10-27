@@ -72,7 +72,6 @@ library
     Game.Sprite
     Game.State
     Game.World
-    Optics.Tupled
     Possession
     System.Random.MWC.Exts
     UI.App

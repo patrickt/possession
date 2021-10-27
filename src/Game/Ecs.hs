@@ -12,54 +12,50 @@ module Game.Ecs (start) where
 import Apecs (Entity)
 import Apecs.Exts qualified as Apecs
 import Control.Carrier.Random.Lifted qualified as Random
-import Control.Carrier.Reader
-import Control.Carrier.State.Strict
-import Control.Carrier.Trace.Ignoring
-import Control.Concurrent
+import Control.Carrier.Reader ( Reader, Has, runReader, ask )
+import Control.Carrier.State.Strict ( State, evalState )
+import Control.Carrier.Trace.Ignoring ( runTrace, trace, Trace )
+import Control.Concurrent ( ThreadId, forkIO )
 import Control.Effect.Broker
+    ( Brokerage, Broker, notify, runBroker )
 import Control.Effect.Broker qualified as Broker
-import Control.Effect.Optics
+import Control.Effect.Optics ( use )
 import Control.Effect.Random (Random)
-import Control.Monad
-import Control.Monad.IO.Class
+import Control.Monad ( guard, when, void, forever )
+import Control.Monad.IO.Class ( MonadIO(..) )
 import Data.Amount (Amount)
-import Data.ByteString qualified as ByteString
 import Data.Color qualified as Color
 import Data.Experience (XP (..))
-import Data.Foldable (for_, traverse_)
+import Data.Foldable (for_)
 import Data.Foldable.WithIndex (iforM_)
-import Data.Function
-import Data.Glyph
-import Data.Hitpoints as HP
+import Data.Function ( (&) )
+import Data.Glyph ( Glyph(..) )
+import Data.Hitpoints as HP ( HP(HP), injure, isDead )
 import Data.Maybe (isJust)
 import Data.Message qualified as Message
-import Data.Monoid
+import Data.Monoid ( Alt(getAlt), Last )
 import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position)
 import Data.Position qualified as Position
-import Data.Store qualified as Store
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Dhall qualified
 import Game.Action
-import Game.Behavior
+    ( Action(Redraw, Move, SaveState, LoadState, Start, Update) )
+import Game.Behavior ( Collision(..) )
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Dungeon qualified as Dungeon
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Info qualified as Game (Info)
-import Game.Info qualified as Info
 import Game.Save qualified as Save
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
-import Optics hiding (assign, use)
-import Optics.Tupled
-import System.Directory (createDirectoryIfMissing, getHomeDirectory)
-import System.FilePath ((</>))
-import TextShow
+import Optics ( (^.), (%), (.~), (?~), At(at) )
+import TextShow ( TextShow(showt) )
 
 type GameState = Game.State.State
 
@@ -68,14 +64,13 @@ type GameState = Game.State.State
 -- record.
 start :: Brokerage -> Game.World -> IO ThreadId
 start broker world = do
-  let initialState = Game.State.State (Apecs.Entity 0) True
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
   forkIO
     . Random.runRandomSystem
     . runTrace
     . runReader @(Vector Enemy.Enemy) values
     . runBroker broker
-    . evalState initialState
+    . evalState (Game.State.State True)
     . Apecs.runWith world
     $ setup *> loop
 
@@ -98,17 +93,22 @@ setup = do
       Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall")
 
   playerStart <- findUnoccupied
-  let play = Player.initial & #position .~ playerStart
+  let play = Player.initial & Position.pos .~ playerStart
 
   -- Create the player
-  Apecs.set Apecs.global (play ^. tupled)
-
-  assign @GameState #player Apecs.global
+  Apecs.set player play
 
   -- Fill in some enemies
-  let mkEnemy e = do
+  let mkEnemy (e :: Enemy.Enemy) = do
         pos <- findUnoccupied
-        Apecs.newEntity (e ^. tupled, HP 5 5, pos)
+        Apecs.newEntity
+          (e ^. #name,
+           e ^. #glyph,
+           e ^. #color,
+           e ^. #behavior,
+           e ^. #yieldsXP,
+           HP 5 5,
+           pos)
 
   ask @(Vector Enemy.Enemy) >>= Vector.mapM_ mkEnemy
 
@@ -144,18 +144,10 @@ loop = forever do
       present <- occupant prospective
       maybe (movePlayer dir) collideWith present
     SaveState -> do
-      save <- ask >>= Save.save
-      liftIO do
-        home <- liftIO getHomeDirectory
-        let path = home </> ".possession"
-        createDirectoryIfMissing False path
-        ByteString.writeFile (path </> "save") (Store.encode save)
+      ask >>= Save.save >>= Save.write
       Broker.notify "Game saved."
     LoadState -> do
-      home <- liftIO getHomeDirectory
-      let path = home </> ".possession"
-      onDisk <- liftIO (ByteString.readFile (path </> "save"))
-      Save.load (Store.decodeEx onDisk)
+      Save.read >>= Save.load
       Broker.notify "Game loaded."
     Start -> pure ()
 
@@ -167,7 +159,7 @@ loop = forever do
 
 playerAttack :: (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) => Entity -> Apecs.SystemT Game.World m ()
 playerAttack ent = do
-  (hp, pos :: Position, canDrop :: Amount, xp :: Maybe XP, name) <- Apecs.get ent
+  (hp, pos :: Position, canDrop :: Amount, xp :: XP, name) <- Apecs.get ent
   dam :: Int <- Random.uniformR (1, 5)
   Broker.notify (Message.fromText ("You attack for " <> showt dam <> " damage."))
   let new = HP.injure dam hp
@@ -176,7 +168,7 @@ playerAttack ent = do
       notify (Message.fromText ("You kill the " <> Name.text name <> "."))
       Apecs.remove @(HP, Position) ent
 
-      traverse_ (Apecs.append player) xp
+      Apecs.append player xp
 
       when (canDrop /= 0) do
         amt <- Random.uniformR (1, canDrop)
@@ -230,7 +222,7 @@ currentInfo = do
   -- use the info as the accumulator itself
   -- when there's a Selection present, emit something other than mempty
   let info =
-        mempty @Info.Info
+        mempty
           & #hitpoints .~ pure @Last hp
           & #gold .~ pure gold
           & #xp .~ xp

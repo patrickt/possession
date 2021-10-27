@@ -13,14 +13,12 @@
 -- should perhaps be called something else. (Game.Env?)
 module Game.State (State (State)) where
 
-import Apecs qualified
 import GHC.Generics (Generic)
 import Optics
 
-data State = State
-  { player :: Apecs.Entity,
-    debugMode :: Bool
+newtype State = State
+  { stateDebugMode :: Bool
   }
   deriving (Generic)
 
-makeFieldLabelsWith noPrefixFieldLabels ''State
+makeFieldLabels ''State

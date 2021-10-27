@@ -15,34 +15,16 @@ module Game.Entity.Player where
 import Data.Amount (Amount)
 import Data.Color
 import Data.Experience
-import Data.Generics.Sum
 import Data.Glyph
 import Data.Hitpoints
 import Data.Position
-import GHC.Generics (Generic)
-import Optics hiding (Is)
-import Optics.Operators.Unsafe
-import Optics.Tupled
 
 type Wealth = Amount
 
 -- This kind of C++-ish pattern is used to cope with the fact
 -- that Apecs deals in tuples exclusively (which is useful!
 -- but not as typesafe as we want).
-type Impl = (Position, Glyph, Color, HP, Wealth, XP)
-
-data Player = Player
-  { position :: Position,
-    glyph :: Glyph,
-    color :: Color,
-    hp :: HP,
-    wealth :: Wealth,
-    experience :: XP
-  }
-  deriving (Generic)
-
-instance Tupled Player Impl where
-  tupled = iso (^?! _Ctor @"Player") (_Ctor @"Player" #)
+type Player = (Position, Glyph, Color, HP, Wealth, XP)
 
 initial :: Player
-initial = tupled # (3, Glyph '@', White, HP 100 100, 0 :: Amount, XP 0 100)
+initial = (3, Glyph '@', White, HP 100 100, 0 :: Amount, XP 0 100)
