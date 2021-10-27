@@ -138,7 +138,7 @@ loop = forever do
 
   case next of
     Move dir -> do
-      adjusted <- (if not debug then offsetRandomly else pure) dir
+      adjusted <- (if not debug then Position.offsetRandomly else pure) dir
       prospective <- (adjusted +) <$> playerPosition
       present <- occupant prospective
       maybe (movePlayer dir) collideWith present
