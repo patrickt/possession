@@ -7,7 +7,7 @@ module Data.Position
   ( V2 (..),
     type Position,
     pattern (:-),
-    pos,
+    position,
     randomIn,
     brickLocation,
     offset,
@@ -17,7 +17,7 @@ where
 
 import Brick qualified
 import Control.Effect.Random
-import Data.Generics.Product
+import Data.Generics.Product hiding (position)
 import Linear.V2
 import Optics
 
@@ -31,8 +31,8 @@ pattern (:-) a b = V2 a b
 brickLocation :: Position -> Brick.Location
 brickLocation (a :- b) = Brick.Location (a + 1, b + 1)
 
-pos :: forall a. HasType Position a => Lens' a Position
-pos = typed
+position :: forall a. HasType Position a => Lens' a Position
+position = typed
 
 randomIn :: Has Random sig m => Int -> Int -> m Position
 randomIn x y = V2 <$> uniformR (x, y) <*> uniformR (x, y)

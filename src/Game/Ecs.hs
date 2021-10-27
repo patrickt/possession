@@ -19,14 +19,14 @@ import Control.Concurrent ( ThreadId, forkIO )
 import Control.Effect.Broker
     ( Brokerage, Broker, notify, runBroker )
 import Control.Effect.Broker qualified as Broker
-import Control.Effect.Optics ( use )
+import Control.Effect.Optics ( use, assign )
 import Control.Effect.Random (Random)
-import Control.Monad ( guard, when, void, forever )
+import Control.Monad ( guard, when, forever )
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Data.Amount (Amount)
 import Data.Color qualified as Color
 import Data.Experience (XP (..))
-import Data.Foldable (for_)
+import Data.Foldable (for_, traverse_)
 import Data.Foldable.WithIndex (iforM_)
 import Data.Function ( (&) )
 import Data.Glyph ( Glyph(..) )
@@ -36,7 +36,7 @@ import Data.Message qualified as Message
 import Data.Monoid ( Alt(getAlt), Last )
 import Data.Name (Name)
 import Data.Name qualified as Name
-import Data.Position (Position)
+import Data.Position (Position, position)
 import Data.Position qualified as Position
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -56,6 +56,7 @@ import Game.World qualified as Game (World)
 import Linear (V2 (..))
 import Optics ( (^.), (%), (.~), (?~), At(at) )
 import TextShow ( TextShow(showt) )
+import Data.Functor.Identity
 
 type GameState = Game.State.State
 
@@ -70,7 +71,7 @@ start broker world = do
     . runTrace
     . runReader @(Vector Enemy.Enemy) values
     . runBroker broker
-    . evalState (Game.State.State True)
+    . evalState Game.State.initial
     . Apecs.runWith world
     $ setup *> loop
 
@@ -89,14 +90,12 @@ setup = do
 
   map' <- liftIO Dungeon.makeDungeon
   iforM_ map' $ \pos cell ->
-    when (cell == Dungeon.On) . void $
-      Apecs.newEntity (pos, Glyph '#', Color.White, Invalid, Name.Name "wall")
-
-  playerStart <- findUnoccupied
-  let play = Player.initial & Position.pos .~ playerStart
+    when (cell == Dungeon.On) $
+      Apecs.newEntity_ (pos, Glyph '#', Color.White, Invalid, Name.Name "wall")
 
   -- Create the player
-  Apecs.set player play
+  playerStart <- findUnoccupied
+  Apecs.set player (Player.initial & position .~ playerStart)
 
   -- Fill in some enemies
   let mkEnemy (e :: Enemy.Enemy) = do
@@ -106,6 +105,7 @@ setup = do
            e ^. #glyph,
            e ^. #color,
            e ^. #behavior,
+           e ^. #canDrop,
            e ^. #yieldsXP,
            HP 5 5,
            pos)
@@ -168,7 +168,7 @@ playerAttack ent = do
       notify (Message.fromText ("You kill the " <> Name.text name <> "."))
       Apecs.remove @(HP, Position) ent
 
-      Apecs.append player xp
+      Apecs.append playerg xp
 
       when (canDrop /= 0) do
         amt <- Random.uniformR (1, canDrop)

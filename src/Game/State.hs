@@ -11,14 +11,19 @@
 -- This is mainly suitable for holding configuration values, cached values
 -- like the player's 'Entity', et cetera. It is generally read-only (and
 -- should perhaps be called something else. (Game.Env?)
-module Game.State (State (State)) where
+module Game.State (State, initial) where
 
 import GHC.Generics (Generic)
 import Optics
+import Game.Canvas qualified as Canvas
 
-newtype State = State
-  { stateDebugMode :: Bool
+data State = State
+  { stateDebugMode :: Bool,
+    stateCanvas :: Canvas.Canvas
   }
   deriving (Generic)
+
+initial :: State
+initial = State True Canvas.empty
 
 makeFieldLabels ''State

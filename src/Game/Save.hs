@@ -45,6 +45,9 @@ type IM = I.IntMap
 unMap :: Apecs.Stores.Map a -> IORef (IM a)
 unMap = unsafeCoerce
 
+-- TODO: this is the wrong abstraction because it precludes
+-- us using Component values other than Map. there needs to be
+-- some code that more
 data Save = Save
   { _amt :: IM Amount,
     _col :: IM Color,
