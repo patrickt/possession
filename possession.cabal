@@ -43,6 +43,7 @@ common shared
 library
   import:          shared
   exposed-modules:
+    Apecs.Exts
     Control.Effect.Broker
     Data.Aeson.Exts
     Data.Amount
