@@ -7,7 +7,7 @@
 -- | Provides the high-level constructs associated with the
 -- game thread. Receives 'Action' values from the UI and sends
 -- 'Command' values back.
-module Game.Ecs (start, cfoldMap) where
+module Game.Ecs (start) where
 
 import Apecs (Entity)
 import Apecs.Exts qualified as Apecs
@@ -207,14 +207,6 @@ collideWith ent = do
     Invalid -> Broker.notify "You can't go that way."
     PickUp -> playerPickUp ent
 
-offsetRandomly :: Has Random sig m => V2 Int -> m (V2 Int)
-offsetRandomly (V2 x y) = V2 <$> go x <*> go y
-  where
-    go v = do
-      fuzz <- Random.uniformR (0, 2)
-      degree <- Random.uniformR (1, 3)
-      pure ((v + fuzz) * degree)
-
 movePlayer ::
   ( Has (State GameState) sig m,
     Has Random sig m,
@@ -224,7 +216,7 @@ movePlayer ::
   Apecs.SystemT Game.World m ()
 movePlayer dx = do
   debug <- use @GameState #debugMode
-  offset <- (if debug then pure else offsetRandomly) dx
+  offset <- (if debug then pure else Position.offsetRandomly) dx
 
   Apecs.modify player (offset +)
 
@@ -255,13 +247,10 @@ playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game
 playerPosition = Apecs.get player
 
 occupant :: MonadIO m => Position -> Apecs.SystemT Game.World m (Maybe Apecs.Entity)
-occupant p = fmap snd . getAlt <$> cfoldMap go
+occupant p = fmap snd . getAlt <$> Apecs.cfoldMap go
   where
     go :: (Position, Apecs.Entity) -> Alt Maybe (Position, Apecs.Entity)
     go x = x <$ guard (fst x == p)
 
 occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool
 occupied = fmap isJust . occupant
-
-cfoldMap :: forall w m c a. (Apecs.Members w m c, Apecs.Get w m c, Monoid a) => (c -> a) -> Apecs.SystemT w m a
-cfoldMap f = Apecs.cfold (\a b -> a <> f b) mempty
