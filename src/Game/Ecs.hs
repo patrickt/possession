@@ -176,7 +176,6 @@ playerAttack ent = do
       notify (Message.fromText ("You kill the " <> Name.text name <> "."))
       Apecs.remove @(HP, Position) ent
 
-      player <- getPlayer
       traverse_ (Apecs.append player) xp
 
       when (canDrop /= 0) do
@@ -189,7 +188,6 @@ playerAttack ent = do
 playerPickUp :: (Has (State GameState) sig m, Has Broker sig m, MonadIO m) => Entity -> Apecs.SystemT Game.World m ()
 playerPickUp ent = do
   (mValue, pos :: Position) <- Apecs.get ent
-  player <- getPlayer
   case mValue :: Maybe Amount of
     Nothing -> pure ()
     Just x -> do
@@ -228,7 +226,6 @@ movePlayer dx = do
   debug <- use @GameState #debugMode
   offset <- (if debug then pure else offsetRandomly) dx
 
-  player <- getPlayer
   Apecs.modify player (offset +)
 
 currentInfo ::
@@ -237,7 +234,7 @@ currentInfo ::
   ) =>
   Apecs.SystemT Game.World m Game.Info
 currentInfo = do
-  (hp :: HP, gold, xp, pos) <- Apecs.get =<< getPlayer
+  (hp :: HP, gold, xp, pos) <- Apecs.get player
   -- use the info as the accumulator itself
   -- when there's a Selection present, emit something other than mempty
   let info =
@@ -251,11 +248,11 @@ currentInfo = do
 
   Apecs.cfold go info
 
-getPlayer :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Entity
-getPlayer = pure Apecs.global
+player :: Entity
+player = Apecs.global
 
 playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
-playerPosition = Apecs.get =<< getPlayer
+playerPosition = Apecs.get player
 
 occupant :: MonadIO m => Position -> Apecs.SystemT Game.World m (Maybe Apecs.Entity)
 occupant p = fmap snd . getAlt <$> cfoldMap go
