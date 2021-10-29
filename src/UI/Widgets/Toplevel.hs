@@ -51,7 +51,7 @@ instance Responder Toplevel where
     _ -> fromMaybe Input.None (Input.fromVty k mods)
   translate _ _ = Input.None
 
-  onSend inp inf s =
+  onSend inp inf _s =
     let move (x, y) = Broadcast (Action.Move (V2 x y))
         left = move (-1, 0)
         right = move (1, 0)

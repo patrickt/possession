@@ -34,7 +34,7 @@ import Data.Position
 import GHC.Generics (Generic)
 import Game.Behavior
 
-makeWorldAndComponents
+makeWorld
   "World"
   [ ''Amount,
     ''Color,

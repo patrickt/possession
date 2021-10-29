@@ -10,6 +10,7 @@ module Data.Vector.Universe
     shiftUp,
     shiftDown,
     neighbors,
+    index,
     generateM,
     generate,
     draw,
@@ -29,6 +30,7 @@ import Data.Vector.Zipper (Zipper (Zipper))
 import Data.Vector.Zipper qualified as Z
 import GHC.Exts (IsList (..))
 import GHC.Generics (Generic)
+import Data.Position
 
 newtype Univ a = Univ (Zipper (Zipper a))
   deriving stock (Eq, Functor, Foldable, Generic)
@@ -71,6 +73,9 @@ shiftRight (Univ u) = Univ (fmap Z.shiftRight u)
 shiftLeft (Univ u) = Univ (fmap Z.shiftLeft u)
 shiftUp (Univ u) = Univ (Z.shiftLeft u)
 shiftDown (Univ u) = Univ (Z.shiftRight u)
+
+index :: Position -> Univ a -> a
+index (x :- y) (Univ u) = Z.zindex x (Z.zindex y u)
 
 neighbors :: Univ a -> V.Vector a
 neighbors u =

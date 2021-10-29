@@ -17,7 +17,6 @@ import Apecs (Entity)
 import Data.Map.Strict (Map)
 import Data.Position (Position)
 import GHC.Generics (Generic)
-import Game.Canvas qualified as Canvas
 import Optics
 
 data State = State

@@ -1,9 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
 -- Behavior values determine what entities do when other entities interact with them.
 module Game.Behavior
@@ -16,6 +12,7 @@ import Data.Text (Text)
 import Dhall qualified
 import GHC.Generics (Generic)
 import Data.Store (Store)
+import Apecs (Component (..), Map)
 
 data Collision
   = Invalid
@@ -23,6 +20,8 @@ data Collision
   | PickUp
   deriving stock (Show, Generic)
   deriving anyclass (Store)
+
+instance Component Collision where type Storage Collision = Map Collision
 
 instance Dhall.FromDhall Collision where
   autoWith n = Dhall.strictText {Dhall.extract = extract}

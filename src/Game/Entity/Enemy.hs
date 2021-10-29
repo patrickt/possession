@@ -12,10 +12,13 @@ import Data.Hitpoints
 import Data.Position (Position)
 import Data.Store.Exts (Store)
 import GHC.Generics
+import Apecs (Component (..), Map)
 
 data Tag = Enemy
   deriving stock Generic
   deriving anyclass Store
+
+instance Apecs.Component Tag where type Storage Tag = Map Tag
 
 type Enemy = (Tag, Name, Position, Behavior.Collision, HP, Amount, XP)
 

@@ -12,9 +12,13 @@ module Data.Glyph where
 import Data.Text qualified as Text
 import Dhall qualified
 import Data.Store (Store)
+import Apecs (Component (..), Map)
 
+-- todo this should not exist
 newtype Glyph = Glyph Char
   deriving newtype (Show, Store)
+
+instance Component Glyph where type Storage Glyph = Map Glyph
 
 instance Dhall.FromDhall Glyph where
   autoWith n = fmap (Glyph . Text.head) (Dhall.autoWith n)

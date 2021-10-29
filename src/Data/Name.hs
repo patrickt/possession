@@ -12,10 +12,13 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Dhall (FromDhall)
 import Data.Store (Store)
+import Apecs (Component (..), Map)
 
 newtype Name = Name {text :: Text}
   deriving stock (Eq, Ord)
   deriving newtype (Show, IsString, FromDhall, Store)
+
+instance Apecs.Component Name where type Storage Name = Map Name
 
 definiteArticle :: Name -> Text
 definiteArticle (Name n)

@@ -14,10 +14,13 @@ import Game.Behavior qualified as Behavior
 import qualified Game.Flag as Flag
 import GHC.Generics
 import Data.Store.Exts (Store)
+import Apecs (Component (..), Map)
 
 data Tag = Wall
   deriving stock Generic
   deriving anyclass Store
+
+instance Apecs.Component Tag where type Storage Tag = Map Tag
 
 type Terrain = (Tag, Position, Glyph, Color, Behavior.Collision, Flag.Persist)
 

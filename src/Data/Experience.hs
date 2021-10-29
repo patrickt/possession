@@ -19,6 +19,7 @@ import Dhall.Exts ()
 import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
 import Optics.IxFold
+import Apecs (Component (..), Map)
 
 -- toNextLevel is dumb, it can be computed statically
 -- and then everything here gets simpler
@@ -28,6 +29,7 @@ data XP = XP {_current :: Sum Natural, _toNextLevel :: Max Natural}
   deriving (Semigroup) via GenericSemigroup XP
 
 instance Monoid XP where mempty = XP 0 0
+instance Apecs.Component XP where type Storage XP = Map XP
 
 instance Dhall.FromDhall XP where
   autoWith n = Dhall.natural {Dhall.extract = extract}

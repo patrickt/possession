@@ -25,7 +25,6 @@ common shared
       ExistentialQuantification
       FlexibleContexts
       FlexibleInstances
-      GADTSyntax
       GeneralizedNewtypeDeriving
       ImportQualifiedPost
       KindSignatures
@@ -38,6 +37,7 @@ common shared
       PatternSynonyms
       TypeApplications
       TypeSynonymInstances
+      TypeFamilies
   ghc-options:      -Wall
 
 library

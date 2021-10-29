@@ -1,13 +1,7 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
 module Data.Vector.Zipper
   ( module Data.Vector.Zipper,
   )
@@ -16,11 +10,11 @@ where
 import Control.Comonad
 import Control.DeepSeq
 import Control.Parallel.Strategies
-import Data.Functor.Identity
-import Data.Vector (Vector)
-import Data.Vector qualified as Vector
 import Data.Foldable.WithIndex
+import Data.Functor.Identity
 import Data.Functor.WithIndex.Instances ()
+import Data.Vector (Vector, (!))
+import Data.Vector qualified as Vector
 import GHC.Generics (Generic)
 
 data Zipper a = Zipper
@@ -30,6 +24,15 @@ data Zipper a = Zipper
   }
   deriving stock (Show, Eq, Generic)
   deriving anyclass (NFData)
+
+zindex :: Int -> Zipper a -> a
+zindex n Zipper{..} =
+  let leftlen = Vector.length before
+      shifted = n - leftlen
+  in if
+    | n < leftlen -> before ! n
+    | shifted == 0 -> focus
+    | otherwise -> after ! (n - 1)
 
 -- TODO: Check to see if this actually is meaningfully faster
 instance Functor Zipper where
@@ -49,7 +52,6 @@ instance Foldable Zipper where
       ]
 
   length Zipper {..} = length before + 1 + length after
-
 
 instance Comonad Zipper where
   -- O(1)
@@ -91,19 +93,19 @@ shiftLeft :: Zipper a -> Zipper a
 shiftLeft z@Zipper {..}
   | singular z = z
   | otherwise = case Vector.unsnoc before of
-      Nothing ->
-        -- wrap around
-        Zipper
-          { before = Vector.cons focus (Vector.init after),
-            focus = Vector.last after,
-            after = Vector.empty
-          }
-      Just (init', last') ->
-        Zipper
-          { before = init',
-            focus = last',
-            after = Vector.cons focus after
-          }
+    Nothing ->
+      -- wrap around
+      Zipper
+        { before = Vector.cons focus (Vector.init after),
+          focus = Vector.last after,
+          after = Vector.empty
+        }
+    Just (init', last') ->
+      Zipper
+        { before = init',
+          focus = last',
+          after = Vector.cons focus after
+        }
 
 -- ([1, 2], 3, [])
 -- ([], 1, [2, 3])
@@ -114,18 +116,18 @@ shiftRight :: Zipper a -> Zipper a
 shiftRight z@Zipper {..}
   | singular z = z
   | otherwise = case Vector.uncons after of
-      Nothing ->
-        Zipper
-          { before = Vector.empty,
-            focus = Vector.head before,
-            after = Vector.snoc (Vector.tail before) focus
-          }
-      Just (head', tail') ->
-        Zipper
-          { before = Vector.snoc before focus,
-            focus = head',
-            after = tail'
-          }
+    Nothing ->
+      Zipper
+        { before = Vector.empty,
+          focus = Vector.head before,
+          after = Vector.snoc (Vector.tail before) focus
+        }
+    Just (head', tail') ->
+      Zipper
+        { before = Vector.snoc before focus,
+          focus = head',
+          after = tail'
+        }
 
 generateM :: Monad m => Int -> (Int -> m a) -> m (Zipper a)
 generateM count fn =

@@ -1,6 +1,7 @@
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- A 2-tuple of integers for position on the world grid.
 module Data.Position
@@ -20,8 +21,11 @@ import Control.Effect.Random
 import Data.Generics.Product hiding (position)
 import Linear.V2
 import Optics
+import Apecs (Component (..), Map)
 
 type Position = V2 Int
+
+instance Apecs.Component Position where type Storage Position = Map Position
 
 pattern (:-) :: Int -> Int -> Position
 pattern (:-) a b = V2 a b

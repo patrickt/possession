@@ -1,13 +1,9 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Data.Color (Color (..)) where
 
+import Apecs (Component (..), Map)
 import Data.Either.Validation
 import Data.Store (Store)
 import Data.Text (Text)
@@ -18,6 +14,8 @@ import GHC.Generics (Generic)
 data Color = Black | Grey | White | Yellow | Brown
   deriving stock (Show, Generic)
   deriving anyclass (Store)
+
+instance Component Color where type Storage Color = Map Color
 
 -- | Serialized as descriptive strings.
 instance Dhall.FromDhall Color where
