@@ -13,17 +13,20 @@
 -- should perhaps be called something else. (Game.Env?)
 module Game.State (State, initial) where
 
+import Apecs (Entity)
+import Data.Map.Strict (Map)
+import Data.Position (Position)
 import GHC.Generics (Generic)
-import Optics
 import Game.Canvas qualified as Canvas
+import Optics
 
 data State = State
   { stateDebugMode :: Bool,
-    stateCanvas :: Canvas.Canvas
+    stateAtlas :: Map Position Entity
   }
   deriving (Generic)
 
 initial :: State
-initial = State True Canvas.empty
+initial = State True mempty
 
 makeFieldLabels ''State

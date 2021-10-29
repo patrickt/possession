@@ -64,6 +64,7 @@ library
     Game.Canvas
     Game.Dungeon
     Game.Ecs
+    Game.Entity.Terrain
     Game.Entity.Enemy
     Game.Entity.Player
     Game.Flag
@@ -72,6 +73,7 @@ library
     Game.Sprite
     Game.State
     Game.World
+    Raw.Enemy
     Possession
     System.Random.MWC.Exts
     UI.App
@@ -118,6 +120,7 @@ library
     , linear
     , mwc-random
     , motor
+    , unagi-chan
     , random
     , optics
     , optics-th

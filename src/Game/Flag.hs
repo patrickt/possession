@@ -1,15 +1,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE FlexibleContexts #-}
 module Game.Flag
-    ( Digger (..)
-    , Dirty (..)
-    , get
-    , set
-    , when
+    ( module Game.Flag
     ) where
 
 import Apecs qualified
@@ -22,6 +14,10 @@ class Enum a => Flag a where
 
 data Digger = Digger
   deriving (Eq, Show, Enum, Flag)
+
+data Persist = Persist
+  deriving stock (Eq, Show, Enum, Generic)
+  deriving anyclass Store
 
 data Dirty = Dirty
   deriving stock (Eq, Show, Enum, Generic)

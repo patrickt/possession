@@ -16,7 +16,8 @@ module Control.Effect.Broker
     sendCommand,
     runBroker,
     notify,
-    Brokerage (Brokerage),
+    Brokerage,
+    newBrokerage,
     enqueueGameAction,
   )
 where
@@ -25,8 +26,7 @@ import Brick.BChan
 import Control.Algebra
 import Control.Carrier.Lift
 import Control.Carrier.Reader
-import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TBQueue
+import Control.Concurrent.Chan.Unagi.Bounded
 import Control.Monad.IO.Class
 import Data.Kind (Type)
 import Data.Message (Message)
@@ -36,13 +36,20 @@ import Optics.TH
 
 data Brokerage = Brokerage
   { _brokerageBrickQueue :: BChan (Action 'UI),
-    _brokerageGameQueue :: TBQueue (Action 'Game)
+    _brokerageGameWrite :: InChan (Action 'Game),
+    _brokerageGameRead :: OutChan (Action 'Game)
   }
 
-enqueueGameAction :: Brokerage -> Action 'Game -> IO ()
-enqueueGameAction (Brokerage _ q) act = atomically (writeTBQueue q act)
-
 makeFieldLabels ''Brokerage
+
+newBrokerage :: IO Brokerage
+newBrokerage = do
+  b <- newBChan 1
+  (w, r) <- newChan 100
+  pure (Brokerage b w r)
+
+enqueueGameAction :: Brokerage -> Action 'Game -> IO ()
+enqueueGameAction (Brokerage _ q _) = writeChan q
 
 data Broker (m :: Type -> Type) k where
   Push :: Action 'Game -> Broker m ()
@@ -51,28 +58,29 @@ data Broker (m :: Type -> Type) k where
 
 -- | Blocks if the queue is full
 pushAction :: Has Broker sig m => Action 'Game -> m ()
-pushAction = send . Push
+pushAction a = send (Push a)
 
 popAction :: Has Broker sig m => m (Action 'Game)
 popAction = send Pop
 
 sendCommand :: Has Broker sig m => Action 'UI -> m ()
-sendCommand = send . Cmd
+sendCommand a = send (Cmd a)
 
 notify :: Has Broker sig m => Message -> m ()
-notify = sendCommand . Game.Notify
+notify a = sendCommand (Game.Notify a)
 
 newtype BrokerC m a = BrokerC {runBrokerC :: ReaderC Brokerage m a}
   deriving newtype (Functor, Applicative, Monad, MonadIO)
 
 runBroker :: Brokerage -> BrokerC m a -> m a
-runBroker b = runReader b . runBrokerC
+runBroker b (BrokerC r) = runReader b r
+{-# INLINE runBroker #-}
 
 instance Has (Lift IO) sig m => Algebra (Broker :+: sig) (BrokerC m) where
   alg hdl sig ctx = do
-    Brokerage to curr <- BrokerC ask
+    Brokerage to writer reader <- BrokerC ask
     case sig of
-      L (Push a) -> ctx <$ (sendM . atomically . writeTBQueue curr $ a)
+      L (Push a) -> ctx <$ (sendM . writeChan writer $ a)
       L (Cmd a) -> ctx <$ (sendM . writeBChan to $ a)
-      L Pop -> (<$ ctx) <$> (sendM . atomically . readTBQueue $ curr)
+      L Pop -> (<$ ctx) <$> (sendM . readChan $ reader)
       R other -> BrokerC (alg (runBrokerC . hdl) (R other) ctx)

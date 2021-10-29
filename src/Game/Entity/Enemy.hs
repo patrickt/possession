@@ -1,36 +1,31 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
 
--- | Operations and accessors on enemy values.
--- Should probably be called something else.
-module Game.Entity.Enemy
-  ( Enemy (Enemy),
-  )
-where
+module Game.Entity.Enemy where
 
-import Data.Amount
-import Data.Color
-import Data.Experience
-import Data.Glyph
+import Data.Amount (Amount)
+import Data.Experience (XP)
 import Data.Name (Name)
-import Dhall
 import Game.Behavior qualified as Behavior
+import Raw.Enemy qualified as Raw
 import Optics
+import Data.Hitpoints
+import Data.Position (Position)
+import Data.Store.Exts (Store)
+import GHC.Generics
 
-data Enemy = Enemy
-  { name :: Name,
-    glyph :: Glyph,
-    color :: Color,
-    behavior :: Behavior.Collision,
-    canDrop :: Amount,
-    yieldsXP :: XP
-  }
-  deriving stock (Generic)
-  deriving anyclass (FromDhall)
+data Tag = Enemy
+  deriving stock Generic
+  deriving anyclass Store
 
-makeFieldLabelsNoPrefix ''Enemy
+type Enemy = (Tag, Name, Position, Behavior.Collision, HP, Amount, XP)
+
+fromRaw :: Position -> Raw.Enemy -> Enemy
+fromRaw p e =
+  ( Enemy,
+    e ^. #name,
+    p,
+    e ^. #behavior,
+    HP 5 5,
+    e ^. #canDrop,
+    e ^. #yieldsXP
+  )

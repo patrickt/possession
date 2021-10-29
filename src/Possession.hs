@@ -1,9 +1,7 @@
 module Possession (main) where
 
 import Brick qualified
-import Brick.BChan (newBChan)
-import Control.Concurrent.STM.TBQueue (newTBQueueIO)
-import Control.Effect.Broker (Brokerage (Brokerage))
+import Control.Effect.Broker (newBrokerage)
 import Control.Monad (void)
 import Game.Ecs qualified as Ecs
 import Game.World qualified as Game
@@ -14,7 +12,7 @@ import UI.State qualified
 
 main :: IO ()
 main = do
-  broker <- Brokerage <$> newBChan 1 <*> newTBQueueIO 100
+  broker <- newBrokerage
   vty <- Vty.standardIOConfig >>= Vty.mkVty
   thread <- Game.initWorld >>= Ecs.start broker
   let ui = UI.State.initial broker thread

@@ -26,7 +26,10 @@ import Data.Color
 import Data.Experience
 import Data.Glyph
 import Data.Hitpoints
+import Game.Entity.Enemy qualified as Enemy (Tag)
+import Game.Entity.Terrain qualified as Terrain (Tag)
 import Data.Name (Name)
+import Game.Flag qualified as Flag
 import Data.Position
 import GHC.Generics (Generic)
 import Game.Behavior
@@ -36,12 +39,20 @@ makeWorldAndComponents
   [ ''Amount,
     ''Color,
     ''Collision,
+    ''Flag.Persist,
     ''Glyph,
     ''HP,
     ''XP,
     ''Name,
-    ''Position
+    ''Position,
+    ''Enemy.Tag,
+    ''Terrain.Tag
   ]
+
+type WorldT = Apecs.SystemT World
+
+pattern VERSION :: Int
+pattern VERSION = 0
 
 deriving stock instance Generic World
 

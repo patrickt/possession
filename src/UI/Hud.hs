@@ -15,7 +15,6 @@ import Data.Message qualified as Message
 import Data.Position (Position)
 import Data.Position qualified as Position
 import Game.Info (Info)
-import Linear (V2 (..))
 import Optics
 import UI.Input qualified as Input
 import UI.Render

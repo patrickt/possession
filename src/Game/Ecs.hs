@@ -12,53 +12,64 @@ module Game.Ecs (start) where
 import Apecs (Entity)
 import Apecs.Exts qualified as Apecs
 import Control.Carrier.Random.Lifted qualified as Random
-import Control.Carrier.Reader ( Reader, Has, runReader, ask )
-import Control.Carrier.State.Strict ( State, evalState )
-import Control.Carrier.Trace.Ignoring ( runTrace, trace, Trace )
-import Control.Concurrent ( ThreadId, forkIO )
+import Control.Carrier.Reader (Has, Reader, ask, runReader)
+import Control.Carrier.State.Strict (State, evalState)
+import Control.Carrier.Trace.Ignoring (Trace, runTrace, trace)
+import Control.Concurrent (ThreadId, forkIO)
 import Control.Effect.Broker
-    ( Brokerage, Broker, notify, runBroker )
+  ( Broker,
+    Brokerage,
+    notify,
+    runBroker,
+  )
 import Control.Effect.Broker qualified as Broker
-import Control.Effect.Optics ( use, assign )
+import Control.Effect.Optics (use)
 import Control.Effect.Random (Random)
-import Control.Monad ( guard, when, forever )
-import Control.Monad.IO.Class ( MonadIO(..) )
+import Control.Monad (forever, guard, when)
+import Control.Monad.IO.Class (MonadIO (..))
 import Data.Amount (Amount)
 import Data.Color qualified as Color
 import Data.Experience (XP (..))
-import Data.Foldable (for_, traverse_)
+import Data.Foldable (for_)
 import Data.Foldable.WithIndex (iforM_)
-import Data.Function ( (&) )
-import Data.Glyph ( Glyph(..) )
-import Data.Hitpoints as HP ( HP(HP), injure, isDead )
+import Data.Function ((&))
+import Data.Glyph (Glyph (..))
+import Data.Hitpoints as HP (HP, injure, isDead)
 import Data.Maybe (isJust)
 import Data.Message qualified as Message
-import Data.Monoid ( Alt(getAlt), Last )
+import Data.Monoid (Alt (getAlt), Last)
 import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position, position)
+import System.Random.MWC qualified as MWC
 import Data.Position qualified as Position
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Dhall qualified
 import Game.Action
-    ( Action(Redraw, Move, SaveState, LoadState, Start, Update) )
-import Game.Behavior ( Collision(..) )
+  ( Action (LoadState, Move, Redraw, SaveState, Start, Update),
+  )
+import Game.Behavior (Collision (..))
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Dungeon qualified as Dungeon
+import Raw.Enemy qualified as Raw
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
+import Game.Entity.Terrain qualified as Terrain
 import Game.Info qualified as Game (Info)
 import Game.Save qualified as Save
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
-import Optics ( (^.), (%), (.~), (?~), At(at) )
-import TextShow ( TextShow(showt) )
-import Data.Functor.Identity
+import Optics (At (at), (%), (.~), (?~))
+import TextShow (TextShow (showt))
 
 type GameState = Game.State.State
+
+runRandomFaster :: MonadIO m => MWC.GenIO -> Random.RandomC IO m a -> m a
+runRandomFaster sr (Random.RandomC act) = runReader sr act
+{-# INLINE runRandomFaster #-}
 
 -- | Kick off the ECS with provided channels and inputs. If we get
 -- more channels/mvars, we should pull those out into their own
@@ -66,10 +77,11 @@ type GameState = Game.State.State
 start :: Brokerage -> Game.World -> IO ThreadId
 start broker world = do
   values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
+  rand <- MWC.createSystemRandom
   forkIO
-    . Random.runRandomSystem
+    . runRandomFaster rand
     . runTrace
-    . runReader @(Vector Enemy.Enemy) values
+    . runReader @(Vector Raw.Enemy) values
     . runBroker broker
     . evalState Game.State.initial
     . Apecs.runWith world
@@ -78,39 +90,30 @@ start broker world = do
 -- | Initial setup associated with ECS creation.
 setup ::
   ( Has (State Game.State.State) sig m,
-    Has (Reader (Vector Enemy.Enemy)) sig m,
+    Has (Reader (Vector Raw.Enemy)) sig m,
     Has Random sig m,
     MonadIO m
   ) =>
   Apecs.SystemT Game.World m ()
 setup = do
   -- Build some walls
-  for_ Canvas.borders \border -> do
-    Apecs.newEntity (border, Glyph '#', Color.White, Invalid, Name.Name "wall")
+  for_ Canvas.borders (Apecs.newEntity_ . Terrain.wall)
 
   map' <- liftIO Dungeon.makeDungeon
   iforM_ map' $ \pos cell ->
     when (cell == Dungeon.On) $
-      Apecs.newEntity_ (pos, Glyph '#', Color.White, Invalid, Name.Name "wall")
+      Apecs.newEntity_ (Terrain.wall pos)
 
   -- Create the player
   playerStart <- findUnoccupied
   Apecs.set player (Player.initial & position .~ playerStart)
 
   -- Fill in some enemies
-  let mkEnemy (e :: Enemy.Enemy) = do
+  let mkEnemy (e :: Raw.Enemy) = do
         pos <- findUnoccupied
-        Apecs.newEntity
-          (e ^. #name,
-           e ^. #glyph,
-           e ^. #color,
-           e ^. #behavior,
-           e ^. #canDrop,
-           e ^. #yieldsXP,
-           HP 5 5,
-           pos)
+        Apecs.newEntity (Enemy.fromRaw pos e)
 
-  ask @(Vector Enemy.Enemy) >>= Vector.mapM_ mkEnemy
+  ask @(Vector Raw.Enemy) >>= Vector.mapM_ mkEnemy
 
 findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
 findUnoccupied = do
@@ -144,7 +147,7 @@ loop = forever do
       present <- occupant prospective
       maybe (movePlayer dir) collideWith present
     SaveState -> do
-      ask >>= Save.save >>= Save.write
+      Save.save >>= Save.write
       Broker.notify "Game saved."
     LoadState -> do
       Save.read >>= Save.load
@@ -166,15 +169,13 @@ playerAttack ent = do
   if HP.isDead new
     then do
       notify (Message.fromText ("You kill the " <> Name.text name <> "."))
-      Apecs.remove @(HP, Position) ent
+      Apecs.remove @Enemy.Enemy ent
 
-      Apecs.append playerg xp
+      Apecs.append player xp
 
       when (canDrop /= 0) do
         amt <- Random.uniformR (1, canDrop)
         Apecs.newEntity_ (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
-
-
     else Apecs.set ent new
 
 playerPickUp :: (Has (State GameState) sig m, Has Broker sig m, MonadIO m) => Entity -> Apecs.SystemT Game.World m ()
