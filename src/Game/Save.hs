@@ -27,14 +27,23 @@ import System.FilePath ((</>))
 import Prelude hiding (read)
 import Data.Foldable (traverse_)
 import Control.Exception (Exception (displayException), throw)
-import Game.Entity.Enemy (Enemy)
+import Game.Entity.Enemy (Enemy, Tag)
 import Game.Entity.Terrain (Terrain)
+import Control.Effect.State
+import Raw.Types as Raw hiding (Enemy)
+import Data.Position
+import Data.Name
+import Raws (Raws)
+import Data.Hitpoints
+import Data.Experience
+import Data.Amount (Amount(Amount))
 
 data Save = Save
   { version :: Int
   , globalPlayer :: Player
   , enemies :: [Enemy]
   , terrain :: [Terrain]
+  , raws :: Raws
   } deriving stock (Generic)
     deriving anyclass Store
 
@@ -45,18 +54,21 @@ instance Exception PersistenceError where
   displayException = \case
     BadVersion n -> "bad save version: expected " <> show World.VERSION <> ", got " <> show n
 
-save :: MonadIO m => Apecs.SystemT World.World m Save
+save :: (Has (State Raws) sig m, MonadIO m) => Apecs.SystemT World.World m Save
 save = Save World.VERSION
   <$> Apecs.get Apecs.global
   <*> Apecs.cfold (flip (:)) []
   <*> Apecs.cfold (flip (:)) []
+  <*> get
 
-load :: MonadIO m => Save -> WorldT m ()
-load (Save ver gp enem terr) = do
+
+load :: (Has (State Raws) sig m, MonadIO m) => Save -> WorldT m ()
+load (Save ver gp enem terr r) = do
   when (ver /= World.VERSION) (throw (BadVersion ver))
   Apecs.set global gp
   traverse_ Apecs.newEntity_ enem
   traverse_ Apecs.newEntity_ terr
+  put r
 
 write :: MonadIO m => Save -> m ()
 write s = liftIO do

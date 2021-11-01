@@ -5,11 +5,6 @@
   - Gameplay loop involves room-jumping until you find something that can help you
   - Or an enemy you can kill for XP, and then possess
 
-Brick event loop (EventM)
-  Reads from keyboard
-  Can read from BChan
-  Can write to WChan
-
 Apecs event loop
   - Can write to BChan (redraw, trigger UI)
   - Can read from WChan (tick)
@@ -25,23 +20,19 @@ Monster locations:
 - from [[https://github.com/sil-quirk/sil-q/blob/master/lib/edit/monster.txt][silq]]
 - from [[https://nikheizen.github.io/pages/compostband/mon-desc.html][poschengband]]
 
-slurp in some enemies
 multi-square things? z-levels in the canvas? gonna need them
 Fade out modeline message
-Save world state: have to write some Any type
 Confusing method dispatch (got a little better)
-Resume menu item, persist save game information
-Template Haskell for writing Impl implementations
 Alert when a level is gained (need to figure out where this logic lives)
 third dimension
 dungeon generation
 switch to Grid instead of array
-
-switch away from Apecs, it's starting to become problematic? maybe?
-we could use fastsum
 
 customizable key layouts
 what is a layout? it describes how components interpret keystrokes
 contained in UI.State, a SomeLayout, parsed from a Dhall string in
 class Layout map widget where
   translate :: map -> widget -> Vty.Event -> Input
+
+generate Haskell types from Dhall
+use Shake?

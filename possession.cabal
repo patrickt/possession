@@ -9,6 +9,7 @@ bug-reports:        github.com/patrickt/possession
 synopsis:           An offbeat roguelike
 description:
   A console-based roguelike inspired by ToME 2's "Lost Soul" mode.
+data-files: cfg/**/*.dhall
 
 category:           Game
 extra-source-files: CHANGELOG.md
@@ -47,7 +48,6 @@ library
     Control.Effect.Broker
     Data.Aeson.Exts
     Data.Amount
-    Data.Color
     Data.Experience
     Data.Glyph
     Data.Hitpoints
@@ -60,7 +60,6 @@ library
     Data.Vector.Zipper
     Dhall.Exts
     Game.Action
-    Game.Behavior
     Game.Canvas
     Game.Dungeon
     Game.Ecs
@@ -73,7 +72,9 @@ library
     Game.Sprite
     Game.State
     Game.World
-    Raw.Enemy
+    Raws
+    Raw.Id
+    Raw.Types
     Possession
     System.Random.MWC.Exts
     UI.App

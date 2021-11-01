@@ -29,7 +29,6 @@ import Data.IntMap.Strict (IntMap)
 import Data.IntMap qualified as IntMap
 
 newtype Canvas = Canvas (IntMap Sprite)
-  deriving newtype (Show)
 
 empty :: Canvas
 empty = Canvas $ IntMap.fromList do

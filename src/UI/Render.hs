@@ -6,7 +6,7 @@ module UI.Render (Renderable (..), renderThe, colorToVty, withForeground) where
 
 import Brick qualified
 import Brick.Markup
-import Data.Color qualified as Color
+import Raw.Types qualified as Color (Color (..))
 import Data.Message
 import Data.Semigroup
 import Data.Text.Markup qualified as Markup
@@ -15,6 +15,7 @@ import Graphics.Vty.Attributes qualified as Attr
 import Optics
 import TextShow
 import UI.Resource
+import Debug.Trace
 
 class Renderable a where
   render :: a -> [Brick.Widget Resource] -> [Brick.Widget Resource]
@@ -43,6 +44,6 @@ colorToVty :: Color.Color -> Vty.Color
 colorToVty = \case
   Color.Black -> Vty.black
   Color.Grey -> Vty.rgbColor 221 221 (221 :: Int)
-  Color.White -> Vty.white
+  Color.White -> trace "WHITE" Vty.white
   Color.Yellow -> Vty.brightYellow
   Color.Brown -> Vty.rgbColor @Int 0x78 0x58 0x32

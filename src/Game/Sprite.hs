@@ -3,14 +3,11 @@ module Game.Sprite
   , blankSprite
   ) where
 
-import Data.Color
+import Raw.Types (Color (..))
 import Data.Glyph
 
-data Sprite = Sprite
-  { glyph :: !Glyph,
-    color :: !Color
-  }
-  deriving (Show)
+data Sprite = Sprite Glyph Color
+  deriving Show
 
 blankSprite :: Sprite
 blankSprite = Sprite (Glyph '.') White

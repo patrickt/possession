@@ -15,5 +15,6 @@ instance Apecs.Component HP where type Storage HP = Map HP
 injure :: Integral a => a -> HP -> HP
 injure n (HP c t) = HP (c - fromIntegral n) t
 
-isDead :: HP -> Bool
-isDead (HP x _) = x > 0
+isAlive, isDead :: HP -> Bool
+isAlive (HP x _) = x >= 0
+isDead = not . isAlive

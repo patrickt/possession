@@ -1,1 +1,4 @@
 packages: .
+
+package dhall
+        flags: -with-http -with-http-client-tls

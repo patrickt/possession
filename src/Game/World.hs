@@ -22,7 +22,6 @@ import Apecs
 import Control.Algebra qualified as Eff
 import Control.Carrier.Reader qualified as Eff
 import Data.Amount
-import Data.Color
 import Data.Experience
 import Data.Glyph
 import Data.Hitpoints
@@ -32,19 +31,25 @@ import Data.Name (Name)
 import Game.Flag qualified as Flag
 import Data.Position
 import GHC.Generics (Generic)
-import Game.Behavior
+import Raw.Types
+import Raw.Id qualified as Raw
 
-makeWorld
-  "World"
+makeWorld "World"
   [ ''Amount,
     ''Color,
-    ''Collision,
     ''Flag.Persist,
     ''Glyph,
     ''HP,
     ''XP,
     ''Name,
     ''Position,
+    ''Raw.Id,
+
+    -- behaviors
+    ''Collision,
+    ''Strategy,
+
+    -- tags
     ''Enemy.Tag,
     ''Terrain.Tag
   ]
@@ -52,7 +57,7 @@ makeWorld
 type WorldT = Apecs.SystemT World
 
 pattern VERSION :: Int
-pattern VERSION = 0
+pattern VERSION = 1
 
 deriving stock instance Generic World
 

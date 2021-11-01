@@ -12,7 +12,7 @@ module Game.Ecs (start) where
 import Apecs (Entity)
 import Apecs.Exts qualified as Apecs
 import Control.Carrier.Random.Lifted qualified as Random
-import Control.Carrier.Reader (Has, Reader, ask, runReader)
+import Control.Carrier.Reader (Has, runReader)
 import Control.Carrier.State.Strict (State, evalState)
 import Control.Carrier.Trace.Ignoring (Trace, runTrace, trace)
 import Control.Concurrent (ThreadId, forkIO)
@@ -28,10 +28,9 @@ import Control.Effect.Random (Random)
 import Control.Monad (forever, guard, when)
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Amount (Amount)
-import Data.Color qualified as Color
 import Data.Experience (XP (..))
 import Data.Foldable (for_)
-import Data.Foldable.WithIndex (iforM_)
+import Data.Foldable.WithIndex (iforM_, itraverse_)
 import Data.Function ((&))
 import Data.Glyph (Glyph (..))
 import Data.Hitpoints as HP (HP, injure, isDead)
@@ -41,19 +40,13 @@ import Data.Monoid (Alt (getAlt), Last)
 import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position, position)
-import System.Random.MWC qualified as MWC
 import Data.Position qualified as Position
-import Data.Vector (Vector)
-import Data.Vector qualified as Vector
-import Dhall qualified
 import Game.Action
   ( Action (LoadState, Move, Redraw, SaveState, Start, Update),
   )
-import Game.Behavior (Collision (..))
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Dungeon qualified as Dungeon
-import Raw.Enemy qualified as Raw
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Entity.Terrain qualified as Terrain
@@ -63,7 +56,14 @@ import Game.State qualified
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
 import Optics (At (at), (%), (.~), (?~))
+import Raw.Types (Collision (..))
+import Raw.Types qualified as Color (Color (..))
+import Raw.Types qualified as Raw
+import Raws (Raws)
+import Raws qualified
+import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
+import Debug.Trace (traceShowId)
 
 type GameState = Game.State.State
 
@@ -76,12 +76,12 @@ runRandomFaster sr (Random.RandomC act) = runReader sr act
 -- record.
 start :: Brokerage -> Game.World -> IO ThreadId
 start broker world = do
-  values <- Dhall.inputFile Dhall.auto "cfg/enemy.dhall"
+  raws <- Raws.loadFromDhall
   rand <- MWC.createSystemRandom
   forkIO
     . runRandomFaster rand
     . runTrace
-    . runReader @(Vector Raw.Enemy) values
+    . evalState @Raws raws
     . runBroker broker
     . evalState Game.State.initial
     . Apecs.runWith world
@@ -90,7 +90,8 @@ start broker world = do
 -- | Initial setup associated with ECS creation.
 setup ::
   ( Has (State Game.State.State) sig m,
-    Has (Reader (Vector Raw.Enemy)) sig m,
+    Has (State Raws) sig m,
+    Has Trace sig m,
     Has Random sig m,
     MonadIO m
   ) =>
@@ -109,11 +110,12 @@ setup = do
   Apecs.set player (Player.initial & position .~ playerStart)
 
   -- Fill in some enemies
-  let mkEnemy (e :: Raw.Enemy) = do
+  let mkEnemy idx (e :: Raw.Enemy) = do
         pos <- findUnoccupied
-        Apecs.newEntity (Enemy.fromRaw pos e)
+        Apecs.newEntity (Enemy.fromRaw pos (Raw.Id idx) e)
 
-  ask @(Vector Raw.Enemy) >>= Vector.mapM_ mkEnemy
+  foes <- use @Raws #enemies
+  itraverse_ mkEnemy (assert (not . null $ foes) foes))
 
 findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
 findUnoccupied = do
@@ -133,6 +135,7 @@ loop ::
     Has Random sig m,
     Has Broker sig m,
     Has (State GameState) sig m,
+    Has (State Raws) sig m,
     Has Trace sig m
   ) =>
   Apecs.SystemT Game.World m ()
@@ -162,7 +165,7 @@ loop = forever do
 
 playerAttack :: (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) => Entity -> Apecs.SystemT Game.World m ()
 playerAttack ent = do
-  (hp, pos :: Position, canDrop :: Amount, xp :: XP, name) <- Apecs.get ent
+  (hp, pos :: Position, canDrop :: Amount, xp :: XP, name, _e :: Entity) <- Apecs.get ent
   dam :: Int <- Random.uniformR (1, 5)
   Broker.notify (Message.fromText ("You attack for " <> showt dam <> " damage."))
   let new = HP.injure dam hp

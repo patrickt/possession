@@ -13,11 +13,11 @@
 module Game.Entity.Player where
 
 import Data.Amount (Amount)
-import Data.Color
 import Data.Experience
 import Data.Glyph
 import Data.Hitpoints
 import Data.Position
+import Raw.Types
 
 type Wealth = Amount
 
