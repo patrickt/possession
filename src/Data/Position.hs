@@ -16,12 +16,12 @@ module Data.Position
   )
 where
 
+import Apecs (Component (..), Map)
 import Brick qualified
 import Control.Effect.Random
 import Data.Generics.Product hiding (position)
 import Linear.V2
 import Optics
-import Apecs (Component (..), Map)
 
 type Position = V2 Int
 

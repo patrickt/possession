@@ -12,7 +12,7 @@ module Game.Ecs (start) where
 import Apecs (Entity)
 import Apecs.Exts qualified as Apecs
 import Control.Carrier.Random.Lifted qualified as Random
-import Control.Carrier.Reader (Has, runReader)
+import Control.Carrier.Reader (runReader)
 import Control.Carrier.State.Strict (State, evalState)
 import Control.Carrier.Trace.Brokered
 import Control.Concurrent (ThreadId, forkIO)
@@ -33,7 +33,7 @@ import Data.Foldable (for_)
 import Data.Foldable.WithIndex (iforM_, itraverse_)
 import Data.Function ((&))
 import Data.Glyph (Glyph (..))
-import Data.Hitpoints as HP (HP, injure, isDead)
+import Data.Hitpoints as HP (HP, injure, isAlive)
 import Data.Maybe (isJust)
 import Data.Message qualified as Message
 import Data.Monoid (Alt (getAlt), Last)
@@ -41,7 +41,6 @@ import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position, position)
 import Data.Position qualified as Position
-import Debug.Trace (traceShowId)
 import Game.Action
   ( Action (LoadState, Move, Redraw, SaveState, Start, Update),
   )
@@ -161,7 +160,6 @@ loop = forever do
   newinfo <- currentInfo
   Broker.sendCommand (Update newinfo)
   Broker.sendCommand (Redraw canv)
-  trace "Done"
 
 playerAttack :: (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) => Entity -> Apecs.SystemT Game.World m ()
 playerAttack ent = do
@@ -169,8 +167,9 @@ playerAttack ent = do
   dam :: Int <- Random.uniformR (1, 5)
   Broker.notify (Message.fromText ("You attack for " <> showt dam <> " damage."))
   let new = HP.injure dam hp
-  if HP.isDead new
-    then do
+  if HP.isAlive new
+    then Apecs.set ent new
+    else do
       notify (Message.fromText ("You kill the " <> Name.text name <> "."))
       Apecs.remove @Enemy.Enemy ent
 
@@ -179,7 +178,6 @@ playerAttack ent = do
       when (canDrop /= 0) do
         amt <- Random.uniformR (1, canDrop)
         Apecs.newEntity_ (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
-    else Apecs.set ent new
 
 playerPickUp :: (Has (State GameState) sig m, Has Broker sig m, MonadIO m) => Entity -> Apecs.SystemT Game.World m ()
 playerPickUp ent = do

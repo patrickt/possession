@@ -1,10 +1,16 @@
 -- | A (ℕ, ℕ) tuple representing the health of living things.
-module Data.Hitpoints (HP (..), injure, isDead) where
+module Data.Hitpoints
+  ( HP (..),
+    injure,
+    isDead,
+    isAlive,
+  )
+where
 
+import Apecs (Component (..), Map)
 import Data.Store (Store)
 import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
-import Apecs (Component (..), Map)
 
 data HP = HP {current :: !Integer, total :: !Natural}
   deriving stock (Show, Generic)

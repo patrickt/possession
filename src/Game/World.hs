@@ -35,8 +35,7 @@ import Raw.Types
 import Raw.Id qualified as Raw
 
 makeWorld "World"
-  [ ''Amount,
-    ''Color,
+  [ ''Color,
     ''Flag.Persist,
     ''Glyph,
     ''HP,
@@ -48,6 +47,10 @@ makeWorld "World"
     -- behaviors
     ''Collision,
     ''Strategy,
+
+    -- numeric quantiites
+    ''Amount,
+    ''Hearing,
 
     -- tags
     ''Enemy.Tag,

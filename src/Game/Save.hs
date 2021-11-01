@@ -27,16 +27,10 @@ import System.FilePath ((</>))
 import Prelude hiding (read)
 import Data.Foldable (traverse_)
 import Control.Exception (Exception (displayException), throw)
-import Game.Entity.Enemy (Enemy, Tag)
+import Game.Entity.Enemy (Enemy)
 import Game.Entity.Terrain (Terrain)
 import Control.Effect.State
-import Raw.Types as Raw hiding (Enemy)
-import Data.Position
-import Data.Name
 import Raws (Raws)
-import Data.Hitpoints
-import Data.Experience
-import Data.Amount (Amount(Amount))
 
 data Save = Save
   { version :: Int

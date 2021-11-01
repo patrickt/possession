@@ -13,6 +13,7 @@ in    [ { name = "gibbering idiot"
         , strategy = Strategy.Wander
         , canDrop = 5
         , yieldsXP = 3
+        , hearing = 5
         }
       , { name = "wolf"
         , glyph = "C"
@@ -21,6 +22,7 @@ in    [ { name = "gibbering idiot"
         , strategy = Strategy.FightOnSight
         , canDrop = 0
         , yieldsXP = 5
+        , hearing = 20
         }
       , { name = "battle-scared veteran"
         , glyph = "H"
@@ -29,6 +31,7 @@ in    [ { name = "gibbering idiot"
         , strategy = Strategy.FightOnSight
         , canDrop = 10
         , yieldsXP = 10
+        , hearing = 15
         }
       ]
     : List Enemy

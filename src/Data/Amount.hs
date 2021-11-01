@@ -4,9 +4,11 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | A natural number representing a quantity of something.
--- Used for things like value of gold pieces.
-module Data.Amount (Amount (..)) where
+-- Various numeric quantities.
+module Data.Amount (
+  Amount (..),
+  Hearing (..),
+  ) where
 
 import Dhall qualified
 import Numeric.Natural
@@ -26,3 +28,9 @@ instance Component Amount where type Storage Amount = Map Amount
 instance Variate Amount where
   uniform = fmap Amount . uniform
   uniformR (a, b) = fmap Amount . uniformR (natural a, natural b)
+
+newtype Hearing = Hearing {unHearing :: Natural}
+  deriving stock (Eq, Show, Ord)
+  deriving newtype (Enum, Real, Integral, Num, Dhall.FromDhall, Dhall.ToDhall, TextShow, Store)
+
+instance Component Hearing where type Storage Hearing = Map Hearing

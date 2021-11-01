@@ -5,4 +5,5 @@
 , strategy : ./Strategy.dhall
 , canDrop : Natural
 , yieldsXP : Natural
+, hearing : Natural
 }

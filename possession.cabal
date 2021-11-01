@@ -75,6 +75,7 @@ library
     Game.World
     Raws
     Raw.Id
+    Raw.Lens
     Raw.Types
     Possession
     System.Random.MWC.Exts
