@@ -29,6 +29,7 @@ instance Renderable Message where
           Info -> ""
           Warning -> "yellow"
           Danger -> "red"
+          Debug -> "gray"
         toAppend = case m ^. #times of
           1 -> ""
           n -> " (" <> showt (getSum n) <> "x)"
@@ -44,6 +45,7 @@ colorToVty :: Color.Color -> Vty.Color
 colorToVty = \case
   Color.Black -> Vty.black
   Color.Grey -> Vty.rgbColor 221 221 (221 :: Int)
-  Color.White -> trace "WHITE" Vty.white
+  Color.White -> Vty.white
+  Color.Red -> Vty.red
   Color.Yellow -> Vty.brightYellow
   Color.Brown -> Vty.rgbColor @Int 0x78 0x58 0x32

@@ -17,10 +17,18 @@ in    [ { name = "gibbering idiot"
       , { name = "wolf"
         , glyph = "C"
         , onCollide = Collision.Attack
-        , color = Color.White
+        , color = Color.Grey
         , strategy = Strategy.FightOnSight
         , canDrop = 0
         , yieldsXP = 5
+        }
+      , { name = "battle-scared veteran"
+        , glyph = "H"
+        , onCollide = Collision.Attack
+        , color = Color.Red
+        , strategy = Strategy.FightOnSight
+        , canDrop = 10
+        , yieldsXP = 10
         }
       ]
     : List Enemy

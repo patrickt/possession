@@ -14,7 +14,7 @@ import Apecs.Exts qualified as Apecs
 import Control.Carrier.Random.Lifted qualified as Random
 import Control.Carrier.Reader (Has, runReader)
 import Control.Carrier.State.Strict (State, evalState)
-import Control.Carrier.Trace.Ignoring (Trace, runTrace, trace)
+import Control.Carrier.Trace.Brokered
 import Control.Concurrent (ThreadId, forkIO)
 import Control.Effect.Broker
   ( Broker,
@@ -41,6 +41,7 @@ import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position, position)
 import Data.Position qualified as Position
+import Debug.Trace (traceShowId)
 import Game.Action
   ( Action (LoadState, Move, Redraw, SaveState, Start, Update),
   )
@@ -63,7 +64,6 @@ import Raws (Raws)
 import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
-import Debug.Trace (traceShowId)
 
 type GameState = Game.State.State
 
@@ -80,9 +80,9 @@ start broker world = do
   rand <- MWC.createSystemRandom
   forkIO
     . runRandomFaster rand
-    . runTrace
     . evalState @Raws raws
     . runBroker broker
+    . runTrace
     . evalState Game.State.initial
     . Apecs.runWith world
     $ setup *> loop
@@ -115,7 +115,7 @@ setup = do
         Apecs.newEntity (Enemy.fromRaw pos (Raw.Id idx) e)
 
   foes <- use @Raws #enemies
-  itraverse_ mkEnemy (assert (not . null $ foes) foes))
+  itraverse_ mkEnemy foes
 
 findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
 findUnoccupied = do

@@ -3,6 +3,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -ddump-splices #-}
 module Raw.Types
   ( module Raw.Types
   , module Raw.Id
@@ -13,6 +14,14 @@ import Dhall.TH
 import Optics.TH (makeFieldLabelsNoPrefix)
 import Raw.Id
 import Data.Store.Exts (Store)
+import Language.Haskell.TH.Syntax (addDependentFile)
+
+[] <$ mapM addDependentFile
+  [ "cfg/Collision.dhall"
+  , "cfg/Color.dhall"
+  , "cfg/Strategy.dhall"
+  , "cfg/Enemy.dhall"
+  ]
 
 Dhall.TH.makeHaskellTypes
   [ MultipleConstructors "Collision" "./cfg/Collision.dhall",

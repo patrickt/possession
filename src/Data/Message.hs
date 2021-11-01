@@ -21,7 +21,7 @@ module Data.Message
     fromText,
     Urgency (..),
     youSee,
-  )
+  debug)
 where
 
 import Data.Aeson.Exts
@@ -34,7 +34,7 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import Optics
 
-data Urgency = Info | Warning | Danger
+data Urgency = Debug | Info | Warning | Danger
   deriving stock (Eq, Show, Ord, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -54,6 +54,9 @@ makeFieldLabelsWith noPrefixFieldLabels ''Message
 
 fromText :: Text -> Message
 fromText t = Message (pure t) (pure Info) 1
+
+debug :: String -> Message
+debug s = Message (pure (fromString s)) (pure Debug) 1
 
 youSee :: Name -> Message
 youSee n = Message (pure ("You see " <> Name.definiteArticle n <> " " <> Name.text n <> ".")) (pure Info) 1

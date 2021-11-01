@@ -45,6 +45,7 @@ library
   import:          shared
   exposed-modules:
     Apecs.Exts
+    Control.Carrier.Trace.Brokered
     Control.Effect.Broker
     Data.Aeson.Exts
     Data.Amount
@@ -130,6 +131,7 @@ library
     , pointedlist
     , store
     , stm
+    , template-haskell
     , text
     , text-show
     , transformers
