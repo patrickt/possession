@@ -30,6 +30,7 @@ Dhall.TH.makeHaskellTypes
   ]
 
 deriving instance Show Color
+deriving instance Eq Strategy
 
 deriving instance Store Collision
 deriving instance Store Color

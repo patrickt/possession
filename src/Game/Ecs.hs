@@ -25,9 +25,9 @@ import Control.Effect.Broker
 import Control.Effect.Broker qualified as Broker
 import Control.Effect.Optics (use)
 import Control.Effect.Random (Random)
-import Control.Monad (forever, guard, when)
+import Control.Monad (forever, guard, when, unless)
 import Control.Monad.IO.Class (MonadIO (..))
-import Data.Amount (Amount)
+import Data.Amount
 import Data.Experience (XP (..))
 import Data.Foldable (for_)
 import Data.Foldable.WithIndex (iforM_, itraverse_)
@@ -56,7 +56,7 @@ import Game.State qualified
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
 import Optics (At (at), (%), (.~), (?~))
-import Raw.Types (Collision (..))
+import Raw.Types (Collision (..), Strategy (..))
 import Raw.Types qualified as Color (Color (..))
 import Raw.Types qualified as Raw
 import Raws (Raws)
@@ -116,6 +116,14 @@ setup = do
   foes <- use @Raws #enemies
   itraverse_ mkEnemy foes
 
+enemyTurn :: (Has Broker sig m, MonadIO m) => Apecs.SystemT Game.World m ()
+enemyTurn = do
+  pp <- playerPosition
+  Apecs.cmapM_ \(Enemy.Enemy, e :: Entity, pos :: Position, Hearing hearingRadius, strat :: Strategy) ->
+    when (Position.dist pos pp < fromIntegral hearingRadius && strat == FightOnSight) do
+      let stepper = Position.stepTowards pp pos + pos
+      unless (stepper == pp) (Apecs.set e stepper)
+
 findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
 findUnoccupied = do
   pos <- Position.randomIn 1 50
@@ -155,6 +163,8 @@ loop = forever do
       Save.read >>= Save.load
       Broker.notify "Game loaded."
     Start -> pure ()
+
+  enemyTurn
 
   canv <- draw
   newinfo <- currentInfo
@@ -237,7 +247,7 @@ currentInfo = do
 player :: Entity
 player = Apecs.global
 
-playerPosition :: (Has (State GameState) sig m, MonadIO m) => Apecs.SystemT Game.World m Position
+playerPosition :: MonadIO m => Apecs.SystemT Game.World m Position
 playerPosition = Apecs.get player
 
 occupant :: MonadIO m => Position -> Apecs.SystemT Game.World m (Maybe Apecs.Entity)

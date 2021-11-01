@@ -1,6 +1,8 @@
 {-# LANGUAGE ExplicitNamespaces #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- A 2-tuple of integers for position on the world grid.
@@ -13,19 +15,26 @@ module Data.Position
     brickLocation,
     offset,
     offsetRandomly,
+    stepTowards,
+    dist,
   )
 where
 
-import Apecs (Component (..), Map)
+import Apecs (Component (..), Map, Cache)
 import Brick qualified
 import Control.Effect.Random
 import Data.Generics.Product hiding (position)
-import Linear.V2
+import Linear
 import Optics
+import TextShow
 
 type Position = V2 Int
 
-instance Apecs.Component Position where type Storage Position = Map Position
+instance TextShow Position where
+  showt (a :- b) = "(" <> showt a <> "," <> showt b <> ")"
+  showb = error "unimplemented"
+
+instance Apecs.Component Position where type Storage Position = Cache 3600 (Map Position)
 
 pattern (:-) :: Int -> Int -> Position
 pattern (:-) a b = V2 a b
@@ -51,3 +60,13 @@ offsetRandomly (V2 x y) = V2 <$> go x <*> go y
       fuzz <- uniformR (0, 2)
       degree <- uniformR (1, 3)
       pure ((v + fuzz) * degree)
+
+stepTowards :: Position -> Position -> V2 Int
+stepTowards a b =
+  fmap (round @_ @Int)
+    . normalize
+    . fmap (fromIntegral @_ @Double)
+    $ (a - b)
+
+dist :: Position -> Position -> Double
+dist a b = distance (fromIntegral <$> a) (fromIntegral <$> b)

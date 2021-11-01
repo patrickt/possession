@@ -10,7 +10,6 @@ module Control.Carrier.Trace.Brokered
 where
 
 import Control.Algebra
-import Control.Applicative
 import Control.Effect.Broker
 import Control.Effect.Trace
 import Control.Monad.IO.Class (MonadIO)

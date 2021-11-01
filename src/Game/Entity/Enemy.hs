@@ -19,10 +19,8 @@ import Data.Store.Exts (Store)
 import Data.Text qualified as Text
 import GHC.Generics hiding (to)
 import Optics
-import Raw.Types (Color, Strategy (..))
+import Raw.Types (Color)
 import Raw.Types qualified as Raw
-import Raw.Lens
-import Data.Generics.Product
 
 data Tag = Enemy
   deriving stock (Generic)
