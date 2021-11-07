@@ -3,13 +3,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
-
-module Game.Dungeon where
+module Game.Dungeon
+  ( Dungeon (..)
+  , Cell (..)
+  , step
+  , randomly
+  , makeDungeon
+  ) where
 
 import Control.Comonad
 import Control.DeepSeq
@@ -35,15 +35,18 @@ instance Show Cell where
     On -> "#"
     Off -> "."
 
+newtype Dungeon = Dungeon { getDungeon :: Game }
+  deriving newtype NFData
+
 type Game = U.Univ Cell
 
 neighborCount :: Game -> Int
-neighborCount = getSum . foldMap (Sum . fromEnum) . V.filter (== On) . U.neighbors
+neighborCount = length . V.filter (== On) . U.neighbors
 
-randomly :: IO (U.Univ Cell)
+randomly :: IO Dungeon
 randomly = do
   rand <- R.getStdGen >>= R.newIOGenM
-  U.generateM 60 (const (uniformM rand))
+  Dungeon <$> U.generateM 60 (const (uniformM rand))
 
 step :: Game -> Cell
 step g = result
@@ -63,8 +66,8 @@ step g = result
           | count > birthLimit -> On
           | otherwise -> Off
 
-makeDungeon :: IO Game
+makeDungeon :: IO Dungeon
 makeDungeon = do
-  start <- randomly
+  Dungeon start <- randomly
   let iter = stimes (3 :: Int) (Endo (extend step))
-  pure (iter `appEndo` start)
+  pure . Dungeon $ iter `appEndo` start

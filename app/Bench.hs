@@ -2,12 +2,12 @@ module Main (main) where
 
 import Gauge
 import Game.Dungeon
+import Data.Foldable
 import Data.Monoid
 import Control.Comonad
-import Data.Foldable
 
-iter :: Game -> Int -> Game
-iter g n = appEndo (fold (replicate n (Endo (extend step)))) g
+iter :: Dungeon -> Int -> Dungeon
+iter g n = Dungeon . appEndo (fold (replicate n (Endo (extend step)))) . getDungeon $ g
 
 main :: IO ()
 main = do

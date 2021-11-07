@@ -31,6 +31,7 @@ common shared
       KindSignatures
       LambdaCase
       MultiParamTypeClasses
+      MultiWayIf
       OverloadedLabels
       RankNTypes
       ScopedTypeVariables
@@ -69,6 +70,7 @@ library
     Game.Entity.Player
     Game.Flag
     Game.Info
+    Game.Pathfind
     Game.Save
     Game.Sprite
     Game.State
@@ -97,7 +99,7 @@ library
 
   hs-source-dirs:  src
   build-depends:
-    , aeson
+      aeson
     , apecs
     , array
     , async
@@ -114,23 +116,25 @@ library
     , fused-effects
     , fused-effects-mwc-random
     , fused-effects-optics
-    , generic-lens-core
     , generic-monoid
     , generic-optics
-    , grid
     , indexed-traversable
     , indexed-traversable-instances
     , linear
     , mwc-random
-    , motor
     , unagi-chan
     , random
+    , prettyprinter
     , optics
     , optics-th
     , optics-vl
     , parallel
     , pointedlist
+    , pqueue
+    , prettyprinter
     , store
+    -- stupid workaround
+    , network == 3.1.2.2
     , stm
     , template-haskell
     , text

@@ -63,6 +63,7 @@ import Raws (Raws)
 import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
+import Game.Dungeon
 
 type GameState = Game.State.State
 
@@ -100,7 +101,7 @@ setup = do
   for_ Canvas.borders (Apecs.newEntity_ . Terrain.wall)
 
   map' <- liftIO Dungeon.makeDungeon
-  iforM_ map' $ \pos cell ->
+  iforM_ (getDungeon map') $ \pos cell ->
     when (cell == Dungeon.On) $
       Apecs.newEntity_ (Terrain.wall pos)
 

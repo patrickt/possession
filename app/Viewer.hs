@@ -11,9 +11,9 @@ import Data.Vector.Universe (drawIO)
 
 main :: IO ()
 main = do
-  let go x = do
+  let go (Dungeon x) = do
         drawIO x
         putStrLn "****"
         void getLine
-        go (extend step x)
+        go (Dungeon (extend step x))
   randomly >>= go
