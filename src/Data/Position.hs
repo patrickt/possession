@@ -4,6 +4,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE BlockArguments #-}
 
 -- A 2-tuple of integers for position on the world grid.
 module Data.Position
@@ -13,6 +14,7 @@ module Data.Position
     position,
     randomIn,
     brickLocation,
+    adjacentClamped,
     offset,
     offsetRandomly,
     stepTowards,
@@ -27,13 +29,15 @@ import Data.Generics.Product hiding (position)
 import Linear
 import Optics
 import TextShow
+import Data.List (nub)
+import Control.Monad (guard)
 
 type Position = V2 Int
 
 instance TextShow Position where
   showt (a :- b) = "(" <> showt a <> "," <> showt b <> ")"
   showb = error "unimplemented"
-
+h
 instance Apecs.Component Position where type Storage Position = Cache 3600 (Map Position)
 
 pattern (:-) :: Int -> Int -> Position
@@ -46,6 +50,18 @@ brickLocation (a :- b) = Brick.Location (a + 1, b + 1)
 
 position :: forall a. HasType Position a => Lens' a Position
 position = typed
+
+adjacentClamped :: Int -> Position -> [Position]
+adjacentClamped maxim (a :- b) = do
+  x <- [-1, 0, 1]
+  y <- [-1, 0, 1]
+  guard (x /= 0 && y /= 0)
+  let new = (a + x) :- (b + y)
+  guard (new `isBoundedBy` (maxim :- maxim))
+  pure new
+
+isBoundedBy :: Position -> Position -> Bool
+isBoundedBy (maxX :- maxY) (a :- b) = a >= 0 && b >= 0 && a < maxX && b < maxY
 
 randomIn :: Has Random sig m => Int -> Int -> m Position
 randomIn x y = V2 <$> uniformR (x, y) <*> uniformR (x, y)

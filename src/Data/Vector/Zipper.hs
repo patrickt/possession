@@ -16,6 +16,7 @@ import Data.Functor.WithIndex.Instances ()
 import Data.Vector (Vector, (!))
 import Data.Vector qualified as Vector
 import GHC.Generics (Generic)
+import Prettyprinter
 
 data Zipper a = Zipper
   { before :: Vector a,
@@ -24,6 +25,9 @@ data Zipper a = Zipper
   }
   deriving stock (Show, Eq, Generic)
   deriving anyclass (NFData)
+
+instance Pretty a => Pretty (Zipper a) where
+  pretty (Zipper b f a) = foldMap pretty b <> pretty f <> foldMap pretty a
 
 zindex :: Int -> Zipper a -> a
 zindex n Zipper{..} =

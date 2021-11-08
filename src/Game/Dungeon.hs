@@ -7,6 +7,7 @@ module Game.Dungeon
   ( Dungeon (..)
   , Cell (..)
   , step
+  , at
   , randomly
   , makeDungeon
   ) where
@@ -20,6 +21,9 @@ import GHC.Generics (Generic)
 import System.Random.Stateful (Uniform (..))
 import System.Random.Stateful qualified as R
 import Data.Semigroup (stimes)
+import Prettyprinter qualified as Pretty
+import Data.Foldable
+import Data.Position (Position)
 
 data Cell = Off | On
   deriving stock (Eq, Enum, Generic)
@@ -35,6 +39,9 @@ instance Show Cell where
     On -> "#"
     Off -> "."
 
+instance Pretty.Pretty Cell where
+  pretty = Pretty.viaShow
+
 newtype Dungeon = Dungeon { getDungeon :: Game }
   deriving newtype NFData
 
@@ -47,6 +54,9 @@ randomly :: IO Dungeon
 randomly = do
   rand <- R.getStdGen >>= R.newIOGenM
   Dungeon <$> U.generateM 60 (const (uniformM rand))
+
+at :: Dungeon -> Position -> Cell
+at (Dungeon d) p = U.index p d
 
 step :: Game -> Cell
 step g = result
@@ -71,3 +81,6 @@ makeDungeon = do
   Dungeon start <- randomly
   let iter = stimes (3 :: Int) (Endo (extend step))
   pure . Dungeon $ iter `appEndo` start
+
+instance Pretty.Pretty Dungeon where
+  pretty (Dungeon d) = Pretty.vcat . fmap Pretty.pretty . toList . U.getZipper $ d

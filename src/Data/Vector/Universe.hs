@@ -13,7 +13,6 @@ module Data.Vector.Universe
     index,
     generateM,
     generate,
-    draw,
     drawIO,
   )
 where
@@ -31,8 +30,10 @@ import Data.Vector.Zipper qualified as Z
 import GHC.Exts (IsList (..))
 import GHC.Generics (Generic)
 import Data.Position
+import Prettyprinter
+import Prettyprinter.Render.Text (putDoc)
 
-newtype Univ a = Univ (Zipper (Zipper a))
+newtype Univ a = Univ { getZipper :: Zipper (Zipper a) }
   deriving stock (Eq, Functor, Foldable, Generic)
   deriving anyclass (NFData)
 
@@ -97,8 +98,8 @@ generateM n f = Univ <$> Z.generateM n (\m -> Z.generateM n (f . P.V2 m))
 generate :: Int -> (P.Position -> a) -> Univ a
 generate n f = coerce (generateM n (Identity . f))
 
-drawIO :: Show a => Univ a -> IO ()
-drawIO = putStrLn . draw
+drawIO :: Pretty a => Univ a -> IO ()
+drawIO = putDoc . pretty
 
-draw :: Show a => Univ a -> String
-draw (Univ g) = unlines . toList . fmap (foldMap show) . Z.toVector $ g
+instance Pretty a => Pretty (Univ a) where
+  pretty (Univ g) = vcat . toList . fmap pretty . Z.toVector $ g

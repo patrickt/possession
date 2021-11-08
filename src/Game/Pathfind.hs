@@ -7,11 +7,13 @@ import Data.PQueue.Prio.Min qualified as PQueue
 import Data.Position
 import Game.Dungeon qualified as Dungeon
 import Data.Maybe (fromMaybe)
+import Debug.Trace
 
 type Path = [Position]
 
 data PathError
   = NoRoute
+  deriving stock Show
 
 type Heuristic = Position -> Double
 
@@ -27,7 +29,7 @@ record :: Position -> Double -> Scorer -> Scorer
 record = Map.insert
 
 aStar :: Dungeon.Dungeon -> Position -> Position -> Heuristic -> Either PathError Path
-aStar dungeon start goal heuristic = go (PQueue.singleton (heuristic start) start) mempty mempty
+aStar dungeon start goal heuristic = go (PQueue.singleton (heuristic start) start) mempty (Map.singleton start 0)
   where
     go ::
       OpenSet ->
@@ -49,7 +51,7 @@ aStar dungeon start goal heuristic = go (PQueue.singleton (heuristic start) star
 
 
         let inner :: [Position] -> OpenSet -> CameFrom -> Scorer -> Either PathError Path
-            inner neighbors openSet' cameFrom' gScore' = case neighbors of
+            inner neighbors openSet' cameFrom' gScore' = case traceShow (current, neighbors, openSet) neighbors of
               [] -> go openSet' cameFrom' gScore'
               neighbor : rest -> do
                 let tentativeGScore = score current gScore' + edgeWeight current neighbor
@@ -66,13 +68,13 @@ aStar dungeon start goal heuristic = go (PQueue.singleton (heuristic start) star
 
         if current == goal
           then pure (reconstructNode [] current)
-          else inner (fastNeighbors dungeon) newOpenSet cameFrom gScore
+          else inner (fastNeighbors dungeon current) newOpenSet cameFrom gScore
 
-fastNeighbors :: Dungeon.Dungeon -> [Position]
-fastNeighbors = error "not implemented"
+fastNeighbors :: Dungeon.Dungeon -> Position -> [Position]
+fastNeighbors d = filter (\p -> Dungeon.at d p == Dungeon.Off) . Data.Position.adjacentClamped 29
 
 edgeWeight :: Position -> Position -> Double
-edgeWeight = error "not implemented"
+edgeWeight _ _ = 1
 
 infinity :: Double
 infinity = read "Infinity"

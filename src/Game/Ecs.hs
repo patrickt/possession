@@ -46,7 +46,7 @@ import Game.Action
   )
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
-import Game.Dungeon qualified as Dungeon
+import Game.Dungeon qualified as Dungeon hiding (at)
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Entity.Terrain qualified as Terrain
@@ -63,7 +63,7 @@ import Raws (Raws)
 import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
-import Game.Dungeon
+import Game.Dungeon hiding (at)
 
 type GameState = Game.State.State
 
