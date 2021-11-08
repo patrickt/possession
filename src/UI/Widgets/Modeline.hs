@@ -1,17 +1,5 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module UI.Widgets.Modeline
   ( Modeline,
@@ -25,13 +13,12 @@ where
 import Brick qualified
 import Brick.Widgets.List qualified as Brick
 import Brick.Widgets.Center qualified as Brick
-import Data.Message
+import Data.Message ( Message )
 import Data.Monoid.Generic
-import Data.Sequence (Seq)
+import Data.Sequence (Seq, (|>))
 import Data.Sequence qualified as Seq
 import GHC.Generics (Generic)
-import Optics
-import UI.Render
+import UI.Render ( Renderable(..), renderThe )
 import UI.Resource qualified as Resource
 
 newtype Modeline = Modeline
@@ -40,8 +27,6 @@ newtype Modeline = Modeline
   deriving stock (Generic)
   deriving (Semigroup) via GenericSemigroup Modeline
   deriving (Monoid) via GenericMonoid Modeline
-
-makeFieldLabelsWith noPrefixFieldLabels ''Modeline
 
 initial :: Modeline
 initial = mempty
@@ -53,7 +38,7 @@ instance Renderable Modeline where
   render (Modeline msgs) stack =
     let readout =
           Brick.hCenter
-          . Brick.renderList (const (head . flip (render @Message) [])) False
+          . Brick.renderList (const (renderThe @Message)) False
           -- TODO: move this viewport appropriately rather than gyrating with drop
           $
             Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1

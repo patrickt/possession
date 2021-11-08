@@ -1,14 +1,7 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -39,9 +32,9 @@ data Urgency = Debug | Info | Warning | Danger
   deriving anyclass (FromJSON, ToJSON)
 
 data Message = Message
-  { contents :: Data.Semigroup.Last Text,
-    urgency :: Max Urgency,
-    times :: Sum Int
+  { messageContents :: Data.Semigroup.Last Text,
+    messageUrgency :: Max Urgency,
+    messageTimes :: Sum Int
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
@@ -50,7 +43,7 @@ data Message = Message
 instance IsString Message where
   fromString s = Message (pure (fromString s)) (pure Info) 1
 
-makeFieldLabelsWith noPrefixFieldLabels ''Message
+makeFieldLabels ''Message
 
 fromText :: Text -> Message
 fromText t = Message (pure t) (pure Info) 1

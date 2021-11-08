@@ -1,4 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -15,7 +14,8 @@ import Graphics.Vty.Attributes qualified as Attr
 import Optics
 import TextShow
 import UI.Resource
-import Debug.Trace
+import Brick.Util (fg)
+import Data.Text.Markup ((@@))
 
 class Renderable a where
   render :: a -> [Brick.Widget Resource] -> [Brick.Widget Resource]
@@ -25,15 +25,15 @@ renderThe a = head (render a [])
 
 instance Renderable Message where
   render m stack =
-    let attr = case m ^. #urgency % coerced of
-          Info -> ""
-          Warning -> "yellow"
-          Danger -> "red"
-          Debug -> "gray"
+    let foreground = case m ^. #urgency % coerced of
+          Info -> mempty
+          Warning -> fg Vty.yellow
+          Danger -> fg Vty.red
+          Debug -> fg Vty.green
         toAppend = case m ^. #times of
           1 -> ""
           n -> " (" <> showt (getSum n) <> "x)"
-        final = markup (((m ^. #contents % coerced) @? attr) <> Markup.fromText toAppend)
+        final = markup (((m ^. #contents % coerced) @@ foreground) <> Markup.fromText toAppend)
      in final : stack
 
 withForeground :: Color.Color -> Brick.Widget a -> Brick.Widget a
@@ -44,7 +44,7 @@ withForeground color = Brick.modifyDefAttr attr
 colorToVty :: Color.Color -> Vty.Color
 colorToVty = \case
   Color.Black -> Vty.black
-  Color.Grey -> Vty.rgbColor 221 221 (221 :: Int)
+  Color.Grey -> Vty.rgbColor @Int 221 221 221
   Color.White -> Vty.white
   Color.Red -> Vty.red
   Color.Yellow -> Vty.brightYellow

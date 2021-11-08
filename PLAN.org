@@ -5,11 +5,6 @@
   - Gameplay loop involves room-jumping until you find something that can help you
   - Or an enemy you can kill for XP, and then possess
 
-Apecs event loop
-  - Can write to BChan (redraw, trigger UI)
-  - Can read from WChan (tick)
-  - Runs in IO
-
 We can't blit vty images directly, there's no superimpose operation
 I don't want to write the various gyrations required to figure that out
 So we could make an Array of Vty images, and each Located thing writes
@@ -25,7 +20,6 @@ Fade out modeline message
 Confusing method dispatch (got a little better)
 Alert when a level is gained (need to figure out where this logic lives)
 third dimension
-dungeon generation
 switch to Grid instead of array
 
 customizable key layouts
@@ -34,5 +28,6 @@ contained in UI.State, a SomeLayout, parsed from a Dhall string in
 class Layout map widget where
   translate :: map -> widget -> Vty.Event -> Input
 
-generate Haskell types from Dhall
 use Shake?
+
+UI.Widgets.Modeline: use viewports instead of

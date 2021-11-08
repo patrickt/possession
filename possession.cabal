@@ -23,6 +23,7 @@ common shared
       DeriveGeneric
       DeriveTraversable
       DerivingStrategies
+      DerivingVia
       ExistentialQuantification
       FlexibleContexts
       FlexibleInstances
