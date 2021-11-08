@@ -35,25 +35,36 @@ makeState ctx =
       best = start ctx
     }
 
-data Prog a
+data Prog m a
   = NoPath
-  | IsDone Position
-  | InProgress Position a
-  deriving (Show, Functor, Generic)
+  | IsDone (m Position)
+  | InProgress (m Position) a
+  deriving (Functor, Generic)
 
-type instance Base (Prog a) = Const (Prog a)
+type instance Base (Prog m a) = Const (Prog m a)
 
-instance Recursive (Prog a) where project = Const
+instance Recursive (Prog m a) where project = Const
 
 infinity :: Double
 infinity = read "Infinity"
 
-buildTree :: Context -> St -> Prog St
+pathfind :: forall m . (m ~ IO) => Context -> m [Position]
+pathfind c = hylo @(Prog m) retraceSteps (buildTree c) (makeState c)
+
+retraceSteps :: forall m . Applicative m => Prog m (m [Position]) -> m [Position]
+retraceSteps = cata (go . getConst)
+  where
+    go = \case
+      NoPath -> pure []
+      IsDone pos -> fmap pure pos
+      InProgress v ps -> (:) <$> v <*> ps
+
+buildTree :: Context -> St -> Prog IO St
 buildTree ctx s = case PQueue.minView (openSet s) of
   Nothing -> NoPath
   Just (current, newSet)
-    | current == goal ctx -> IsDone current
-    | otherwise -> InProgress (best newState) newState
+    | current == goal ctx -> IsDone (current <$ print ("done", current))
+    | otherwise -> InProgress (best newState <$ print ("iter", current)) newState
     where
       newState = foldr adder s {openSet = newSet} . neighborsFor ctx $ current
       getScore p = fromMaybe infinity . Map.lookup p . scorer $ s
@@ -71,18 +82,18 @@ buildTree ctx s = case PQueue.minView (openSet s) of
           withNeighbor = PQueue.insert (tentativeScore + heuristic ctx neighbor) neighbor . openSet
           updated = Map.insert neighbor tentativeScore . scorer
 
-pathfind :: Context -> [Position]
-pathfind = hylo retraceSteps <$> buildTree <*> makeState
+-- pathfind :: Context -> [Position]
+-- pathfind = hylo retraceSteps <$> buildTree <*> makeState
 
-retraceSteps :: Prog [Position] -> [Position]
-retraceSteps = cata (go . getConst)
-  where
-    go = \case
-      NoPath -> []
-      IsDone pos -> [pos]
-      InProgress v ps
-        | v == head ps -> ps
-        | otherwise -> v : ps
+-- retraceSteps :: Prog [Position] -> [Position]
+-- retraceSteps = cata (go . getConst)
+--   where
+--     go = \case
+--       NoPath -> []
+--       IsDone pos -> [pos]
+--       InProgress v ps
+--         | v == head ps -> ps
+--         | otherwise -> v : ps
 
 {-
 .a...
@@ -97,7 +108,7 @@ sampleContext =
   Context
     { start = 0 :- 1,
       goal = 4 :- 4,
-      heuristic = Position.dist (4 :- 4),
+      heuristic = Position.dist (goal sampleContext),
       edgeWeight = \_ _ -> 0,
       neighborsFor = \b ->
         [ x
