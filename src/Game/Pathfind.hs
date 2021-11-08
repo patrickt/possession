@@ -2,79 +2,109 @@
 
 module Game.Pathfind (module Game.Pathfind) where
 
+import Data.Functor.Const
+import Data.Functor.Foldable
 import Data.Map.Strict qualified as Map
-import Data.PQueue.Prio.Min qualified as PQueue
-import Data.Position
-import Game.Dungeon qualified as Dungeon
 import Data.Maybe (fromMaybe)
-import Debug.Trace
+import Data.PQueue.Prio.Min qualified as PQueue
+import Data.Position as Position
+import GHC.Generics (Generic)
 
-type Path = [Position]
+-- immutable components of a path search
+data Context = Context
+  { start :: Position,
+    goal :: Position,
+    heuristic :: Position -> Double,
+    edgeWeight :: Position -> Position -> Double,
+    neighborsFor :: Position -> [Position]
+  }
 
-data PathError
-  = NoRoute
-  deriving stock Show
+-- mutable components
+data St = St
+  { openSet :: PQueue.MinPQueue Double Position,
+    scorer :: Map.Map Position Double, -- TODO can we use histo to simulate this?
+    best :: Position
+  }
+  deriving (Show)
 
-type Heuristic = Position -> Double
+makeState :: Context -> St
+makeState ctx =
+  St
+    { openSet = PQueue.singleton 0 (start ctx),
+      scorer = Map.singleton (start ctx) 0,
+      best = start ctx
+    }
 
-type Scorer = Map.Map Position Double
+data Prog a
+  = NoPath
+  | IsDone Position
+  | InProgress Position a
+  deriving (Show, Functor, Generic)
 
-type OpenSet = PQueue.MinPQueue Double Position
-type CameFrom = Map.Map Position Position
+type instance Base (Prog a) = Const (Prog a)
 
-score :: Position -> Scorer -> Double
-score p = fromMaybe infinity . Map.lookup p
-
-record :: Position -> Double -> Scorer -> Scorer
-record = Map.insert
-
-aStar :: Dungeon.Dungeon -> Position -> Position -> Heuristic -> Either PathError Path
-aStar dungeon start goal heuristic = go (PQueue.singleton (heuristic start) start) mempty (Map.singleton start 0)
-  where
-    go ::
-      OpenSet ->
-      -- open-set, The set of discovered nodes that may need to be (re-)expanded.
-      CameFrom ->
-      -- came-from, maps a node to the one immediately preceding it on the cheapest currently-known path from start
-      Scorer ->
-      -- g-score, cost of the cheapest path from start to a node, currently known
-      Either PathError Path
-    go openSet cameFrom gScore
-      | PQueue.null openSet = Left NoRoute
-      | otherwise = do
-        let ((_, current), newOpenSet) = PQueue.deleteFindMin openSet
-
-        let reconstructNode :: [Position] -> Position -> [Position]
-            reconstructNode acc it = case Map.lookup it cameFrom of
-              Nothing -> acc
-              Just a -> reconstructNode (a : acc) a
-
-
-        let inner :: [Position] -> OpenSet -> CameFrom -> Scorer -> Either PathError Path
-            inner neighbors openSet' cameFrom' gScore' = case traceShow (current, neighbors, openSet) neighbors of
-              [] -> go openSet' cameFrom' gScore'
-              neighbor : rest -> do
-                let tentativeGScore = score current gScore' + edgeWeight current neighbor
-                if tentativeGScore < score neighbor gScore'
-                  then do
-                    let newCameFrom = Map.insert neighbor current cameFrom
-                    let newGScore = record neighbor tentativeGScore gScore'
-                    let newFScore = score neighbor gScore' + heuristic neighbor
-                    let newOpenSet'
-                          | neighbor `elem` PQueue.elemsU openSet' = openSet'
-                          | otherwise = PQueue.insert newFScore neighbor openSet'
-                    inner rest newOpenSet' newCameFrom newGScore
-                  else inner rest openSet' cameFrom' gScore'
-
-        if current == goal
-          then pure (reconstructNode [] current)
-          else inner (fastNeighbors dungeon current) newOpenSet cameFrom gScore
-
-fastNeighbors :: Dungeon.Dungeon -> Position -> [Position]
-fastNeighbors d = filter (\p -> Dungeon.at d p == Dungeon.Off) . Data.Position.adjacentClamped 29
-
-edgeWeight :: Position -> Position -> Double
-edgeWeight _ _ = 1
+instance Recursive (Prog a) where project = Const
 
 infinity :: Double
 infinity = read "Infinity"
+
+buildTree :: Context -> St -> Prog St
+buildTree ctx s = case PQueue.minView (openSet s) of
+  Nothing -> NoPath
+  Just (current, newSet)
+    | current == goal ctx -> IsDone current
+    | otherwise -> InProgress (best newState) newState
+    where
+      newState = foldr adder s {openSet = newSet} . neighborsFor ctx $ current
+      getScore p = fromMaybe infinity . Map.lookup p . scorer $ s
+      adder :: Position -> St -> St
+      adder neighbor st
+        | tentativeScore < getScore neighbor =
+          st
+            { openSet = withNeighbor st,
+              scorer = updated st,
+              best = current
+            }
+        | otherwise = st
+        where
+          tentativeScore = edgeWeight ctx current neighbor + getScore current
+          withNeighbor = PQueue.insert (tentativeScore + heuristic ctx neighbor) neighbor . openSet
+          updated = Map.insert neighbor tentativeScore . scorer
+
+pathfind :: Context -> [Position]
+pathfind = hylo retraceSteps <$> buildTree <*> makeState
+
+retraceSteps :: Prog [Position] -> [Position]
+retraceSteps = cata (go . getConst)
+  where
+    go = \case
+      NoPath -> []
+      IsDone pos -> [pos]
+      InProgress v ps
+        | v == head ps -> ps
+        | otherwise -> v : ps
+
+{-
+.a...
+.XXX.
+.XX..
+...b.
+.....
+-}
+
+sampleContext :: Context
+sampleContext =
+  Context
+    { start = 0 :- 1,
+      goal = 4 :- 4,
+      heuristic = Position.dist (4 :- 4),
+      edgeWeight = \_ _ -> 0,
+      neighborsFor = \b ->
+        [ x
+          | b `notElem` [1 :- 1, 1 :- 2, 1 :- 3, 2 :- 1, 2 :- 2],
+            x <- adjacentClamped 6 b
+        ]
+    }
+
+sampleState :: St
+sampleState = makeState sampleContext
