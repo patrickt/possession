@@ -31,6 +31,7 @@ import UI.Responder
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Sidebar (Sidebar)
+import UI.Widgets.Sidebar qualified as Sidebar
 
 data Toplevel = Toplevel
   { toplevelCanvas :: Canvas,
@@ -43,7 +44,7 @@ makeFieldLabels ''Toplevel
 
 initial :: Toplevel
 initial =
-  Toplevel Canvas.initial mempty Modeline.initial
+  Toplevel Canvas.initial Sidebar.initial Modeline.initial
 
 instance Responder Toplevel where
   translate (Vty.EvKey k mods) _ = case k of
