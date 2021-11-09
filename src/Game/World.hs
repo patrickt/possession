@@ -47,6 +47,7 @@ makeWorld "World"
     -- behaviors
     ''Collision,
     ''Strategy,
+    ''Flag.Impassable,
 
     -- numeric quantiites
     ''Amount,

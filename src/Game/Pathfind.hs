@@ -9,6 +9,8 @@ import Data.Maybe (fromMaybe)
 import Data.PQueue.Prio.Min qualified as PQueue
 import Data.Position as Position
 import GHC.Generics (Generic)
+import Data.Functor.Identity
+import Data.Coerce (coerce)
 
 -- immutable components of a path search
 data Context = Context
@@ -48,8 +50,11 @@ instance Recursive (Prog m a) where project = Const
 infinity :: Double
 infinity = read "Infinity"
 
-pathfind :: forall m . (m ~ IO) => Context -> m [Position]
+pathfind :: forall m . Monad m => Context -> m [Position]
 pathfind c = hylo @(Prog m) retraceSteps (buildTree c) (makeState c)
+
+pathfind' :: Context -> [Position]
+pathfind' = coerce . pathfind @Identity
 
 retraceSteps :: forall m . Applicative m => Prog m (m [Position]) -> m [Position]
 retraceSteps = cata (go . getConst)
@@ -59,12 +64,12 @@ retraceSteps = cata (go . getConst)
       IsDone pos -> fmap pure pos
       InProgress v ps -> (:) <$> v <*> ps
 
-buildTree :: Context -> St -> Prog IO St
+buildTree :: Monad m => Context -> St -> Prog m St
 buildTree ctx s = case PQueue.minView (openSet s) of
   Nothing -> NoPath
   Just (current, newSet)
-    | current == goal ctx -> IsDone (current <$ print ("done", current))
-    | otherwise -> InProgress (best newState <$ print ("iter", current)) newState
+    | current == goal ctx -> IsDone (pure current)
+    | otherwise -> InProgress (pure (best newState)) newState
     where
       newState = foldr adder s {openSet = newSet} . neighborsFor ctx $ current
       getScore p = fromMaybe infinity . Map.lookup p . scorer $ s

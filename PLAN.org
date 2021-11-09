@@ -30,4 +30,5 @@ class Layout map widget where
 
 use Shake?
 
-UI.Widgets.Modeline: use viewports instead of
+UI.Widgets.Modeline: learn how viewports work
+fix HUD

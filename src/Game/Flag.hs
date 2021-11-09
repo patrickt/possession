@@ -28,6 +28,12 @@ data Dirty = Dirty
   deriving stock (Eq, Show, Enum, Generic)
   deriving anyclass (Flag, Store)
 
+data Impassable = Impassable
+  deriving stock (Eq, Show, Enum, Generic)
+  deriving anyclass (Flag, Store)
+
+instance Component Impassable where type Storage Impassable = Map Impassable
+
 get :: forall f w m. (Apecs.Get w m f, Flag f) => Apecs.Entity -> Apecs.SystemT w m Bool
 get e = Apecs.exists e (Proxy @f)
 

@@ -34,7 +34,7 @@ import Data.Foldable.WithIndex (iforM_, itraverse_)
 import Data.Function ((&))
 import Data.Glyph (Glyph (..))
 import Data.Hitpoints as HP (HP, injure, isAlive)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, mapMaybe)
 import Data.Message qualified as Message
 import Data.Monoid (Alt (getAlt), Last)
 import Data.Name (Name)
@@ -64,6 +64,9 @@ import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
 import Game.Dungeon hiding (at)
+import Game.Pathfind qualified as PF
+import qualified Game.Flag as Flag
+import qualified Data.Map.Strict as Map
 
 type GameState = Game.State.State
 
@@ -97,6 +100,7 @@ setup ::
   ) =>
   Apecs.SystemT Game.World m ()
 setup = do
+
   -- Build some walls
   for_ Canvas.borders (Apecs.newEntity_ . Terrain.wall)
 
@@ -117,13 +121,25 @@ setup = do
   foes <- use @Raws #enemies
   itraverse_ mkEnemy foes
 
-enemyTurn :: (Has Broker sig m, MonadIO m) => Apecs.SystemT Game.World m ()
+enemyTurn :: (Has Broker sig m, MonadIO m, Has Trace sig m) => Apecs.SystemT Game.World m ()
 enemyTurn = do
   pp <- playerPosition
+
+  let empties = Map.fromList $ do
+        pos <- Canvas.borders
+        pure (pos, Dungeon.On)
+  impassables <- Apecs.cfoldMap (\(Flag.Impassable, p :: Position) -> Map.singleton p Dungeon.Off)
+  let lookupTable = Map.union impassables empties
+  let isEmpty x = Map.lookup x lookupTable == Just Dungeon.Off
+  let neighborsOf p = filter isEmpty (Position.adjacentClamped Canvas.size p)
+
   Apecs.cmapM_ \(Enemy.Enemy, e :: Entity, pos :: Position, Hearing hearingRadius, strat :: Strategy) ->
     when (Position.dist pos pp < fromIntegral hearingRadius && strat == FightOnSight) do
-      let stepper = Position.stepTowards pp pos + pos
-      unless (stepper == pp) (Apecs.set e stepper)
+      let pfctx = PF.Context pos pp (Position.dist pos) (\_ _ -> 1) neighborsOf
+      let path = PF.pathfind' pfctx
+      case path of
+        (_:y:_) -> Apecs.set e y
+        x -> trace ("path is " <> show x)
 
 findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
 findUnoccupied = do
