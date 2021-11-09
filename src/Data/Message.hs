@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -12,12 +12,16 @@
 module Data.Message
   ( Message (Message),
     fromText,
+    isSubsumed,
+    contents,
     Urgency (..),
     youSee,
-  debug)
+    debug,
+  )
 where
 
 import Data.Aeson.Exts
+import Data.Function
 import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Semigroup
@@ -26,24 +30,33 @@ import Data.String
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Optics
+import qualified Data.Monoid
+import Data.Monoid.Generic
 
 data Urgency = Debug | Info | Warning | Danger
-  deriving stock (Eq, Show, Ord, Generic)
+  deriving stock (Eq, Show, Bounded, Ord, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
 data Message = Message
-  { messageContents :: Data.Semigroup.Last Text,
+  { messageContents :: Data.Monoid.Last Text,
     messageUrgency :: Max Urgency,
     messageTimes :: Sum Int
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
   deriving (Semigroup) via GenericSemigroup Message
+  deriving (Monoid) via GenericMonoid Message
 
 instance IsString Message where
   fromString s = Message (pure (fromString s)) (pure Info) 1
 
 makeFieldLabels ''Message
+
+contents :: Message -> Text
+contents m = m ^. #contents % coerced % non ""
+
+isSubsumed :: Message -> Message -> Bool
+isSubsumed = (==) `on` view #contents
 
 fromText :: Text -> Message
 fromText t = Message (pure t) (pure Info) 1

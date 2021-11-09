@@ -4,8 +4,8 @@
 module UI.Widgets.Modeline
   ( Modeline,
     initial,
-    messages,
     update,
+    lastMessage,
     render,
   )
 where
@@ -15,11 +15,12 @@ import Brick.Widgets.List qualified as Brick
 import Brick.Widgets.Center qualified as Brick
 import Data.Message ( Message )
 import Data.Monoid.Generic
-import Data.Sequence (Seq, (|>))
+import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
 import GHC.Generics (Generic)
 import UI.Render ( Renderable(..), renderThe )
 import UI.Resource qualified as Resource
+import Optics
 
 newtype Modeline = Modeline
   { messages :: Seq Message
@@ -33,6 +34,9 @@ initial = mempty
 
 update :: Message -> Modeline -> Modeline
 update m (Modeline msgs) = Modeline (msgs |> m)
+
+lastMessage :: AffineTraversal' Modeline Message
+lastMessage = #messages % _last
 
 instance Renderable Modeline where
   render (Modeline msgs) stack =

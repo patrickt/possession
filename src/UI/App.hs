@@ -28,6 +28,7 @@ import UI.State qualified as State
 import UI.State qualified as UI (State)
 import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Toplevel (Toplevel)
+import qualified Data.Message as Message
 
 draw :: UI.State -> [Brick.Widget UI.Resource]
 draw s = render (s ^. #renderStack) []
@@ -66,23 +67,21 @@ handleVty s vty =
    in go (Responder.onSend inp (s ^. #latestInfo) first)
 
 handleApp :: UI.State -> Action dest -> Brick.EventM UI.Resource (Brick.Next UI.State)
-handleApp s cmd = Brick.continue $ case cmd of
-  Action.Start -> s
+handleApp state cmd = Brick.continue $ case cmd of
+  Action.Start -> state
   Action.Redraw canv ->
-    propagate @Toplevel (#canvas %~ Canvas.update canv) s
+    propagate @Toplevel (#canvas %~ Canvas.update canv) state
   Action.Update info ->
     -- TODO: I don't like this double-info thing; can we make the sidebar not store it?
     -- Yes, I think we can, since we pass in the info in onSend now.
-    s & #latestInfo .~ info
+    state & #latestInfo .~ info
       & propagate @Toplevel (#sidebar % #info .~ info)
   Action.Notify msg -> do
-    let lastMessage = State.firstResponder % castTo @Toplevel % #modeline % #messages % _last
-    let previous = s ^? lastMessage % #contents
-    let shouldCoalesce = previous == Just (msg ^. #contents)
-    case (previous, shouldCoalesce) of
-      (Just _, True) -> s & lastMessage % #times %~ (+ 1)
-      _ -> propagate @Toplevel (#modeline %~ Modeline.update msg) s
-  _ -> s
+    let findMessage = State.firstResponder % castTo @Toplevel % #modeline % Modeline.lastMessage
+    if Message.isSubsumed msg (foldOf findMessage state)
+      then state & findMessage % #times %~ (+ 1)
+      else state & propagate @Toplevel (#modeline %~ Modeline.update msg)
+  _ -> state
 
 propagate :: (Renderable a, Responder a, Typeable a) => (a -> a) -> UI.State -> UI.State
 propagate fn s = s & #renderStack %~ Responder.propagate fn

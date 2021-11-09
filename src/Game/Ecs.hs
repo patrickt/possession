@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 -- | Provides the high-level constructs associated with the
 -- game thread. Receives 'Action' values from the UI and sends
@@ -25,7 +26,7 @@ import Control.Effect.Broker
 import Control.Effect.Broker qualified as Broker
 import Control.Effect.Optics (use)
 import Control.Effect.Random (Random)
-import Control.Monad (forever, guard, when, unless)
+import Control.Monad (forever, guard, when)
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Amount
 import Data.Experience (XP (..))
@@ -34,7 +35,7 @@ import Data.Foldable.WithIndex (iforM_, itraverse_)
 import Data.Function ((&))
 import Data.Glyph (Glyph (..))
 import Data.Hitpoints as HP (HP, injure, isAlive)
-import Data.Maybe (isJust, mapMaybe)
+import Data.Maybe (isJust)
 import Data.Message qualified as Message
 import Data.Monoid (Alt (getAlt), Last)
 import Data.Name (Name)
@@ -125,9 +126,7 @@ enemyTurn :: (Has Broker sig m, MonadIO m, Has Trace sig m) => Apecs.SystemT Gam
 enemyTurn = do
   pp <- playerPosition
 
-  let empties = Map.fromList $ do
-        pos <- Canvas.borders
-        pure (pos, Dungeon.On)
+  let empties = Map.fromList ((, Dungeon.On) <$> Canvas.borders)
   impassables <- Apecs.cfoldMap (\(Flag.Impassable, p :: Position) -> Map.singleton p Dungeon.Off)
   let lookupTable = Map.union impassables empties
   let isEmpty x = Map.lookup x lookupTable == Just Dungeon.Off
@@ -139,7 +138,7 @@ enemyTurn = do
       let path = PF.pathfind' pfctx
       case path of
         (_:y:_) -> Apecs.set e y
-        x -> trace ("path is " <> show x)
+        _ -> pure ()
 
 findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
 findUnoccupied = do
