@@ -83,6 +83,21 @@ instance Responder MainMenu where
         _ -> Nil
       _ -> Nil
 
+instance CanHandle MainMenu where
+  handleEvent (Vty.EvKey k _) mm = case k of
+    Vty.KUp -> mm & #choices %~ Pointed.previous & updating
+    Vty.KDown -> mm & #choices %~ Pointed.next & updating
+    Vty.KEnter -> case mm ^. selected of
+      NewGame -> Ok Pop
+      Quit -> Ok Terminate
+      Save -> Ok (Broadcast SaveState <> Pop)
+      Load -> Ok (Broadcast LoadState <> Pop)
+      Resume -> Ok Pop
+      _ -> Fail
+    _ -> Fail
+  handleEvent _ _ = Fail
+
+
 initial :: MainMenu
 initial = MainMenu [NewGame, About, Quit]
 

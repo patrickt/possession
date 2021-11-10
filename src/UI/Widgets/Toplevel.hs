@@ -36,7 +36,7 @@ import UI.Widgets.Sidebar qualified as Sidebar
 data Toplevel = Toplevel
   { toplevelCanvas :: Canvas,
     toplevelSidebar :: Sidebar,
-    toplevelModeline :: Modeline
+    toplevelModeline :: Modeline,
   }
   deriving stock (Generic)
 
@@ -45,6 +45,11 @@ makeFieldLabels ''Toplevel
 initial :: Toplevel
 initial =
   Toplevel Canvas.initial Sidebar.initial Modeline.initial
+
+instance CanHandle Toplevel where
+  handleEvent (Vty.EvKey (KChar 'q') _) _ = Ok Terminate
+  handleEvent (Vty.EvKey KEsc _) _ = Ok (Push (SomeResponder MainMenu.inGame))
+  handleEvent _ _ = Try #canvas
 
 instance Responder Toplevel where
   translate (Vty.EvKey k mods) _ = case k of

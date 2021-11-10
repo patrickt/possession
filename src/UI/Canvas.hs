@@ -24,6 +24,7 @@ import UI.Render
 import Game.Sprite
 import UI.Resource qualified
 import GHC.Generics (Generic)
+import UI.Responder
 
 data Canvas = Canvas
   { canvasData :: Game.Canvas,
@@ -34,6 +35,8 @@ makeFieldLabels ''Canvas
 
 initial :: Canvas
 initial = Canvas { canvasData = Game.Canvas.empty, canvasShowsCursor = False }
+
+instance CanHandle Canvas
 
 instance Renderable Canvas where
   render canv stack =
