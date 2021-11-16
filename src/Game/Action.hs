@@ -22,6 +22,7 @@ data Dest = Game | UI
 data Action (dest :: Dest) where
   -- These can be sent either way
   Start :: Action a
+  Terminate :: Action a
   -- These are sent from UI to ECS
   Move :: V2 Int -> Action 'Game
   SaveState :: Action 'Game

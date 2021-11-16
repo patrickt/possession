@@ -1,11 +1,24 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
-module UI.Render (Renderable (..), renderThe, colorToVty, withForeground) where
+module UI.Render
+  ( Renderable (..),
+    laidOut,
+    RTree (..),
+    withForeground,
+    colorToVty,
+  )
+where
 
 import Brick qualified
 import Brick.Markup
 import Brick.Util (fg)
+import Brick.Widgets.Core ((<+>), (<=>))
+import Data.Functor.Foldable
+import Data.Functor.Foldable.TH
+import Data.Maybe (fromMaybe)
 import Data.Message
 import Data.Message qualified as Message
 import Data.Semigroup
@@ -18,14 +31,37 @@ import Raw.Types qualified as Color (Color (..))
 import TextShow
 import UI.Resource
 
-class Renderable a where
-  render :: a -> [Brick.Widget Resource] -> [Brick.Widget Resource]
+data RTree
+  = Leaf Widget
+  | HSplit RTree RTree
+  | VSplit RTree RTree
+  | Modal (Maybe RTree) RTree
 
-renderThe :: Renderable a => a -> Brick.Widget Resource
-renderThe a = head (render a [])
+makeBaseFunctor ''RTree
+
+class Renderable a where
+  {-# MINIMAL layout | draw #-}
+  layout :: a -> RTree
+  layout = Leaf . draw
+
+  draw :: a -> Widget
+  draw = draw . layout
+
+instance Renderable () where draw = const Brick.emptyWidget
+
+laidOut :: Renderable a => Getter a RTree
+laidOut = to layout
+
+instance Renderable RTree where
+  layout = id
+  draw = cata \case
+    LeafF f -> f
+    HSplitF a b -> a <+> b
+    VSplitF a b -> a <=> b
+    ModalF a b -> fromMaybe b a
 
 instance Renderable Message where
-  render m stack =
+  draw m =
     let foreground = case m ^. #urgency % coerced of
           Info -> mempty
           Warning -> fg Vty.yellow
@@ -34,8 +70,7 @@ instance Renderable Message where
         toAppend = case m ^. #times of
           1 -> ""
           n -> " (" <> showt (getSum n) <> "x)"
-        final = markup ((Message.contents m @@ foreground) <> Markup.fromText toAppend)
-     in final : stack
+     in markup ((Message.contents m @@ foreground) <> Markup.fromText toAppend)
 
 withForeground :: Color.Color -> Brick.Widget a -> Brick.Widget a
 withForeground color = Brick.modifyDefAttr attr

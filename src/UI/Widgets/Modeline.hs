@@ -6,7 +6,6 @@ module UI.Widgets.Modeline
     initial,
     update,
     lastMessage,
-    render,
   )
 where
 
@@ -18,9 +17,11 @@ import Data.Monoid.Generic
 import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
 import GHC.Generics (Generic)
-import UI.Render ( Renderable(..), renderThe )
+import UI.Render ( Renderable(..), )
 import UI.Resource qualified as Resource
 import Optics
+import UI.Responder
+import qualified Data.Message as Message
 
 newtype Modeline = Modeline
   { messages :: Seq Message
@@ -33,21 +34,26 @@ initial :: Modeline
 initial = mempty
 
 update :: Message -> Modeline -> Modeline
-update m (Modeline msgs) = Modeline (msgs |> m)
+update m (Modeline (firsts :> last'))
+  | Message.mergeable m last' = Modeline (firsts :> mappend last' m)
+  | otherwise = Modeline (firsts :> last' :> m)
+update m _ = Modeline (pure m)
 
 lastMessage :: AffineTraversal' Modeline Message
 lastMessage = #messages % _last
 
 instance Renderable Modeline where
-  render (Modeline msgs) stack =
+  draw (Modeline msgs) =
     let readout =
           Brick.hCenter
-          . Brick.renderList (const (renderThe @Message)) False
+          . Brick.renderList (const (draw @Message)) False
           -- TODO: move this viewport appropriately rather than gyrating with drop
           $
             Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1
-        final = Brick.vLimit 3
-                . Brick.viewport Resource.Modeline Brick.Vertical
-                . Brick.vLimit 3
-                $ readout
-     in final : stack
+     in Brick.vLimit 3
+        . Brick.viewport Resource.Modeline Brick.Vertical
+        . Brick.vLimit 3
+        $ readout
+
+instance Responder Modeline where
+  respondTo _ = mempty

@@ -35,6 +35,7 @@ import Data.Foldable.WithIndex (iforM_, itraverse_)
 import Data.Function ((&))
 import Data.Glyph (Glyph (..))
 import Data.Hitpoints as HP (HP, injure, isAlive)
+import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Message qualified as Message
 import Data.Monoid (Alt (getAlt), Last)
@@ -42,16 +43,17 @@ import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position, position)
 import Data.Position qualified as Position
-import Game.Action
-  ( Action (LoadState, Move, Redraw, SaveState, Start, Update),
-  )
+import Game.Action (Action (..))
 import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
+import Game.Dungeon hiding (at)
 import Game.Dungeon qualified as Dungeon hiding (at)
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Entity.Terrain qualified as Terrain
+import Game.Flag qualified as Flag
 import Game.Info qualified as Game (Info)
+import Game.Pathfind qualified as PF
 import Game.Save qualified as Save
 import Game.State qualified
 import Game.World qualified as Game (World)
@@ -64,10 +66,6 @@ import Raws (Raws)
 import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
-import Game.Dungeon hiding (at)
-import Game.Pathfind qualified as PF
-import qualified Game.Flag as Flag
-import qualified Data.Map.Strict as Map
 
 type GameState = Game.State.State
 
@@ -101,7 +99,6 @@ setup ::
   ) =>
   Apecs.SystemT Game.World m ()
 setup = do
-
   -- Build some walls
   for_ Canvas.borders (Apecs.newEntity_ . Terrain.wall)
 
@@ -126,7 +123,7 @@ enemyTurn :: (Has Broker sig m, MonadIO m, Has Trace sig m) => Apecs.SystemT Gam
 enemyTurn = do
   pp <- playerPosition
 
-  let empties = Map.fromList ((, Dungeon.On) <$> Canvas.borders)
+  let empties = Map.fromList ((,Dungeon.On) <$> Canvas.borders)
   impassables <- Apecs.cfoldMap (\(Flag.Impassable, p :: Position) -> Map.singleton p Dungeon.Off)
   let lookupTable = Map.union impassables empties
   let isEmpty x = Map.lookup x lookupTable == Just Dungeon.Off
@@ -137,7 +134,7 @@ enemyTurn = do
       let pfctx = PF.Context pos pp (Position.dist pos) (\_ _ -> 1) neighborsOf
       let path = PF.pathfind' pfctx
       case path of
-        (_:y:_) -> Apecs.set e y
+        (_ : y : _) -> Apecs.set e y
         _ -> pure ()
 
 findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
@@ -178,6 +175,7 @@ loop = forever do
     LoadState -> do
       Save.read >>= Save.load
       Broker.notify "Game loaded."
+    Terminate -> Broker.sendCommand Terminate
     Start -> pure ()
 
   enemyTurn

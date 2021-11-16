@@ -25,7 +25,7 @@ import Linear (V2 (..))
 import Optics
 import UI.Hud qualified as Hud
 import UI.Input qualified as Input
-import UI.MainMenu qualified as MainMenu
+import UI.Widgets.MainMenu qualified as MainMenu
 import UI.Render
 import UI.Responder
 import UI.Widgets.Modeline (Modeline)
@@ -36,7 +36,7 @@ import UI.Widgets.Sidebar qualified as Sidebar
 data Toplevel = Toplevel
   { toplevelCanvas :: Canvas,
     toplevelSidebar :: Sidebar,
-    toplevelModeline :: Modeline,
+    toplevelModeline :: Modeline
   }
   deriving stock (Generic)
 
@@ -46,33 +46,8 @@ initial :: Toplevel
 initial =
   Toplevel Canvas.initial Sidebar.initial Modeline.initial
 
-instance CanHandle Toplevel where
-  handleEvent (Vty.EvKey (KChar 'q') _) _ = Ok Terminate
-  handleEvent (Vty.EvKey KEsc _) _ = Ok (Push (SomeResponder MainMenu.inGame))
-  handleEvent _ _ = Try #canvas
-
 instance Responder Toplevel where
-  translate (Vty.EvKey k mods) _ = case k of
-    Vty.KChar 'l' -> Input.Look
-    _ -> fromMaybe Input.None (Input.fromVty k mods)
-  translate _ _ = Input.None
-
-  onSend inp inf _s =
-    let move (x, y) = Broadcast (Action.Move (V2 x y))
-        left = move (-1, 0)
-        right = move (1, 0)
-        down = move (0, 1)
-        up = move (0, -1)
-     in case inp of
-          Input.Left -> left
-          Input.Right -> right
-          Input.Down -> down
-          Input.Up -> up
-          Input.Quit -> Terminate
-          Input.Menu -> Push (SomeResponder MainMenu.inGame)
-          Input.Look -> Push (SomeResponder (Hud.Hud (inf ^. #position % coerced % non 0)))
-          _ -> Nil
+  respondTo _ _ = try #modeline <> try #canvas
 
 instance Renderable Toplevel where
-  render (Toplevel canvas sidebar modeline) stack =
-    renderThe sidebar <+> Brick.vBorder <+> (renderThe canvas <=> renderThe modeline) : stack
+  layout t = HSplit (t ^. #sidebar % laidOut) (VSplit (t ^. #canvas % laidOut) (t ^. #modeline % laidOut))

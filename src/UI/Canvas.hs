@@ -36,16 +36,15 @@ makeFieldLabels ''Canvas
 initial :: Canvas
 initial = Canvas { canvasData = Game.Canvas.empty, canvasShowsCursor = False }
 
-instance CanHandle Canvas
-
 instance Renderable Canvas where
-  render canv stack =
+  draw canv =
     let allLines = scanline canv <$> [0 .. Game.Canvas.size]
-        rendered =
-          Brick.viewport UI.Resource.Canvas Brick.Both
-            . Brick.raw
-            $ Vty.vertCat allLines
-     in rendered : stack
+     in Brick.viewport UI.Resource.Canvas Brick.Both
+        . Brick.raw
+        $ Vty.vertCat allLines
+
+instance Responder Canvas where
+  respondTo = mempty
 
 scanline :: Canvas -> Int -> Vty.Image
 scanline (Canvas canv _) idx = Vty.horizCat do

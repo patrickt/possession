@@ -12,7 +12,7 @@
 module Data.Message
   ( Message (Message),
     fromText,
-    isSubsumed,
+    mergeable,
     contents,
     Urgency (..),
     youSee,
@@ -55,8 +55,8 @@ makeFieldLabels ''Message
 contents :: Message -> Text
 contents m = m ^. #contents % coerced % non ""
 
-isSubsumed :: Message -> Message -> Bool
-isSubsumed = (==) `on` view #contents
+mergeable :: Message -> Message -> Bool
+mergeable = (==) `on` view #contents
 
 fromText :: Text -> Message
 fromText t = Message (pure t) (pure Info) 1

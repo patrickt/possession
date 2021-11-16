@@ -1,7 +1,13 @@
 module UI.Resource
   ( Resource (..),
+    Widget,
+    Event,
+    EventM,
   )
 where
+
+import qualified Brick
+import Game.Action (UIAction)
 
 -- | Names visible widgets in the UI.
 data Resource
@@ -12,3 +18,7 @@ data Resource
   | Readout
   | Unspecified
   deriving (Eq, Show, Ord)
+
+type Widget = Brick.Widget Resource
+type Event = Brick.BrickEvent Resource UIAction
+type EventM s = Brick.EventM Resource (Brick.Next s)

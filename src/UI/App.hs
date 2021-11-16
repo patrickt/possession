@@ -2,98 +2,53 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module UI.App (app) where
 
 import Brick qualified
-import Brick.AttrMap qualified
-import Control.Concurrent (killThread)
+import Brick.Widgets.Center qualified as Brick
 import Control.Effect.Broker qualified as Broker
-import Control.Monad.IO.Class
-import Data.Typeable
-import Game.Action (Action, Dest (..))
-import Game.Action qualified as Action
-import Graphics.Vty qualified as Vty
+import Control.Monad.IO.Class (liftIO)
+import Game.Action as Action
 import Optics
-import UI.Canvas qualified as Canvas
-import UI.Render
+import UI.Render qualified as Render
+import UI.Resource (Event, EventM, Widget)
 import UI.Resource qualified as UI (Resource)
-import UI.Responder (Responder)
-import UI.Responder qualified as Responder
-import UI.Responder.Chain (castTo)
-import UI.Responder.Chain qualified as Responder
-import UI.State qualified as State
 import UI.State qualified as UI (State)
-import UI.Widgets.Modeline qualified as Modeline
-import UI.Widgets.Toplevel (Toplevel)
-import qualified Data.Message as Message
+import UI.Responder qualified as Responder
+import Data.Foldable
+import qualified UI.Widgets.Modeline as Modeline
 
-draw :: UI.State -> [Brick.Widget UI.Resource]
-draw s = render (s ^. #renderStack) []
+draw :: UI.State -> [Widget]
+draw = pure . Brick.hCenter . Render.draw
 
-handleEvent ::
-  UI.State ->
-  Brick.BrickEvent UI.Resource (Action 'UI) ->
-  Brick.EventM UI.Resource (Brick.Next UI.State)
-handleEvent s evt = case evt of
-  Brick.VtyEvent vty -> handleVty s vty
-  Brick.AppEvent cmd -> handleApp s cmd
-  _ -> Brick.continue s
-
-handleVty :: UI.State -> Vty.Event -> Brick.EventM UI.Resource (Brick.Next UI.State)
-handleVty s vty =
-  let first = s ^. #renderStack % Responder.first
-      inp = Responder.translate vty first
-      next fn = Brick.continue (fn s)
-      go act = case act of
-        Responder.Nil -> next id
-        a `Responder.Then` b -> go a *> go b
-        Responder.Push r ->
-          next (#renderStack %~ Responder.push r)
-        Responder.Pop -> do
-          next (#renderStack %~ Responder.pop)
-        Responder.Update a ->
-          next (#renderStack % Responder.first .~ a)
-        Responder.Broadcast it -> do
-          liftIO
-            . Broker.enqueueGameAction (s ^. #brokerage)
-            $ it
-          next id
-        Responder.Terminate -> do
-          liftIO . killThread . view #gameThread $ s
-          Brick.halt s
-   in go (Responder.onSend inp (s ^. #latestInfo) first)
-
-handleApp :: UI.State -> Action dest -> Brick.EventM UI.Resource (Brick.Next UI.State)
-handleApp state cmd = Brick.continue $ case cmd of
-  Action.Start -> state
-  Action.Redraw canv ->
-    propagate @Toplevel (#canvas %~ Canvas.update canv) state
-  Action.Update info ->
-    -- TODO: I don't like this double-info thing; can we make the sidebar not store it?
-    -- Yes, I think we can, since we pass in the info in onSend now.
-    state & #latestInfo .~ info
-      & propagate @Toplevel (#sidebar % #info .~ info)
-  Action.Notify msg -> do
-    let findMessage = State.firstResponder % castTo @Toplevel % #modeline % Modeline.lastMessage
-    if Message.isSubsumed msg (foldOf findMessage state)
-      then state & findMessage % #times %~ (+ 1)
-      else state & propagate @Toplevel (#modeline %~ Modeline.update msg)
-  _ -> state
-
-propagate :: (Renderable a, Responder a, Typeable a) => (a -> a) -> UI.State -> UI.State
-propagate fn s = s & #renderStack %~ Responder.propagate fn
-
-app :: Brick.App UI.State (Action 'UI) UI.Resource
+app :: Brick.App UI.State UIAction UI.Resource
 app =
   Brick.App
     { Brick.appDraw = draw,
       Brick.appChooseCursor = Brick.showFirstCursor,
       Brick.appHandleEvent = handleEvent,
-      Brick.appAttrMap = const (Brick.AttrMap.attrMap Vty.defAttr []),
+      Brick.appAttrMap = \_ -> Brick.attrMap mempty mempty,
       Brick.appStartEvent = \s -> do
         liftIO $ Broker.enqueueGameAction (s ^. #brokerage) Action.Start
         pure s
     }
+
+handleEvent :: UI.State -> Event -> EventM UI.State
+handleEvent s e = case e of
+  Brick.VtyEvent vty -> do
+    let resp = Responder.respondTo vty s
+    let newState = Responder.propagateResponse vty resp s
+    forM_ (Responder.findActions resp newState) $
+      liftIO . Broker.enqueueGameAction (s ^. #brokerage)
+    Brick.continue newState
+  Brick.AppEvent e -> do
+    let next fn = Brick.continue (fn s)
+    case e of
+      Start -> Brick.continue s
+      Terminate -> Brick.halt s
+      Redraw canv -> next (set (#toplevel % #canvas % #data) canv)
+      Update info -> next (set (#toplevel % #sidebar % #info) info)
+      Notify msg -> next (over (#toplevel % #modeline) (Modeline.update msg))
+  _ -> Brick.continue s

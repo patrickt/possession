@@ -39,6 +39,7 @@ common shared
       StandaloneDeriving
       PatternSynonyms
       TypeApplications
+      TypeOperators
       TypeSynonymInstances
       TypeFamilies
   ghc-options:      -Wall
@@ -84,15 +85,13 @@ library
     System.Random.MWC.Exts
     UI.App
     UI.Canvas
-    UI.GameOver
+    -- UI.GameOver
     UI.Hud
-    UI.Input
-    UI.MainMenu
     UI.Render
     UI.Resource
     UI.Responder
-    UI.Responder.Chain
     UI.State
+    UI.Widgets.MainMenu
     UI.Widgets.Sidebar
     UI.Widgets.Toplevel
     UI.Widgets.Modeline
@@ -108,6 +107,7 @@ library
     , bytestring
     , comonad
     , containers
+    , data-fix
     , deepseq
     , dhall
     , directory
