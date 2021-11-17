@@ -32,5 +32,16 @@ data Action (dest :: Dest) where
   Update :: Info -> Action 'UI
   Notify :: Message -> Action 'UI
 
+instance Show (Action dest) where
+  show = \case
+    Start -> "Start"
+    Terminate -> "Terminate"
+    Move _ -> "Move"
+    SaveState -> "SaveState"
+    LoadState -> "LoadState"
+    Redraw{} -> "Redraw"
+    Update{} -> "Update"
+    Notify{} -> "Notify"
+
 type GameAction = Action 'Game
 type UIAction = Action 'UI

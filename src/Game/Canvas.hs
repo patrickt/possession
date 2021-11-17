@@ -55,6 +55,7 @@ size = 60
 bounds :: (Position, Position)
 bounds = (0 :: Position, fromIntegral size)
 
+
 clamp :: Position -> Position
 clamp (x :- y) = go x :- go y
   where

@@ -40,8 +40,11 @@ handleEvent s e = case e of
   Brick.VtyEvent vty -> do
     let resp = Responder.respondTo vty s
     let newState = Responder.propagateResponse vty resp s
-    forM_ (Responder.findActions resp newState) $
+    let actions = Responder.findActions resp newState
+    forM_ actions $
       liftIO . Broker.enqueueGameAction (s ^. #brokerage)
+    liftIO (print resp)
+    liftIO (print actions)
     Brick.continue newState
   Brick.AppEvent e -> do
     let next fn = Brick.continue (fn s)

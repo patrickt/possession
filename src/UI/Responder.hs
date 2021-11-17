@@ -18,6 +18,7 @@ import Optics
 import Data.Fix hiding (cata)
 import qualified Graphics.Vty as Vty
 import Game.Action (GameAction)
+import Data.Functor.Classes
 
 type Response a = Fix (Path a)
 
@@ -32,6 +33,14 @@ data Path a r where
   Try :: (k `Is` A_Fold, k `Is` A_Setter, Responder child) => Optic' k is a child -> Path a r
   Perform :: GameAction -> r -> Path a r
   Alt :: r -> r -> Path a r
+
+instance (Show a) => Show1 (Path a) where
+  liftShowsPrec showp _ n = \case
+    Ok a -> showString "Ok " . shows a
+    Fail -> showString "Fail"
+    Try _ -> showString "try"
+    Perform x a -> showString "Perform " . shows x . showParen (n > 7) (showp (succ n) a)
+    Alt l r -> showString "Alt " . showParen (n > 7) (showp (succ n) l) . showChar ' ' . showParen (n > 7) (showp (succ n) r)
 
 deriving stock instance Functor (Path a)
 

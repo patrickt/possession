@@ -22,6 +22,7 @@ import UI.Resource qualified as Resource
 import Optics
 import UI.Responder
 import qualified Data.Message as Message
+import Debug.Trace
 
 newtype Modeline = Modeline
   { messages :: Seq Message
@@ -56,4 +57,4 @@ instance Renderable Modeline where
         $ readout
 
 instance Responder Modeline where
-  respondTo _ = mempty
+  respondTo _ = trace "modeline responder" mempty

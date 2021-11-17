@@ -91,6 +91,7 @@ library
     UI.Resource
     UI.Responder
     UI.State
+    UI.SimpleResponder
     UI.Widgets.MainMenu
     UI.Widgets.Sidebar
     UI.Widgets.Toplevel

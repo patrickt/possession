@@ -47,7 +47,7 @@ instance Renderable Choice where
 newtype MainMenu = MainMenu
   { choices :: PointedList Choice
   }
-  deriving (Generic)
+  deriving stock (Show, Generic)
 
 makeFieldLabelsWith noPrefixFieldLabels ''MainMenu
 

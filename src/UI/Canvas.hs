@@ -25,6 +25,8 @@ import Game.Sprite
 import UI.Resource qualified
 import GHC.Generics (Generic)
 import UI.Responder
+import Game.Action
+import Debug.Trace
 
 data Canvas = Canvas
   { canvasData :: Game.Canvas,
@@ -32,6 +34,8 @@ data Canvas = Canvas
   } deriving stock Generic
 
 makeFieldLabels ''Canvas
+
+instance Show Canvas where show = const "Canvas"
 
 initial :: Canvas
 initial = Canvas { canvasData = Game.Canvas.empty, canvasShowsCursor = False }
@@ -44,7 +48,10 @@ instance Renderable Canvas where
         $ Vty.vertCat allLines
 
 instance Responder Canvas where
-  respondTo = mempty
+  respondTo e canv =
+    case e of
+      Vty.EvKey (Vty.KChar 'q') _ -> Terminate `andThen` accept canv
+      _ -> mempty
 
 scanline :: Canvas -> Int -> Vty.Image
 scanline (Canvas canv _) idx = Vty.horizCat do

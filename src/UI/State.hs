@@ -30,6 +30,8 @@ data State = State
   }
   deriving (Generic)
 
+instance Show State where show = const "State"
+
 makeFieldLabels ''State
 
 instance Responder State where

@@ -13,12 +13,8 @@ where
 
 import Data.Message qualified as Message
 import Data.Position (Position)
-import Data.Position qualified as Position
 import Game.Info (Info)
 import Optics
-import UI.Input qualified as Input
-import UI.Render
-import UI.Responder
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 
