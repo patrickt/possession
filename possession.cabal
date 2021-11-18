@@ -182,5 +182,6 @@ test-suite possession-test
   hs-source-dirs: test
   ghc-options:    -Wall -threaded
   build-depends:
-    , hedgehog
+      hedgehog
+    , optics
     , possession
