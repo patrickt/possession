@@ -32,36 +32,41 @@ import UI.SimpleResponder
 --   let shifts = replicate (length z) Z.shiftLeft
 --   appEndo (foldMap Endo shifts) z === z
 
-data ModalTest = ModalTest { menu :: MenuTest, canvas :: CanvasTest }
+data ModalTest = ModalTest { menu :: Maybe MenuTest, canvas :: CanvasTest }
   deriving stock (Eq, Show)
 
-data MenuTest = Closed | Open | Nil
+data MenuTest = Closed
   deriving stock (Eq, Show)
 
 instance Responder MenuTest where
-  respondTo Closed = pure Nil
-  respondTo Open = pure Closed
-  respondTo _ = empty
+  respondTo = accept
+
+instance Responder (Maybe MenuTest) where
+  respondTo = \case
+    Just Closed -> accept Nothing
+    Nothing -> mempty
 
 data CanvasTest = CanvasTest | Different
   deriving stock (Eq, Show)
 
 instance Responder CanvasTest where
-  respondTo = mempty
+  respondTo CanvasTest = accept Different
+  respondTo Different = accept CanvasTest
 
+makePrisms ''MenuTest
 makeFieldLabelsNoPrefix ''ModalTest
 
 instance Responder ModalTest where
-  respondTo = descend #menu <> descend #canvas
+  respondTo _ = try (#state % #menu % _Just) #menu <> recurse #canvas
 
 prop_simpleResponderTestsWork :: Property
 prop_simpleResponderTestsWork = withTests 1 $ property do
-  run undefined Closed === Nil
-  run undefined Open === Closed
-  let mt = ModalTest Open CanvasTest
-  let mt2 = run undefined mt
-  mt2 === ModalTest Closed CanvasTest
-  run undefined mt2 === ModalTest Nil Different
+  let mt = ModalTest (Just Closed) CanvasTest
+  let mt1 = respond undefined mt
+  let mt2 = mt1 >>= respond undefined
+  mt1 === Just (ModalTest Nothing CanvasTest)
+  mt2 === Just (ModalTest Nothing Different)
+
 
 main :: IO ()
 main = void (checkParallel $$(discover))

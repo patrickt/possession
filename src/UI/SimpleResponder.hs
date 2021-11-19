@@ -1,56 +1,72 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module UI.SimpleResponder
-  ( Path (..)
-  , descend
-  , run
-  , Responder (..)
-  , module Control.Applicative
-  ) where
+  ( Path (..),
+    Responder (..),
+    Event,
+    accept,
+    respond,
+    try,
+    recurse,
+    eval,
+  )
+where
 
-import Game.Action
-import Optics
-import Data.Monoid hiding (Ap (..))
 import Control.Applicative
-import Data.Maybe
 import Data.Kind (Type)
-import qualified Control.Alternative.Free as Free
-import Data.Functor.Compose
-import qualified Graphics.Vty as Vty
-import Data.Coerce (coerce)
+import Graphics.Vty qualified as Vty
+import Optics
 
-data PathF :: Type -> Type where
-  When :: (Vty.Event -> a) -> PathF a
-  Within :: Is k A_Traversal => Optic' k is a s -> (Vty.Event -> s -> s) -> PathF a -> PathF a
-  Emit :: GameAction -> PathF a -> PathF a
+-- Encapsulates a Vty event, a component's state, and some extra, propagatable info
+data Event contents state = Event {eventVty :: Vty.Event, eventState :: state, eventContents :: contents}
+  deriving stock Functor
 
-newtype Path a = Path { getPath :: Free.Alt (Compose First PathF) a }
-  deriving newtype (Functor, Applicative, Alternative)
-  deriving (Semigroup, Monoid) via Alt Path a
+makeFieldLabels ''Event
 
-fromPathF :: PathF a -> Path a
-fromPathF = Path . Free.liftAlt . coerce . Just
+data Path :: Type -> Type where
+  Fail :: Path a
+  Try :: Path a -> Path a -> Path a
+  When :: (Event () a -> Maybe x) -> (Event x a -> Maybe a) -> Path a
 
-descend :: (Responder s, Is k A_Traversal) => Optic' k is a s -> a -> Path a
-descend opt = fromPathF . Within opt run . When . const
+accept :: a -> Path a
+accept a = When Just . const $ Just a
 
+instance Semigroup (Path a) where
+  Fail <> a = a
+  a <> Fail = a
+  a <> b = Try a b
+
+instance Monoid (Path a) where mempty = Fail
+
+-- Coalgebra describing how components unfold into an event tree
 class Responder a where respondTo :: a -> Path a
 
-instance Responder a => Responder (Maybe a) where
-  respondTo = maybe mempty (fmap Just . respondTo)
+respond :: Responder a => Vty.Event -> a -> Maybe a
+respond e a = eval (respondTo a) e a
 
-runPath :: forall a . Vty.Event -> Compose First PathF a -> Maybe a
-runPath e (Compose (First x)) = x >>= go
+-- Using two traversals, rewrite the Responder pointed to by the second
+-- should the first succeed.
+try ::
+  (Is k1 A_Traversal, Is k2 An_AffineFold, Responder b) =>
+  Optic' k2 is1 (Event () a) unused ->
+  Optic' k1 is2 a b ->
+  Path a
+try getit setit = When (preview getit) (\(Event vty state _) -> traverseOf setit (respond vty) state)
+
+recurse :: (Is k A_Traversal, Responder b) => Optic' k is a b -> Path a
+recurse = try (to Just)
+
+eval :: forall a. Path a -> Vty.Event -> a -> Maybe a
+eval p e s = go p
   where
-    go :: PathF a -> Maybe a
+    go :: Path a -> Maybe a
     go = \case
-      When fn -> Just . fn $ e
-      Within opt fn p -> go p >>= failover opt (fn e)
-      Emit _ v -> go v
-
-run :: Responder a => Vty.Event -> a -> a
-run e a = fromMaybe a . Free.runAlt (runPath e) . getPath . respondTo $ a
+      Fail -> Nothing
+      Try a b -> go a <|> go b
+      When predicate action -> predicate (Event e s ()) >>= action . Event e s
