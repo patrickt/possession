@@ -35,7 +35,7 @@ instance Show State where show = const "State"
 makeFieldLabels ''State
 
 instance Responder State where
-  respondTo _ _ = try #menu <> try #toplevel
+  respondTo = try (#state % #menu % _Just) #menu <> recurse #toplevel
 
 instance Renderable State where
   layout = Modal <$> preview (#menu % _Just % laidOut) <*> view (#toplevel % laidOut)

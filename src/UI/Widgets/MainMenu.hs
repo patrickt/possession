@@ -30,6 +30,8 @@ import UI.Render (Renderable (..))
 import UI.Resource qualified as Resource
 import UI.Responder
 import Game.Action (Action(..))
+import UI.Event
+import Debug.Trace
 
 data Choice
   = NewGame
@@ -69,18 +71,32 @@ instance Renderable MainMenu where
       drawItem on = Brick.hCenter . (if on then Brick.border else id) . draw
 
 instance Responder (Maybe MainMenu) where
-  respondTo (Vty.EvKey k _) (Just mm) = case k of
-    Vty.KUp -> accept . Just . over #choices Pointed.previous $ mm
-    Vty.KDown -> accept . Just . over #choices Pointed.next $ mm
-    Vty.KEnter -> case mm ^. selected of
-      NewGame -> accept Nothing
-      Resume -> accept Nothing
-      Load -> LoadState `andThen` accept Nothing
-      Save -> LoadState `andThen` accept Nothing
-      Quit -> Terminate `andThen` accept (Just mm)
-      _ -> mempty
-    _ -> mempty
-  respondTo _ _ = mempty
+  respondTo = mconcat
+    [
+      overState (keypress Vty.KUp) (over (mapped % #choices) Pointed.previous),
+      overState (keypress Vty.KDown) (over (mapped % #choices) Pointed.next),
+      whenMatches (keypress Vty.KEnter) $ switch $ \m -> case m ^? _Just % selected of
+        Just NewGame -> result Nothing
+        Just Resume -> result Nothing
+        Just Load -> result Nothing `emitting` LoadState
+        Just Save -> result Nothing `emitting` SaveState
+        Just Quit -> result Nothing `emitting` Terminate
+        _ -> mempty
+
+    ]
+
+  -- respondTo (Vty.EvKey k _) (Just mm) = case k of
+  --   Vty.KUp -> accept . Just . over #choices Pointed.previous $ mm
+  --   Vty.KDown -> accept . Just . over #choices Pointed.next $ mm
+  --   Vty.KEnter -> case mm ^. selected of
+  --     NewGame -> accept Nothing
+  --     Resume -> accept Nothing
+  --     Load -> LoadState `andThen` accept Nothing
+  --     Save -> LoadState `andThen` accept Nothing
+  --     Quit -> Terminate `andThen` accept (Just mm)
+  --     _ -> mempty
+  --   _ -> mempty
+  -- respondTo _ _ = mempty
 
 -- instance Responder MainMenu where
 --   translate (Vty.EvKey k _) _ = case k of

@@ -19,6 +19,8 @@ import UI.State qualified as UI (State)
 import UI.Responder qualified as Responder
 import Data.Foldable
 import qualified UI.Widgets.Modeline as Modeline
+import Data.Maybe
+import Control.Monad
 
 draw :: UI.State -> [Widget]
 draw = pure . Brick.hCenter . Render.draw
@@ -38,13 +40,12 @@ app =
 handleEvent :: UI.State -> Event -> EventM UI.State
 handleEvent s e = case e of
   Brick.VtyEvent vty -> do
-    let resp = Responder.respondTo vty s
-    let newState = Responder.propagateResponse vty resp s
-    let actions = Responder.findActions resp newState
-    forM_ actions $
-      liftIO . Broker.enqueueGameAction (s ^. #brokerage)
-    liftIO (print resp)
-    liftIO (print actions)
+    let newState = fromMaybe s (Responder.respond vty s)
+    let actions = Responder.actions (Responder.respondTo @UI.State) vty s
+    forM_ actions $ \act -> do
+      liftIO . Broker.enqueueGameAction (s ^. #brokerage) $ act
+      liftIO $ print act
+    when (null actions) (liftIO (print "no actions"))
     Brick.continue newState
   Brick.AppEvent e -> do
     let next fn = Brick.continue (fn s)

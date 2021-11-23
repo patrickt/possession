@@ -17,7 +17,7 @@ import Data.Monoid
 import Optics
 import Optics.TH
 import Data.Vector.Zipper qualified as Z
-import UI.SimpleResponder
+import UI.Responder
 
 -- prop_zipperRotatesCancelOut :: Property
 -- prop_zipperRotatesCancelOut = property do
@@ -42,22 +42,24 @@ instance Responder MenuTest where
   respondTo = accept
 
 instance Responder (Maybe MenuTest) where
-  respondTo = \case
-    Just Closed -> accept Nothing
+  respondTo = switch \case
+    Just Closed -> result Nothing
     Nothing -> mempty
 
 data CanvasTest = CanvasTest | Different
   deriving stock (Eq, Show)
 
 instance Responder CanvasTest where
-  respondTo CanvasTest = accept Different
-  respondTo Different = accept CanvasTest
+  respondTo = switch \case
+    CanvasTest -> result Different
+    Different -> result CanvasTest
+
 
 makePrisms ''MenuTest
 makeFieldLabelsNoPrefix ''ModalTest
 
 instance Responder ModalTest where
-  respondTo _ = try (#state % #menu % _Just) #menu <> recurse #canvas
+  respondTo = try (#state % #menu % _Just) #menu <> recurse #canvas
 
 prop_simpleResponderTestsWork :: Property
 prop_simpleResponderTestsWork = withTests 1 $ property do

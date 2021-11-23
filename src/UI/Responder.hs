@@ -1,88 +1,109 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module UI.Responder
-  ( Responder (..),
+  ( Path (..),
+    Responder (..),
+    Event (..),
     accept,
+    whenMatches,
+    emitting,
+    overState,
+    respond,
     try,
-    runResponder,
-    propagateResponse,
-    andThen,
-    findActions,
+    recurse,
+    eval,
+    actions,
+    switch,
+    result,
+    emptyResult,
   )
 where
 
-import Data.Functor.Foldable
-import Optics
-import Data.Fix hiding (cata)
-import qualified Graphics.Vty as Vty
+import Control.Applicative
+import Data.Kind (Type)
 import Game.Action (GameAction)
-import Data.Functor.Classes
+import Graphics.Vty qualified as Vty
+import Optics
+import UI.Event
 
-type Response a = Fix (Path a)
+-- A binary tree of actions that, given some state type and a Vty event,
+-- can evaluate to success/failure. If this were of type T -> T -> T,
+-- it could implement Profunctor.
+data Path :: Type -> Type where
+  Fail :: Path a
+  Try :: Path a -> Path a -> Path a
+  -- First parameter represents a query operation that, if it succeeds,
+  -- is passed to the second operation, which can in turn succeed/fail.
+  -- The forall'ed `x` variable here prevents functoriality/applicativeness
+  When :: (Event () a -> Maybe x) -> (Event x a -> Maybe a) -> Path a
+  -- Send an action back to the ECS
+  Emit :: GameAction -> Path a -> Path a
 
-class Responder a where
-  respondTo :: Vty.Event -> a -> Response a
+accept :: Path a
+accept = When Just (Just . eventState)
 
-instance Responder () where respondTo = mempty
+result :: a -> Path a
+result a = When Just (const (Just a))
 
-data Path a r where
-  Ok :: a -> Path a r
-  Fail :: Path a r
-  Try :: (k `Is` A_Fold, k `Is` A_Setter, Responder child) => Optic' k is a child -> Path a r
-  Perform :: GameAction -> r -> Path a r
-  Alt :: r -> r -> Path a r
+emptyResult :: Monoid a => Path a
+emptyResult = result mempty
 
-instance (Show a) => Show1 (Path a) where
-  liftShowsPrec showp _ n = \case
-    Ok a -> showString "Ok " . shows a
-    Fail -> showString "Fail"
-    Try _ -> showString "try"
-    Perform x a -> showString "Perform " . shows x . showParen (n > 7) (showp (succ n) a)
-    Alt l r -> showString "Alt " . showParen (n > 7) (showp (succ n) l) . showChar ' ' . showParen (n > 7) (showp (succ n) r)
+switch :: (a -> Path a) -> Path a
+switch fn = When Just (\(Event vty state _) -> eval (fn state) vty state)
 
-deriving stock instance Functor (Path a)
+emitting :: Path a -> GameAction -> Path a
+emitting = flip Emit
 
-instance Semigroup (Response a) where
-  a <> Fix Fail = a
-  Fix Fail <> a = a
-  a <> b = Fix (Alt a b)
+instance Semigroup (Path a) where
+  Fail <> a = a
+  a <> Fail = a
+  a <> b = Try a b
 
-instance Monoid (Response a) where mempty = Fix Fail
+instance Monoid (Path a) where mempty = Fail
 
-accept :: a -> Response a
-accept = Fix . Ok
+-- Coalgebra describing how components unfold into an event tree
+class Responder a where respondTo :: Path a
 
-try :: (k `Is` A_Fold, k `Is` A_Setter, Responder child) => Optic' k is a child -> Response a
-try = Fix . Try
+respond :: Responder a => Vty.Event -> a -> Maybe a
+respond = eval respondTo
 
-andThen :: GameAction -> Response a -> Response a
-andThen act = Fix . Perform act
+-- Using two traversals, rewrite the Responder pointed to by the second
+-- should the first succeed.
+try ::
+  (Is setter A_Traversal, Is query An_AffineFold, Responder b) =>
+  Optic' query is1 (Event () a) unused ->
+  Optic' setter is2 a b ->
+  Path a
+try getit setit = When (preview getit) (\(Event vty state _) -> traverseOf setit (respond vty) state)
 
-runResponder :: Responder a => Vty.Event -> a -> a
-runResponder e a = propagateResponse e (respondTo e a) a
+whenMatches :: (Is query An_AffineFold) => Optic' query is (Event () a) unused -> Path a -> Path a
+whenMatches getIt a = When (preview getIt) (\(Event vty state _) -> eval a vty state)
 
-findActions :: forall a . Response a -> a -> [GameAction]
-findActions a = para go a ([] :: [GameAction]) where
-  go :: Path a (Response a, [GameAction] -> a -> [GameAction]) -> [GameAction] -> a -> [GameAction]
-  go p acts val = case p of
-    Perform act rest -> act : snd rest acts val
-    Alt (Fix (Try optic), it) alt -> if has optic val then it acts val else snd alt acts val
-    Alt (Fix Fail, _) alt -> snd alt acts val
-    Alt rest _ -> snd rest acts val
-    _ -> acts
+overState :: Is k An_AffineFold => Optic' k is (Event () b) contents -> (b -> b) -> Path b
+overState getIt fn = When (preview getIt) (Just . fn . eventState)
 
+recurse :: (Is k A_Traversal, Responder b) => Optic' k is a b -> Path a
+recurse = try (to Just)
 
-propagateResponse :: forall a . Vty.Event -> Response a -> a -> a
-propagateResponse e = para go
+actions :: Path a -> Vty.Event -> a -> [GameAction]
+actions p e s = go [] p
   where
-    go :: Path a (Response a, a -> a) -> a -> a
-    go path = case path of
-      Ok v -> const v
-      Fail -> id
-      Try optic -> over optic (runResponder e)
-      Alt (Fix (Try optic), it) alt -> \val -> if has optic val then it val else snd alt val
-      Alt (Fix Fail, _) x -> snd x
-      Alt x _ -> snd x
-      Perform _ x -> snd x
+    go xs = \case
+      Fail -> []
+      Try l r -> go xs l <|> go xs r
+      When check _ -> maybe [] (const xs) (check (Event e s ()))
+      Emit evt next -> go (evt : xs) next
+
+eval :: forall a. Path a -> Vty.Event -> a -> Maybe a
+eval p e s = go p
+  where
+    go :: Path a -> Maybe a
+    go = \case
+      Fail -> Nothing
+      Try a b -> go a <|> go b
+      Emit _ a -> go a
+      When predicate action -> predicate (Event e s ()) >>= action . Event e s

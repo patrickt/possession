@@ -20,6 +20,7 @@ import Graphics.Vty qualified as Vty
 import Graphics.Vty.Attributes qualified as Attr
 import Data.Glyph
 import Optics
+import UI.Event
 import UI.Render
 import Game.Sprite
 import UI.Resource qualified
@@ -48,10 +49,8 @@ instance Renderable Canvas where
         $ Vty.vertCat allLines
 
 instance Responder Canvas where
-  respondTo e canv =
-    case e of
-      Vty.EvKey (Vty.KChar 'q') _ -> Terminate `andThen` accept canv
-      _ -> mempty
+  respondTo = whenMatches (keypress (Vty.KChar 'q')) (accept `emitting` Terminate) <> whenMatches (keypress Vty.KUp) (accept `emitting` Move (-1 :- 0))
+
 
 scanline :: Canvas -> Int -> Vty.Image
 scanline (Canvas canv _) idx = Vty.horizCat do

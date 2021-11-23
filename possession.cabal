@@ -85,13 +85,13 @@ library
     System.Random.MWC.Exts
     UI.App
     UI.Canvas
+    UI.Event
     -- UI.GameOver
     UI.Hud
     UI.Render
     UI.Resource
     UI.Responder
     UI.State
-    UI.SimpleResponder
     UI.Widgets.MainMenu
     UI.Widgets.Sidebar
     UI.Widgets.Toplevel

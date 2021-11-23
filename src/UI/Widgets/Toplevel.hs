@@ -40,7 +40,7 @@ initial =
   Toplevel Canvas.initial Sidebar.initial Modeline.initial
 
 instance Responder Toplevel where
-  respondTo _ _ = try #modeline <> try #canvas
+  respondTo = recurse #canvas
 
 instance Renderable Toplevel where
   layout t = HSplit (t ^. #sidebar % laidOut) (VSplit (t ^. #canvas % laidOut) (t ^. #modeline % laidOut))

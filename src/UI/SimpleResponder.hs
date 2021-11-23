@@ -2,7 +2,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
@@ -23,15 +22,11 @@ import Data.Kind (Type)
 import Graphics.Vty qualified as Vty
 import Optics
 import Game.Action (GameAction)
-
--- Encapsulates a Vty event, a component's state, and some extra, propagatable info
-data Event contents state = Event {eventVty :: Vty.Event, eventState :: state, eventContents :: contents}
-  deriving stock Functor
-
-makeFieldLabels ''Event
+import UI.Event
 
 -- A binary tree of actions that, given some state type and a Vty event,
--- can evaluate to success/failure.
+-- can evaluate to success/failure. If this were of type T -> T -> T,
+-- it could implement Profunctor.
 data Path :: Type -> Type where
   Fail :: Path a
   Try :: Path a -> Path a -> Path a
