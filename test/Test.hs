@@ -17,6 +17,7 @@ import Data.Monoid
 import Optics
 import Optics.TH
 import Data.Vector.Zipper qualified as Z
+import qualified Graphics.Vty as Vty
 import UI.Responder
 
 -- prop_zipperRotatesCancelOut :: Property
@@ -42,30 +43,31 @@ instance Responder MenuTest where
   respondTo = accept
 
 instance Responder (Maybe MenuTest) where
-  respondTo = switch \case
-    Just Closed -> result Nothing
-    Nothing -> mempty
+  respondTo = \case
+    Just Closed -> pure Nothing
+    Nothing -> empty
 
 data CanvasTest = CanvasTest | Different
   deriving stock (Eq, Show)
 
 instance Responder CanvasTest where
-  respondTo = switch \case
-    CanvasTest -> result Different
-    Different -> result CanvasTest
+  respondTo = \case
+    CanvasTest -> pure Different
+    Different -> pure CanvasTest
 
 
 makePrisms ''MenuTest
 makeFieldLabelsNoPrefix ''ModalTest
 
 instance Responder ModalTest where
-  respondTo = try (#state % #menu % _Just) #menu <> recurse #canvas
+  respondTo a = try (#state % #menu % _Just) #menu a <|> recurse #canvas a
 
 prop_simpleResponderTestsWork :: Property
 prop_simpleResponderTestsWork = withTests 1 $ property do
+  let someEvt = Vty.EvKey (Vty.KChar 'q') mempty
   let mt = ModalTest (Just Closed) CanvasTest
-  let mt1 = respond undefined mt
-  let mt2 = mt1 >>= respond undefined
+  let mt1 = respond someEvt mt
+  let mt2 = mt1 >>= respond someEvt
   mt1 === Just (ModalTest Nothing CanvasTest)
   mt2 === Just (ModalTest Nothing Different)
 

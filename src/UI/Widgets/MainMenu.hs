@@ -32,6 +32,7 @@ import UI.Responder
 import Game.Action (Action(..))
 import UI.Event
 import Debug.Trace
+import Control.Effect.NonDet (oneOf)
 
 data Choice
   = NewGame
@@ -71,19 +72,17 @@ instance Renderable MainMenu where
       drawItem on = Brick.hCenter . (if on then Brick.border else id) . draw
 
 instance Responder (Maybe MainMenu) where
-  respondTo = mconcat
-    [
-      overState (keypress Vty.KUp) (over (mapped % #choices) Pointed.previous),
-      overState (keypress Vty.KDown) (over (mapped % #choices) Pointed.next),
-      whenMatches (keypress Vty.KEnter) $ switch $ \m -> case m ^? _Just % selected of
-        Just NewGame -> result Nothing
-        Just Resume -> result Nothing
-        Just Load -> result Nothing `emitting` LoadState
-        Just Save -> result Nothing `emitting` SaveState
-        Just Quit -> result Nothing `emitting` Terminate
-        _ -> mempty
-
-    ]
+  respondTo a = up <|> down <|> selection
+    where
+      up = overState (keypress Vty.KUp) (over (mapped % #choices) Pointed.previous) a
+      down = overState (keypress Vty.KDown) (over (mapped % #choices) Pointed.next) a
+      selection = case a ^? _Just % selected of
+           Just NewGame -> pure Nothing
+           Just Resume -> pure Nothing
+           Just Load -> pure Nothing `emitting` LoadState
+           Just Save -> pure Nothing `emitting` SaveState
+           Just Quit -> pure Nothing `emitting` Terminate
+           _ -> empty
 
   -- respondTo (Vty.EvKey k _) (Just mm) = case k of
   --   Vty.KUp -> accept . Just . over #choices Pointed.previous $ mm

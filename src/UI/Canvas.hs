@@ -28,6 +28,7 @@ import GHC.Generics (Generic)
 import UI.Responder
 import Game.Action
 import Debug.Trace
+import Control.Applicative
 
 data Canvas = Canvas
   { canvasData :: Game.Canvas,
@@ -49,7 +50,10 @@ instance Renderable Canvas where
         $ Vty.vertCat allLines
 
 instance Responder Canvas where
-  respondTo = whenMatches (keypress (Vty.KChar 'q')) (accept `emitting` Terminate) <> whenMatches (keypress Vty.KUp) (accept `emitting` Move (-1 :- 0))
+  respondTo a = quit <|> move
+    where
+      quit = whenMatches (keypress (Vty.KChar 'q')) ((`emitting` Terminate) . pure) a
+      move = whenMatches (keypress Vty.KUp) ((`emitting` Move (-1 :- 0)) . pure) a
 
 
 scanline :: Canvas -> Int -> Vty.Image

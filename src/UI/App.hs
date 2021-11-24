@@ -40,13 +40,12 @@ app =
 handleEvent :: UI.State -> Event -> EventM UI.State
 handleEvent s e = case e of
   Brick.VtyEvent vty -> do
-    let newState = fromMaybe s (Responder.respond vty s)
-    let actions = Responder.actions (Responder.respondTo @UI.State) vty s
-    forM_ actions $ \act -> do
-      liftIO . Broker.enqueueGameAction (s ^. #brokerage) $ act
-      liftIO $ print act
-    when (null actions) (liftIO (print "no actions"))
-    Brick.continue newState
+    case Responder.runResponder vty s of
+      Nothing -> Brick.continue s
+      Just (actions, new) -> do
+        forM_ actions $ \act -> do
+          liftIO . Broker.enqueueGameAction (s ^. #brokerage) $ act
+        Brick.continue new
   Brick.AppEvent e -> do
     let next fn = Brick.continue (fn s)
     case e of
