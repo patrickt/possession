@@ -26,49 +26,55 @@ import Game.Action (GameAction)
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Event
-import Control.Alternative.Free
 import Control.Applicative
+import Control.Alternative.Free
+import Control.Monad.Free
 import Control.Arrow
 import Data.Monoid (First (..))
 import Data.Monoid qualified as Monoid
 import Control.Monad
 
-data Result a = Ok a | Fail | Emit [GameAction] a
+data Result a = Emit [GameAction] a
   deriving stock Functor
 
-instance Semigroup (Result a) where
-  Fail <> a = a
-  a <> _ = a
+-- instance Semigroup a => Semigroup (Result a) where
+--   Emit xs a <> _ = Emit xs a
 
-instance Monoid (Result a) where mempty = Fail
+-- instance Monoid (Result a) where mempty = Fail
 
-instance Applicative Result where
-  pure = Ok
-  Ok f <*> Ok a = Ok (f a)
-  Ok f <*> Emit e a = Emit e (f a)
-  Emit e f <*> Ok a = Emit e (f a)
-  Emit e f <*> Emit e' a = Emit (e <> e') (f a)
-  Fail <*> _ = Fail
-  _ <*> Fail = Fail
+-- instance Applicative Result where
+--   pure = Ok
+--   Ok f <*> Ok a = Ok (f a)
+--   Ok f <*> Emit e a = Emit e (f a)
+--   Emit e f <*> Ok a = Emit e (f a)
+--   Emit e f <*> Emit e' a = Emit (e <> e') (f a)
+--   Fail <*> _ = Fail
+--   _ <*> Fail = Fail
 
 deriving via Monoid.Alt Result instance Alternative Result
 
 emptyResult :: Monoid a => Path a
 emptyResult = pure mempty
 
-newtype PathF a = PathF { runPathF :: Vty.Event -> a -> Result a }
+data PathF :: Type -> Type where
+  Switch :: (Vty.Event -> a -> Result a) -> a -> PathF a
 
-newtype Path a = Path { runPath :: Alt PathF a }
-  deriving newtype (Functor, Applicative, Alternative)
+type PathM = Alt PathF
+
+newtype Path a = Path { runPath :: PathM a }
+  deriving newtype (Functor, Applicative)
 
 liftPathF :: PathF a -> Path a
-liftPathF = Path . liftAlt
+liftPathF = liftPathM . liftAlt
+
+liftPathM :: PathM a -> Path a
+liftPathM = Path
 
 result :: a -> Path a
 result = pure
 
-switch :: (Vty.Event -> a -> Result a) -> Path a
-switch fn = Path (liftAlt (PathF fn))
+switch :: (Vty.Event -> a -> Result a) -> a -> Path a
+switch = Switch
 
 emitting :: a -> GameAction -> Result a
 emitting a e = Emit (pure e) a
@@ -90,7 +96,7 @@ try ::
 try getit setit a = recurse setit a <* guard (has getit a)
 
 whenMatches :: (Is query A_Fold) => Optic' query is (Event () a) unused -> (a -> Result a) -> a -> Path a
-whenMatches opt fn a = switch $ (\e _ -> if has opt (Event e a ()) then fn a else Fail)
+whenMatches opt fn a = switch (\e _ -> if has opt (Event e a ()) then fn a else Fail)
 
 overState :: Is k A_Fold => Optic' k is (Event () a) contents -> (a -> a) -> a -> Path a
 overState opt fn = whenMatches opt (Ok . fn)
@@ -100,4 +106,4 @@ recurse opt = traverseOf opt respondTo
 
 
 eval :: forall a. Path a -> Vty.Event -> a -> Result a
-eval (Path (Alt xs)) = _
+eval (Path xs) evt a = runAlt _ xs
