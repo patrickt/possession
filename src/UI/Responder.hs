@@ -8,7 +8,6 @@ module UI.Responder
   ( Path (..),
     Responder (..),
     Event (..),
-    accept,
     whenMatches,
     emitting,
     overState,
@@ -23,87 +22,63 @@ module UI.Responder
   )
 where
 
-import Control.Applicative
 import Data.Kind (Type)
 import Game.Action (GameAction)
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Event
+import Control.Applicative
+import Control.Applicative.Free
+import Control.Arrow
+import Data.Monoid (First (..))
 
--- A binary tree of actions that, given some state type and a Vty event,
--- can evaluate to success/failure. If this were of type T -> T -> T,
--- it could implement Profunctor.
-data Path :: Type -> Type where
-  Fail :: Path a
-  Try :: Path a -> Path a -> Path a
-  -- First parameter represents a query operation that, if it succeeds,
-  -- is passed to the second operation, which can in turn succeed/fail.
-  -- The forall'ed `x` variable here prevents functoriality/applicativeness
-  When :: (Event () a -> Maybe x) -> (Event x a -> Maybe a) -> Path a
-  -- Send an action back to the ECS
-  Emit :: GameAction -> Path a -> Path a
+data Result a = Ok a | Fail | Emit GameAction a
 
-accept :: Path a
-accept = When Just (Just . eventState)
+instance Semigroup (Result a) where
+  Fail <> a = a
+  a <> _ = a
 
-result :: a -> Path a
-result a = When Just (const (Just a))
+instance Monoid (Result a) where mempty = Fail
 
 emptyResult :: Monoid a => Path a
-emptyResult = result mempty
+emptyResult = pure mempty
 
-switch :: (a -> Path a) -> Path a
-switch fn = When Just (\(Event vty state _) -> eval (fn state) vty state)
+newtype Path a = Path { runPath :: Vty.Event -> a -> Result a }
 
-emitting :: Path a -> GameAction -> Path a
+
+result :: a -> Path a
+result = pure
+
+switch :: (Vty.Event -> a -> Result a) -> Path a
+switch = Path
+
+emitting :: a -> GameAction -> Result a
 emitting = flip Emit
 
-instance Semigroup (Path a) where
-  Fail <> a = a
-  a <> Fail = a
-  a <> b = Try a b
-
-instance Monoid (Path a) where mempty = Fail
-
 -- Coalgebra describing how components unfold into an event tree
-class Responder a where respondTo :: Path a
+class Responder a where respondTo :: a -> Path a
 
-respond :: Responder a => Vty.Event -> a -> Maybe a
-respond = eval respondTo
+respond :: Responder a => Vty.Event -> a -> Result a
+respond e a = eval (respondTo a) e a
 
 -- Using two traversals, rewrite the Responder pointed to by the second
 -- should the first succeed.
 try ::
-  (Is setter A_Traversal, Is query An_AffineFold, Responder b) =>
-  Optic' query is1 (Event () a) unused ->
+  (Is setter A_Traversal, Is query A_Fold, Responder b) =>
+  Optic' query is1 a unused ->
   Optic' setter is2 a b ->
+  a ->
   Path a
-try getit setit = When (preview getit) (\(Event vty state _) -> traverseOf setit (respond vty) state)
+try getit setit a = recurse setit a <* guard (has getit a)
 
-whenMatches :: (Is query An_AffineFold) => Optic' query is (Event () a) unused -> Path a -> Path a
-whenMatches getIt a = When (preview getIt) (\(Event vty state _) -> eval a vty state)
+whenMatches :: (Is query A_Fold) => Optic' query is (Event () a) unused -> (a -> Result a) -> a -> Path a
+whenMatches opt fn a = Path (\e _ -> if has opt (Event e a ()) then fn a else Fail)
 
-overState :: Is k An_AffineFold => Optic' k is (Event () b) contents -> (b -> b) -> Path b
-overState getIt fn = When (preview getIt) (Just . fn . eventState)
+overState :: Is k A_Fold => Optic' k is (Event () a) contents -> (a -> a) -> a -> Path a
+overState opt fn = whenMatches opt (Ok . fn)
 
-recurse :: (Is k A_Traversal, Responder b) => Optic' k is a b -> Path a
-recurse = try (to Just)
+recurse :: (Is k A_Traversal, Responder b) => Optic' k is a b -> a -> Path a
+recurse opt = traverseOf opt respondTo
 
-actions :: Path a -> Vty.Event -> a -> [GameAction]
-actions p e s = go [] p
-  where
-    go xs = \case
-      Fail -> []
-      Try l r -> go xs l <|> go xs r
-      When check _ -> maybe [] (const xs) (check (Event e s ()))
-      Emit evt next -> go (evt : xs) next
-
-eval :: forall a. Path a -> Vty.Event -> a -> Maybe a
-eval p e s = go p
-  where
-    go :: Path a -> Maybe a
-    go = \case
-      Fail -> Nothing
-      Try a b -> go a <|> go b
-      Emit _ a -> go a
-      When predicate action -> predicate (Event e s ()) >>= action . Event e s
+eval :: forall a. Path a -> Vty.Event -> a -> Result a
+eval = runPath
