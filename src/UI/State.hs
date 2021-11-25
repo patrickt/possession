@@ -21,6 +21,9 @@ import UI.Responder
 import UI.Render
 import qualified UI.Widgets.MainMenu as MainMenu
 import qualified UI.Widgets.Toplevel as Toplevel
+import qualified Graphics.Vty as Vty
+import UI.Event
+import Control.Effect.Reader
 
 data State = State
   { stateToplevel :: Toplevel.Toplevel,
@@ -35,7 +38,15 @@ instance Show State where show = const "State"
 makeFieldLabels ''State
 
 instance Responder State where
-  respondTo a = try (#state % #menu % _Just) #menu a <|> recurse #toplevel a
+  respondTo a = do
+    evt <- ask
+    let
+      shouldPop = folding (\_ -> if has (#menu % _Nothing) a && has _Escape evt then Just () else Nothing)
+      bringUpMenu = whenMatches shouldPop (pure . set #menu (Just MainMenu.inGame)) a
+      menuOpen = try (#state % #menu % _Just) #menu a
+      recur = recurse #toplevel a
+    bringUpMenu <|> menuOpen <|> recur
+
 
 instance Renderable State where
   layout = Modal <$> preview (#menu % _Just % laidOut) <*> view (#toplevel % laidOut)

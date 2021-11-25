@@ -17,3 +17,9 @@ data Event state = Event {eventVty :: Vty.Event, eventState :: state }
 makeFieldLabels ''Event
 
 keypress k = #vty % _Ctor @"EvKey" % _1 % only k
+
+evkey :: Prism' Vty.Event (Vty.Key, [Vty.Modifier])
+evkey = _Ctor @"EvKey"
+
+_Escape :: Optic An_AffineTraversal NoIx Vty.Event Vty.Event () ()
+_Escape = evkey % _1 % only Vty.KEsc

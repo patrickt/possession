@@ -14,6 +14,7 @@ module UI.Responder
     accept,
     whenMatches,
     Alternative (..),
+    guard,
   emitting,overState,respond)
 where
 
@@ -46,8 +47,11 @@ class Responder a where
 accept :: Applicative f => a -> f a
 accept = pure
 
-emitting :: ResponderEff sig m => m a -> GameAction -> m a
-emitting fn act = modify (act:) *> fn
+emitting :: ResponderEff sig m => a -> GameAction -> m a
+emitting it act = it <$ modify (act:)
+
+respondingTo :: (ResponderEff sig m, Responder a) => a -> m a
+respondingTo = respondTo
 
 try :: (ResponderEff sig m, Is k1 A_Traversal, Is k2 A_Fold, Responder b) => Optic' k2 is1 (Event s) a -> Optic' k1 is2 s b -> s -> m s
 try getit setit a = do
@@ -55,7 +59,7 @@ try getit setit a = do
   recurse setit a <* guard (has getit (Event evt a))
 
 recurse :: (ResponderEff sig m, Is k A_Traversal, Responder b) => Optic' k is s b -> s -> m s
-recurse setter = traverseOf setter respondTo
+recurse setter = traverseOf setter respondingTo
 
 whenMatches :: (ResponderEff sig m, Is k A_Fold) => Optic' k is (Event a) x -> (a -> m a) -> a -> m a
 whenMatches opt go a = do

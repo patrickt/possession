@@ -50,10 +50,14 @@ instance Renderable Canvas where
         $ Vty.vertCat allLines
 
 instance Responder Canvas where
-  respondTo a = quit <|> move
+  respondTo a = quit
+    <|> move Vty.KUp (0 :- negate 1)
+    <|> move Vty.KDown (0 :- 1)
+    <|> move Vty.KLeft (negate 1 :- 0)
+    <|> move Vty.KRight (1 :- 0)
     where
-      quit = whenMatches (keypress (Vty.KChar 'q')) ((`emitting` Terminate) . pure) a
-      move = whenMatches (keypress Vty.KUp) ((`emitting` Move (-1 :- 0)) . pure) a
+      quit = whenMatches (keypress (Vty.KChar 'q')) (`emitting` Terminate) a
+      move k amt = whenMatches (keypress k) (`emitting` Move amt) a
 
 
 scanline :: Canvas -> Int -> Vty.Image

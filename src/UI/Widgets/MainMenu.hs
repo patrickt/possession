@@ -79,9 +79,9 @@ instance Responder (Maybe MainMenu) where
       selection = case a ^? _Just % selected of
            Just NewGame -> pure Nothing
            Just Resume -> pure Nothing
-           Just Load -> pure Nothing `emitting` LoadState
-           Just Save -> pure Nothing `emitting` SaveState
-           Just Quit -> pure Nothing `emitting` Terminate
+           Just Load -> Nothing `emitting` LoadState
+           Just Save -> Nothing `emitting` SaveState
+           Just Quit -> Nothing `emitting` Terminate
            _ -> empty
 
   -- respondTo (Vty.EvKey k _) (Just mm) = case k of
