@@ -33,5 +33,14 @@ in    [ { name = "gibbering idiot"
         , yieldsXP = 10
         , hearing = 15
         }
+      , { name = "blink dog"
+        , glyph = "d"
+        , onCollide = Collision.Attack
+        , color = Color.White
+        , strategy = Strategy.FightOnSight
+        , canDrop = 0
+        , yieldsXP = 20
+        , hearing = 15
+        }
       ]
     : List Enemy
