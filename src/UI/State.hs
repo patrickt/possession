@@ -24,6 +24,7 @@ import qualified UI.Widgets.Toplevel as Toplevel
 import qualified Graphics.Vty as Vty
 import UI.Event
 import Control.Effect.Reader
+import Control.Monad
 
 data State = State
   { stateToplevel :: Toplevel.Toplevel,
@@ -38,14 +39,14 @@ instance Show State where show = const "State"
 makeFieldLabels ''State
 
 instance Responder State where
-  respondTo a = do
+  respondTo = Kleisli $ \a -> do
     evt <- ask
     let
       shouldPop = folding (\_ -> if has (#menu % _Nothing) a && has _Escape evt then Just () else Nothing)
-      bringUpMenu = whenMatches shouldPop (pure . set #menu (Just MainMenu.inGame)) a
-      menuOpen = try (#state % #menu % _Just) #menu a
-      recur = recurse #toplevel a
-    bringUpMenu <|> menuOpen <|> recur
+      bringUpMenu = whenMatches shouldPop (pure . set #menu (Just MainMenu.inGame))
+      menuOpen = try (#state % #menu % _Just) #menu
+      recur = recurse #toplevel
+    runKleisli (bringUpMenu <|> menuOpen <|> recur) a
 
 
 instance Renderable State where

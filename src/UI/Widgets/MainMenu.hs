@@ -72,11 +72,11 @@ instance Renderable MainMenu where
       drawItem on = Brick.hCenter . (if on then Brick.border else id) . draw
 
 instance Responder (Maybe MainMenu) where
-  respondTo a = up <|> down <|> selection
+  respondTo = up <|> down <|> selection
     where
-      up = overState (keypress Vty.KUp) (over (mapped % #choices) Pointed.previous) a
-      down = overState (keypress Vty.KDown) (over (mapped % #choices) Pointed.next) a
-      selection = case a ^? _Just % selected of
+      up = overState (keypress Vty.KUp) (over (mapped % #choices) Pointed.previous)
+      down = overState (keypress Vty.KDown) (over (mapped % #choices) Pointed.next)
+      selection = Kleisli $ \a -> case a ^? _Just % selected of
            Just NewGame -> pure Nothing
            Just Resume -> pure Nothing
            Just Load -> Nothing `emitting` LoadState

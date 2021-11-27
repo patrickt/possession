@@ -57,4 +57,4 @@ instance Renderable Modeline where
         $ readout
 
 instance Responder Modeline where
-  respondTo _ = empty
+  respondTo = empty
