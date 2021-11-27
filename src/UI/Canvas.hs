@@ -27,8 +27,6 @@ import UI.Resource qualified
 import GHC.Generics (Generic)
 import UI.Responder
 import Game.Action
-import Debug.Trace
-import Control.Applicative
 
 data Canvas = Canvas
   { canvasData :: Game.Canvas,

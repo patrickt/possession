@@ -4,6 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE BlockArguments #-}
 
 -- | Top-level state container used by the Brick app.
 module UI.State
@@ -15,16 +16,13 @@ where
 import Control.Concurrent (ThreadId)
 import Control.Effect.Broker (Brokerage)
 import GHC.Generics (Generic)
-import Game.Info qualified as Game (Info)
 import Optics
 import UI.Responder
 import UI.Render
 import qualified UI.Widgets.MainMenu as MainMenu
 import qualified UI.Widgets.Toplevel as Toplevel
-import qualified Graphics.Vty as Vty
 import UI.Event
 import Control.Effect.Reader
-import Control.Monad
 
 data State = State
   { stateToplevel :: Toplevel.Toplevel,
@@ -39,14 +37,14 @@ instance Show State where show = const "State"
 makeFieldLabels ''State
 
 instance Responder State where
-  respondTo = Kleisli $ \a -> do
+  respondTo = upon \a -> do
     evt <- ask
     let
       shouldPop = folding (\_ -> if has (#menu % _Nothing) a && has _Escape evt then Just () else Nothing)
       bringUpMenu = whenMatches shouldPop (pure . set #menu (Just MainMenu.inGame))
       menuOpen = try (#state % #menu % _Just) #menu
       recur = recurse #toplevel
-    runKleisli (bringUpMenu <|> menuOpen <|> recur) a
+    invoke (bringUpMenu <|> menuOpen <|> recur) a
 
 
 instance Renderable State where

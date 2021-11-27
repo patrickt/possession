@@ -40,10 +40,10 @@ data MenuTest = Closed
   deriving stock (Eq, Show)
 
 instance Responder MenuTest where
-  respondTo = accept
+  respondTo = upon pure
 
 instance Responder (Maybe MenuTest) where
-  respondTo = \case
+  respondTo = upon \case
     Just Closed -> pure Nothing
     Nothing -> empty
 
@@ -51,7 +51,7 @@ data CanvasTest = CanvasTest | Different
   deriving stock (Eq, Show)
 
 instance Responder CanvasTest where
-  respondTo = \case
+  respondTo = upon \case
     CanvasTest -> pure Different
     Different -> pure CanvasTest
 
@@ -60,7 +60,7 @@ makePrisms ''MenuTest
 makeFieldLabelsNoPrefix ''ModalTest
 
 instance Responder ModalTest where
-  respondTo a = try (#state % #menu % _Just) #menu a <|> recurse #canvas a
+  respondTo = try (#state % #menu % _Just) #menu <|> recurse #canvas
 
 prop_simpleResponderTestsWork :: Property
 prop_simpleResponderTestsWork = withTests 1 $ property do

@@ -31,8 +31,6 @@ import UI.Resource qualified as Resource
 import UI.Responder
 import Game.Action (Action(..))
 import UI.Event
-import Debug.Trace
-import Control.Effect.NonDet (oneOf)
 
 data Choice
   = NewGame
@@ -76,7 +74,7 @@ instance Responder (Maybe MainMenu) where
     where
       up = overState (keypress Vty.KUp) (over (mapped % #choices) Pointed.previous)
       down = overState (keypress Vty.KDown) (over (mapped % #choices) Pointed.next)
-      selection = Kleisli $ \a -> case a ^? _Just % selected of
+      selection = upon $ \a -> case a ^? _Just % selected of
            Just NewGame -> pure Nothing
            Just Resume -> pure Nothing
            Just Load -> Nothing `emitting` LoadState

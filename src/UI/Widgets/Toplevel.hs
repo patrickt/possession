@@ -22,7 +22,6 @@ import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Sidebar (Sidebar)
 import UI.Widgets.Sidebar qualified as Sidebar
-import Debug.Trace
 
 data Toplevel = Toplevel
   { toplevelCanvas :: Canvas,

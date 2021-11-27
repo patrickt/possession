@@ -19,8 +19,8 @@ module UI.Responder
     emitting,
     overState,
     respond,
-    arr,
-    Kleisli (..)
+    upon,
+    invoke,
   )
 where
 
@@ -42,6 +42,12 @@ type ResponderEff sig m =
 
 class Responder a where
   respondTo :: ResponderEff sig m => Kleisli m a a
+
+upon :: (a -> m b) -> Kleisli m a b
+upon = Kleisli
+
+invoke :: Kleisli m a b -> a -> m b
+invoke = runKleisli
 
 accept :: Applicative f => a -> f a
 accept = pure
@@ -68,12 +74,10 @@ whenMatches opt go = Kleisli $ \a -> do
   go a
 
 overState :: (ResponderEff sig m, Is k A_Fold) => Optic' k is (Event s) x -> (s -> s) -> Kleisli m s s
-overState opt fn = Kleisli $ \a -> do
-  evt <- ask
-  guard (has opt (Event evt a))
-  pure (fn a)
+overState opt fn = whenMatches opt (pure . fn)
 
 runResponder :: Responder a => Vty.Event -> a -> Maybe ([GameAction], a)
 runResponder e = run . runReader e . runNonDetA . runState mempty . respondingTo
 
+respond :: Responder b => Vty.Event -> b -> Maybe b
 respond a = fmap snd . runResponder a
