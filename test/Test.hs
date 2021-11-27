@@ -1,24 +1,27 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module Main where
 
-import Hedgehog
+import Control.Category (id)
 import Control.Monad
-import Gen qualified
 import Data.Foldable
+import Data.Monoid
+import Data.Vector.Zipper qualified as Z
+import Gen qualified
+import Graphics.Vty qualified as Vty
+import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
-import Data.Monoid
 import Optics
 import Optics.TH
-import Data.Vector.Zipper qualified as Z
-import qualified Graphics.Vty as Vty
 import UI.Responder
+import Prelude hiding (id)
 
 -- prop_zipperRotatesCancelOut :: Property
 -- prop_zipperRotatesCancelOut = property do
@@ -33,14 +36,14 @@ import UI.Responder
 --   let shifts = replicate (length z) Z.shiftLeft
 --   appEndo (foldMap Endo shifts) z === z
 
-data ModalTest = ModalTest { menu :: Maybe MenuTest, canvas :: CanvasTest }
+data ModalTest = ModalTest {menu :: Maybe MenuTest, canvas :: CanvasTest}
   deriving stock (Eq, Show)
 
 data MenuTest = Closed
   deriving stock (Eq, Show)
 
 instance Responder MenuTest where
-  respondTo = upon pure
+  respondTo = id
 
 instance Responder (Maybe MenuTest) where
   respondTo = upon \case
@@ -54,7 +57,6 @@ instance Responder CanvasTest where
   respondTo = upon \case
     CanvasTest -> pure Different
     Different -> pure CanvasTest
-
 
 makePrisms ''MenuTest
 makeFieldLabelsNoPrefix ''ModalTest
@@ -70,7 +72,6 @@ prop_simpleResponderTestsWork = withTests 1 $ property do
   let mt2 = mt1 >>= respond someEvt
   mt1 === Just (ModalTest Nothing CanvasTest)
   mt2 === Just (ModalTest Nothing Different)
-
 
 main :: IO ()
 main = void (checkParallel $$(discover))

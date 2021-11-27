@@ -30,6 +30,7 @@ import Optics
 import Raw.Types qualified as Color (Color (..))
 import TextShow
 import UI.Resource
+import qualified Brick.Widgets.Border as Brick
 
 data RTree
   = Leaf Widget
@@ -56,8 +57,8 @@ instance Renderable RTree where
   layout = id
   draw = cata \case
     LeafF f -> f
-    HSplitF a b -> a <+> b
-    VSplitF a b -> a <=> b
+    HSplitF a b -> a <+> Brick.vBorder <+> b
+    VSplitF a b -> a <=> Brick.hBorder <=> b
     ModalF a b -> fromMaybe b a
 
 instance Renderable Message where
