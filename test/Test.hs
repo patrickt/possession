@@ -62,7 +62,7 @@ makePrisms ''MenuTest
 makeFieldLabelsNoPrefix ''ModalTest
 
 instance Responder ModalTest where
-  respondTo = try (#state % #menu % _Just) #menu <|> recurse #canvas
+  respondTo = try (#menu % _Just) #menu <|> recurse #canvas
 
 prop_simpleResponderTestsWork :: Property
 prop_simpleResponderTestsWork = withTests 1 $ property do

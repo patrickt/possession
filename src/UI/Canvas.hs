@@ -27,10 +27,11 @@ import UI.Resource qualified
 import GHC.Generics (Generic)
 import UI.Responder
 import Game.Action
+import UI.Hud qualified as Hud
 
 data Canvas = Canvas
-  { canvasData :: Game.Canvas,
-    canvasShowsCursor :: Bool
+  { canvasData :: Game.Canvas
+  , canvasHud :: Maybe Hud.Hud
   } deriving stock Generic
 
 makeFieldLabels ''Canvas
@@ -38,22 +39,29 @@ makeFieldLabels ''Canvas
 instance Show Canvas where show = const "Canvas"
 
 initial :: Canvas
-initial = Canvas { canvasData = Game.Canvas.empty, canvasShowsCursor = False }
+initial = Canvas { canvasData = Game.Canvas.empty, canvasHud = Nothing }
 
 instance Renderable Canvas where
   draw canv =
     let allLines = scanline canv <$> [0 .. Game.Canvas.size]
-     in Brick.viewport UI.Resource.Canvas Brick.Both
+        withCursor = maybe id (Brick.showCursor UI.Resource.Canvas) (canv ^? #hud % _Just % position % brickLocation)
+     in withCursor
+        . Brick.viewport UI.Resource.Canvas Brick.Both
         . Brick.raw
         $ Vty.vertCat allLines
 
 instance Responder Canvas where
   respondTo = quit
+    <|> esc
+    <|> look
+    <|> try (#hud % _Just) (#hud % _Just)
     <|> move Vty.KUp (0 :- negate 1)
     <|> move Vty.KDown (0 :- 1)
     <|> move Vty.KLeft (negate 1 :- 0)
     <|> move Vty.KRight (1 :- 0)
     where
+      look = overState (keypress (Vty.KChar '*')) (set #hud (Just Hud.initial))
+      esc = ensuring (has (#state % #hud %_Just)) >>> overState (keypress Vty.KEsc) (set #hud Nothing)
       quit = whenMatches (keypress (Vty.KChar 'q')) (`emitting` Terminate)
       move k amt = whenMatches (keypress k) (`emitting` Move amt)
 

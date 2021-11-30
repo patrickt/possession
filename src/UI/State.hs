@@ -42,9 +42,9 @@ instance Responder State where
     let
       shouldPop = folding (\_ -> if has (#menu % _Nothing) a && has _Escape evt then Just () else Nothing)
       bringUpMenu = whenMatches shouldPop (pure . set #menu (Just MainMenu.inGame))
-      menuOpen = try (#state % #menu % _Just) #menu
+      menuOpen = try (#menu % _Just) #menu
       recur = recurse #toplevel
-    invoke (bringUpMenu <|> menuOpen <|> recur) a
+    invoke (menuOpen <|> recur <|> bringUpMenu) a
 
 
 instance Renderable State where
