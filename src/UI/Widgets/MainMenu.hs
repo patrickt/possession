@@ -46,11 +46,11 @@ instance Renderable Choice where
   draw other = Brick.txt . fromString . show $ other
 
 newtype MainMenu = MainMenu
-  { choices :: PointedList Choice
+  { mainMenuChoices :: PointedList Choice
   }
   deriving stock (Show, Generic)
 
-makeFieldLabelsWith noPrefixFieldLabels ''MainMenu
+makeFieldLabels ''MainMenu
 
 initial :: MainMenu
 initial = MainMenu [NewGame, About, Quit]
@@ -72,8 +72,8 @@ instance Renderable MainMenu where
 instance Responder (Maybe MainMenu) where
   respondTo = up <|> down <|> selection
     where
-      up = overState (keypress Vty.KUp) (over (mapped % #choices) Pointed.previous)
-      down = overState (keypress Vty.KDown) (over (mapped % #choices) Pointed.next)
+      up = overState (keypress Vty.KUp) (fmap (over #choices Pointed.previous))
+      down = overState (keypress Vty.KDown) (fmap (over #choices Pointed.next))
       selection = upon $ \a -> case a ^? _Just % selected of
            Just NewGame -> pure Nothing
            Just Resume -> pure Nothing
@@ -81,71 +81,3 @@ instance Responder (Maybe MainMenu) where
            Just Save -> Nothing `emitting` SaveState
            Just Quit -> Nothing `emitting` Terminate
            _ -> empty
-
-  -- respondTo (Vty.EvKey k _) (Just mm) = case k of
-  --   Vty.KUp -> accept . Just . over #choices Pointed.previous $ mm
-  --   Vty.KDown -> accept . Just . over #choices Pointed.next $ mm
-  --   Vty.KEnter -> case mm ^. selected of
-  --     NewGame -> accept Nothing
-  --     Resume -> accept Nothing
-  --     Load -> LoadState `andThen` accept Nothing
-  --     Save -> LoadState `andThen` accept Nothing
-  --     Quit -> Terminate `andThen` accept (Just mm)
-  --     _ -> mempty
-  --   _ -> mempty
-  -- respondTo _ _ = mempty
-
--- instance Responder MainMenu where
---   translate (Vty.EvKey k _) _ = case k of
---     Vty.KUp -> Input.Up
---     Vty.KDown -> Input.Down
---     Vty.KEnter -> Input.Confirm
---     _ -> Input.None
---   translate _ _ = Input.None
-
---   onSend inp _inf s =
---     case inp of
---       Input.Up -> Update (s & #choices %~ Pointed.previous)
---       Input.Down -> Update (s & #choices %~ Pointed.next)
---       Input.Confirm -> case s ^. selected of
---         NewGame -> Pop
---         Quit -> Terminate
---         Save -> Broadcast SaveState <> Pop
---         Load -> Broadcast LoadState <> Pop
---         Resume -> Pop
---         _ -> Nil
---       _ -> Nil
-
--- instance CanHandle MainMenu where
---   handleEvent (Vty.EvKey k _) mm = case k of
---     Vty.KUp -> mm & #choices %~ Pointed.previous & updating
---     Vty.KDown -> mm & #choices %~ Pointed.next & updating
---     Vty.KEnter -> case mm ^. selected of
---       NewGame -> Ok Pop
---       Quit -> Ok Terminate
---       Save -> Ok (Broadcast SaveState <> Pop)
---       Load -> Ok (Broadcast LoadState <> Pop)
---       Resume -> Ok Pop
---       _ -> Fail
---     _ -> Fail
---   handleEvent _ _ = Fail
-
--- render' :: Bool -> Choice -> Brick.Widget Resource.Resource
--- render' isOn =
---   Brick.hCenter
---     . (if isOn then Brick.border else id)
---     . head
---     . flip render []
-
--- form :: MainMenu -> Form.Form MainMenu e Resource.Resource
--- form = Form.newForm [theList]
---   where
---     theList =
---       Form.listField
---         (fromList . toList . view #choices)
---         (toLensVL (selected % re (non NewGame)))
---         render'
---         8
---         Resource.MainMenu
-
--- instance Renderable MainMenu where render s stack = Form.renderForm (form s) : stack

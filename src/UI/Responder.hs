@@ -10,7 +10,6 @@ module UI.Responder
     try,
     recurse,
     runResponder,
-    accept,
     whenMatches,
     respondingTo,
     Alternative (..),
@@ -19,7 +18,6 @@ module UI.Responder
     overState,
     respond,
     upon,
-    invoke,
     (>>>),
     ensuring,
   )
@@ -47,12 +45,6 @@ class Responder a where
 upon :: (a -> m b) -> Kleisli m a b
 upon = Kleisli
 
-invoke :: Kleisli m a b -> a -> m b
-invoke = runKleisli
-
-accept :: Applicative f => a -> f a
-accept = pure
-
 emitting :: ResponderEff sig m => a -> GameAction -> m a
 emitting it act = it <$ modify (act :)
 
@@ -63,10 +55,10 @@ try :: (Algebra sig m, Is k1 A_Traversal, Is k2 A_Fold, JoinKinds A_Lens l k2, R
 try getit setit = ensuring (has (#state % getit)) >>> upon (traverseOf setit respondingTo)
 
 recurse :: (ResponderEff sig m, Is k A_Traversal, Responder b) => Optic' k is s b -> Kleisli m s s
-recurse setter = Kleisli (traverseOf setter respondingTo)
+recurse setter = upon (traverseOf setter respondingTo)
 
 whenMatches :: (ResponderEff sig m, Is k A_Fold) => Optic' k is (Event a) x -> (a -> m a) -> Kleisli m a a
-whenMatches opt go  = ensuring (has opt) >>> upon go
+whenMatches opt go = ensuring (has opt) >>> upon go
 
 overState :: (ResponderEff sig m, Is k A_Fold) => Optic' k is (Event s) x -> (s -> s) -> Kleisli m s s
 overState opt fn = whenMatches opt (pure . fn)
