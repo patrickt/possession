@@ -20,6 +20,7 @@ module UI.Responder
     upon,
     (>>>),
     ensuring,
+    within,
   )
 where
 
@@ -31,6 +32,7 @@ import Control.Carrier.State.Strict
 import Game.Action (GameAction)
 import Graphics.Vty qualified as Vty
 import Optics
+import Optics.Arrow
 import UI.Event
 
 type ResponderEff sig m =
@@ -56,6 +58,18 @@ try getit setit = ensuring (has (#state % getit)) >>> upon (traverseOf setit res
 
 recurse :: (ResponderEff sig m, Is k A_Traversal, Responder b) => Optic' k is s b -> Kleisli m s s
 recurse setter = upon (traverseOf setter respondingTo)
+
+within ::
+  ( Algebra sig m,
+    Responder b1,
+    ArrowOptic k1 (Kleisli m),
+    JoinKinds A_Lens k1 k2,
+    Is k2 A_Fold,
+    ResponderEff sig m
+  ) =>
+  Optic k1 is b2 b2 b1 b1 ->
+  Kleisli m b2 b2
+within setter = ensuring (has (#state % setter)) >>> overA setter respondTo
 
 whenMatches :: (ResponderEff sig m, Is k A_Fold) => Optic' k is (Event a) x -> (a -> m a) -> Kleisli m a a
 whenMatches opt go = ensuring (has opt) >>> upon go

@@ -54,7 +54,7 @@ instance Responder Canvas where
   respondTo = quit
     <|> esc
     <|> look
-    <|> try (#hud % _Just) (#hud % _Just)
+    <|> within (#hud % _Just)
     <|> move Vty.KUp (0 :- negate 1)
     <|> move Vty.KDown (0 :- 1)
     <|> move Vty.KLeft (negate 1 :- 0)
