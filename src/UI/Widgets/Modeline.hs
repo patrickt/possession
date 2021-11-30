@@ -17,7 +17,7 @@ import Data.Monoid.Generic
 import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
 import GHC.Generics (Generic)
-import UI.Render ( Renderable(..), )
+import UI.Render ( Renderable(..), runDraw )
 import UI.Resource qualified as Resource
 import Optics
 import UI.Responder
@@ -46,11 +46,12 @@ instance Renderable Modeline where
   draw (Modeline msgs) =
     let readout =
           Brick.hCenter
-          . Brick.renderList (const (draw @Message)) False
+          . Brick.renderList (const (runDraw @Message)) False
           -- TODO: move this viewport appropriately rather than gyrating with drop
           $
             Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1
-     in Brick.vLimit 3
+     in pure
+        . Brick.vLimit 3
         . Brick.viewport Resource.Modeline Brick.Vertical
         . Brick.vLimit 3
         $ readout

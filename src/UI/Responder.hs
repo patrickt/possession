@@ -11,7 +11,6 @@ module UI.Responder
     recurse,
     runResponder,
     whenMatches,
-    respondingTo,
     Alternative (..),
     guard,
     emitting,
@@ -21,10 +20,12 @@ module UI.Responder
     (>>>),
     ensuring,
     within,
+    arr,
   )
 where
 
 import Control.Applicative
+import Prelude hiding (id)
 import Control.Arrow
 import Control.Carrier.NonDet.Church
 import Control.Carrier.Reader
@@ -50,14 +51,9 @@ upon = Kleisli
 emitting :: ResponderEff sig m => a -> GameAction -> m a
 emitting it act = it <$ modify (act :)
 
-respondingTo :: (ResponderEff sig m, Responder a) => a -> m a
-respondingTo = runKleisli respondTo
+try getit setit = ensuring (has (#state % getit)) >>> within setit
 
-try :: (Algebra sig m, Is k1 A_Traversal, Is k2 A_Fold, JoinKinds A_Lens l k2, ResponderEff sig m, Responder b1) => Optic l is1 b2 b2 a a -> Optic k1 is2 b2 c b1 b1 -> Kleisli m b2 c
-try getit setit = ensuring (has (#state % getit)) >>> upon (traverseOf setit respondingTo)
-
-recurse :: (ResponderEff sig m, Is k A_Traversal, Responder b) => Optic' k is s b -> Kleisli m s s
-recurse setter = upon (traverseOf setter respondingTo)
+recurse setter = overA setter respondTo
 
 within ::
   ( Algebra sig m,
@@ -67,9 +63,9 @@ within ::
     Is k2 A_Fold,
     ResponderEff sig m
   ) =>
-  Optic k1 is b2 b2 b1 b1 ->
-  Kleisli m b2 b2
-within setter = ensuring (has (#state % setter)) >>> overA setter respondTo
+  Optic k1 is b b b1 b1 ->
+  Kleisli m b b
+within setter = ensuring (has (#state % setter)) >>> recurse setter
 
 whenMatches :: (ResponderEff sig m, Is k A_Fold) => Optic' k is (Event a) x -> (a -> m a) -> Kleisli m a a
 whenMatches opt go = ensuring (has opt) >>> upon go
@@ -84,7 +80,7 @@ ensuring fn = Kleisli $ \a -> do
   pure a
 
 runResponder :: Responder a => Vty.Event -> a -> Maybe ([GameAction], a)
-runResponder e = run . runReader e . runNonDetA . runState mempty . respondingTo
+runResponder e = run . runReader e . runNonDetA . runState mempty . runKleisli respondTo
 
 respond :: Responder b => Vty.Event -> b -> Maybe b
 respond a = fmap snd . runResponder a

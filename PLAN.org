@@ -31,4 +31,12 @@ class Layout map widget where
 use Shake?
 
 UI.Widgets.Modeline: learn how viewports work
-fix HUD
+
+figure out solution for caching things like position-entity maps
+
+remove upon from Responder and use arrow notation instead
+
+* Caching
+
+could centralize everything in Game.Info, be the source of truth for the last iteration of the ECS
+how do we get at that info, is there an effect or do we manually propagate it on data

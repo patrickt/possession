@@ -42,4 +42,7 @@ instance Responder Toplevel where
   respondTo = within #canvas
 
 instance Renderable Toplevel where
-  layout t = HSplit (t ^. #sidebar % laidOut) (VSplit (t ^. #canvas % laidOut) (t ^. #modeline % laidOut))
+  layout t =
+    HSplit
+      <$> (t ^. #sidebar % laidOut)
+      <*> (VSplit <$> (t ^. #canvas % laidOut) <*> (t ^. #modeline % laidOut))

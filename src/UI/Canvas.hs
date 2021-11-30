@@ -45,7 +45,8 @@ instance Renderable Canvas where
   draw canv =
     let allLines = scanline canv <$> [0 .. Game.Canvas.size]
         withCursor = maybe id (Brick.showCursor UI.Resource.Canvas) (canv ^? #hud % _Just % position % brickLocation)
-     in withCursor
+     in pure
+        . withCursor
         . Brick.viewport UI.Resource.Canvas Brick.Both
         . Brick.raw
         $ Vty.vertCat allLines

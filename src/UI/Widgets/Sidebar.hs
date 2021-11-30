@@ -39,7 +39,7 @@ initial :: Sidebar
 initial = Sidebar mempty
 
 instance Renderable Sidebar where
-  draw (Sidebar i) = boxed
+  draw (Sidebar i) = pure boxed
     where
       boxed =
         Brick.vBox $

@@ -23,7 +23,7 @@ import Data.Maybe
 import Control.Monad
 
 draw :: UI.State -> [Widget]
-draw = pure . Brick.hCenter . Render.draw
+draw = pure . Brick.hCenter . Render.runDraw
 
 app :: Brick.App UI.State UIAction UI.Resource
 app =

@@ -26,7 +26,7 @@ import Data.Vector qualified as Vector
 import GHC.Generics (Generic)
 import Graphics.Vty qualified as Vty
 import Optics
-import UI.Render (Renderable (..))
+import UI.Render (Renderable (..), runDraw)
 import UI.Resource qualified as Resource
 import UI.Responder
 import Game.Action (Action(..))
@@ -42,8 +42,9 @@ data Choice
   deriving (Eq, Ord, Show, Enum)
 
 instance Renderable Choice where
-  draw NewGame = Brick.txt "New Game"
-  draw other = Brick.txt . fromString . show $ other
+  draw = pure . go where
+    go NewGame = Brick.txt "New Game"
+    go other = Brick.txt . fromString . show $ other
 
 newtype MainMenu = MainMenu
   { mainMenuChoices :: PointedList Choice
@@ -62,12 +63,12 @@ selected :: Lens' MainMenu Choice
 selected = #choices % Pointed.focus
 
 instance Renderable MainMenu where
-  draw = Form.renderForm . toForm
+  draw = pure . Form.renderForm . toForm
     where
       toForm = Form.newForm [list]
       list = Form.listField allChoices (toLensVL (selected % re (non NewGame))) drawItem 8 Resource.MainMenu
       allChoices = Vector.fromList . toList . view #choices
-      drawItem on = Brick.hCenter . (if on then Brick.border else id) . draw
+      drawItem on = Brick.hCenter . (if on then Brick.border else id) . runDraw
 
 instance Responder (Maybe MainMenu) where
   respondTo = up <|> down <|> selection

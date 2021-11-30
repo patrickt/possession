@@ -4,6 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE BlockArguments #-}
 
 -- | Top-level state container used by the Brick app.
@@ -46,7 +47,10 @@ instance Responder State where
 
 
 instance Renderable State where
-  layout = Modal <$> preview (#menu % _Just % laidOut) <*> view (#toplevel % laidOut)
+  -- todo write helper for modal
+  layout a = case a ^. #menu of
+    Nothing -> a ^. #toplevel % laidOut
+    Just x -> x ^. laidOut
 
 initial :: Brokerage -> ThreadId -> State
 initial =

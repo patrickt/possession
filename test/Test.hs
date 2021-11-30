@@ -46,17 +46,15 @@ instance Responder MenuTest where
   respondTo = id
 
 instance Responder (Maybe MenuTest) where
-  respondTo = upon \case
-    Just Closed -> pure Nothing
-    Nothing -> empty
+  respondTo = whenMatches (#state % _Just) (const (pure Nothing))
 
 data CanvasTest = CanvasTest | Different
   deriving stock (Eq, Show)
 
 instance Responder CanvasTest where
-  respondTo = upon \case
-    CanvasTest -> pure Different
-    Different -> pure CanvasTest
+  respondTo = arr \case
+    CanvasTest -> Different
+    Different -> CanvasTest
 
 makePrisms ''MenuTest
 makeFieldLabelsNoPrefix ''ModalTest
