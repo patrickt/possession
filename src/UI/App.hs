@@ -19,11 +19,9 @@ import UI.State qualified as UI (State)
 import UI.Responder qualified as Responder
 import Data.Foldable
 import qualified UI.Widgets.Modeline as Modeline
-import Data.Maybe
-import Control.Monad
 
 draw :: UI.State -> [Widget]
-draw = pure . Brick.hCenter . Render.runDraw
+draw s = pure . Brick.hCenter . Render.runDraw (s ^. #info) $ s
 
 app :: Brick.App UI.State UIAction UI.Resource
 app =
@@ -52,6 +50,6 @@ handleEvent s e = case e of
       Start -> Brick.continue s
       Terminate -> Brick.halt s
       Redraw canv -> next (set (#toplevel % #canvas % #data) canv)
-      Update info -> next (set (#toplevel % #sidebar % #info) info)
+      Update info -> next (set #info info)
       Notify msg -> next (over (#toplevel % #modeline) (Modeline.update msg))
   _ -> Brick.continue s

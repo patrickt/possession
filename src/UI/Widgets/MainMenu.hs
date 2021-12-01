@@ -31,6 +31,8 @@ import UI.Resource qualified as Resource
 import UI.Responder
 import Game.Action (Action(..))
 import UI.Event
+import Game.Info (Info)
+import Control.Effect.Reader
 
 data Choice
   = NewGame
@@ -63,12 +65,15 @@ selected :: Lens' MainMenu Choice
 selected = #choices % Pointed.focus
 
 instance Renderable MainMenu where
-  draw = pure . Form.renderForm . toForm
-    where
+  draw x = do
+    i <- ask @Info
+    let
       toForm = Form.newForm [list]
       list = Form.listField allChoices (toLensVL (selected % re (non NewGame))) drawItem 8 Resource.MainMenu
       allChoices = Vector.fromList . toList . view #choices
-      drawItem on = Brick.hCenter . (if on then Brick.border else id) . runDraw
+      drawItem on = Brick.hCenter . (if on then Brick.border else id) . runDraw i
+    pure . Form.renderForm . toForm $ x
+
 
 instance Responder (Maybe MainMenu) where
   respondTo = up <|> down <|> selection

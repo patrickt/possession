@@ -22,6 +22,8 @@ import UI.Resource qualified as Resource
 import Optics
 import UI.Responder
 import qualified Data.Message as Message
+import Game.Info (Info)
+import Control.Effect.Reader
 
 newtype Modeline = Modeline
   { messages :: Seq Message
@@ -43,10 +45,11 @@ lastMessage :: AffineTraversal' Modeline Message
 lastMessage = #messages % _last
 
 instance Renderable Modeline where
-  draw (Modeline msgs) =
+  draw (Modeline msgs) = do
+    i <- ask @Info
     let readout =
           Brick.hCenter
-          . Brick.renderList (const (runDraw @Message)) False
+          . Brick.renderList (const (runDraw i)) False
           -- TODO: move this viewport appropriately rather than gyrating with drop
           $
             Brick.list Resource.Readout (Seq.drop (length msgs - 3) msgs) 1

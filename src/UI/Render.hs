@@ -35,6 +35,8 @@ import qualified Brick.Widgets.Border as Brick
 import Control.Applicative
 import Control.Monad
 import Data.Functor.Identity
+import Game.Info (Info)
+import Control.Carrier.Reader
 
 data RTree
   = Leaf Widget
@@ -44,16 +46,18 @@ data RTree
 
 makeBaseFunctor ''RTree
 
+type RenderM = ((->) Info)
+
 class Renderable a where
   {-# MINIMAL layout | draw #-}
-  layout :: Monad m => a -> m RTree
+  layout :: a -> RenderM RTree
   layout = fmap Leaf . draw
 
-  draw :: Monad m => a -> m Widget
+  draw :: a -> RenderM Widget
   draw = layout >=> draw
 
-runDraw :: Renderable a => a -> Widget
-runDraw = runIdentity . draw
+runDraw :: Renderable a => Info -> a -> Widget
+runDraw = flip draw
 
 (<+>), (<=>) :: Applicative m => m Widget -> m Widget -> m Widget
 (<+>) = liftA2 (Brick.<+>)
@@ -61,7 +65,7 @@ runDraw = runIdentity . draw
 
 instance Renderable () where draw = const (pure Brick.emptyWidget)
 
-laidOut :: (Monad m, Renderable a) => Getter a (m RTree)
+laidOut :: Renderable a => Getter a (RenderM RTree)
 laidOut = to layout
 
 instance Renderable RTree where

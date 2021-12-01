@@ -23,10 +23,12 @@ import UI.Render
 import qualified UI.Widgets.MainMenu as MainMenu
 import qualified UI.Widgets.Toplevel as Toplevel
 import UI.Event
+import Game.Info qualified as Game (Info)
 
 data State = State
   { stateToplevel :: Toplevel.Toplevel,
     stateMenu :: Maybe MainMenu.MainMenu,
+    stateInfo :: Game.Info,
     stateBrokerage :: Brokerage,
     stateGameThread :: ThreadId
   }
@@ -54,4 +56,4 @@ instance Renderable State where
 
 initial :: Brokerage -> ThreadId -> State
 initial =
-  State Toplevel.initial (Just MainMenu.initial)
+  State Toplevel.initial (Just MainMenu.initial) mempty

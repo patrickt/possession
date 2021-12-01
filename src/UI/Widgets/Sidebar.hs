@@ -27,10 +27,9 @@ import Graphics.Vty qualified as Vty
 import Optics
 import TextShow (showt)
 import UI.Render
+import Control.Effect.Reader
 
-newtype Sidebar = Sidebar
-  { sidebarInfo :: Info
-  }
+newtype Sidebar = Sidebar ()
   deriving (Generic)
 
 makeFieldLabels ''Sidebar
@@ -39,8 +38,9 @@ initial :: Sidebar
 initial = Sidebar mempty
 
 instance Renderable Sidebar where
-  draw (Sidebar i) = pure boxed
-    where
+  draw (Sidebar i) = do
+    i <- ask @Info
+    let
       boxed =
         Brick.vBox $
           fmap
@@ -66,3 +66,4 @@ instance Renderable Sidebar where
       renderedLevel = ("Level: " @@ bold) <> showm (i ^. #xp & Experience.level)
 
       showm = Markup.fromText . showt
+    pure boxed
