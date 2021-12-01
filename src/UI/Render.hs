@@ -34,9 +34,7 @@ import UI.Resource
 import qualified Brick.Widgets.Border as Brick
 import Control.Applicative
 import Control.Monad
-import Data.Functor.Identity
 import Game.Info (Info)
-import Control.Carrier.Reader
 
 data RTree
   = Leaf Widget

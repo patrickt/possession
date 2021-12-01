@@ -73,9 +73,10 @@ scanline (Canvas canv _) idx = Vty.horizCat do
   pure . drawSprite . Game.Canvas.at canv $ x :- idx
 
 drawSprite :: Sprite -> Vty.Image
-drawSprite (Sprite (Glyph chr) color) = Vty.char attr chr
+drawSprite (Sprite (Glyph chr) color bgcolor) = Vty.char attr chr
   where
-    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (colorToVty color)}
+    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (colorToVty color),
+                            Attr.attrBackColor = Attr.SetTo (colorToVty bgcolor)}
 
 update :: Game.Canvas -> Canvas -> Canvas
 update = set #data

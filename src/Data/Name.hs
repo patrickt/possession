@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | A type for the names of items and monsters.
-module Data.Name (Name (..), definiteArticle) where
+module Data.Name (Name (..), definiteArticle, HasName (..)) where
 
 import Data.Char qualified as Char
 import Data.String (IsString)
@@ -13,12 +13,16 @@ import Data.Text qualified as Text
 import Dhall (FromDhall)
 import Data.Store (Store)
 import Apecs (Component (..), Map)
+import Optics
 
 newtype Name = Name {text :: Text}
   deriving stock (Eq, Ord)
   deriving newtype (Show, IsString, FromDhall, Store)
 
 instance Apecs.Component Name where type Storage Name = Map Name
+
+class HasName a where
+  name :: Lens' a Name
 
 definiteArticle :: Name -> Text
 definiteArticle (Name n)

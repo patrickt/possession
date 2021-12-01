@@ -22,6 +22,7 @@ import GHC.Generics (Generic)
 import qualified Graphics.Vty as Vty
 import UI.Responder
 import UI.Event (keypress)
+import Data.Name
 
 newtype Hud = Hud
   { hudPosition :: Position
@@ -43,6 +44,6 @@ initial :: Hud
 initial = Hud (3 :- 3)
 
 insertReadout :: Position -> Info -> Modeline -> Modeline
-insertReadout p i m = case i ^. #summary % at p of
+insertReadout p i m = case i ^? #summary % ix p % name of
   Just n -> m & Modeline.update (Message.youSee n)
   _ -> m

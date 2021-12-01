@@ -31,15 +31,13 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Amount
 import Data.Experience (XP (..))
 import Data.Foldable (for_)
-import Data.Foldable.WithIndex (iforM_, itraverse_)
-import Data.Function ((&))
+import Data.Foldable.WithIndex (iforM_)
 import Data.Glyph (Glyph (..))
 import Data.Hitpoints as HP (HP, injure, isAlive)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Message qualified as Message
 import Data.Monoid (Alt (getAlt), Last)
-import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Position (Position, position)
 import Data.Position qualified as Position
@@ -58,7 +56,7 @@ import Game.Save qualified as Save
 import Game.State qualified
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
-import Optics (At (at), (%), (.~), (?~))
+import Optics hiding (use)
 import Raw.Types (Collision (..), Strategy (..))
 import Raw.Types qualified as Color (Color (..))
 import Raw.Types qualified as Raw
@@ -66,6 +64,7 @@ import Raws (Raws)
 import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
+import Game.Info (Info)
 
 type GameState = Game.State.State
 
@@ -147,7 +146,7 @@ findUnoccupied = do
 draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
 draw = Apecs.cfold go Canvas.empty
   where
-    go c (pos, chr, color) = Canvas.update c pos (Canvas.Sprite chr color)
+    go c (pos, chr, color) = Canvas.update c pos (Canvas.Sprite chr color Color.Black)
 
 -- The main game loop.
 loop ::
@@ -254,7 +253,8 @@ currentInfo = do
           & #xp .~ xp
           & #position .~ pure @Last @Position pos
 
-  let go inf (name :: Name, p :: Position) = inf & #summary % at p ?~ name
+  let go :: Info -> Enemy.Enemy -> Info
+      go inf (e :: Enemy.Enemy) = inf & #summary % at (e ^. _1 % position) ?~ e
 
   Apecs.cfold go info
 

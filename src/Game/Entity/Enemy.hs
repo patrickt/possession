@@ -13,7 +13,7 @@ import Data.Experience (XP (XP))
 import Data.Glyph (Glyph (Glyph))
 import Data.Hitpoints
 import Data.Monoid
-import Data.Name (Name (Name))
+import Data.Name
 import Data.Position (Position)
 import Data.Store.Exts (Store)
 import Data.Text qualified as Text
@@ -32,6 +32,9 @@ type Enemy =
   ( (Tag, Name, Color, Glyph, Raw.Id, Position, Hearing),
     (Raw.Collision, Raw.Strategy, HP, Amount, XP)
   )
+
+instance HasName Enemy where
+  name = _1 % _2
 
 fromRaw :: Position -> Raw.Id -> Raw.Enemy -> Enemy
 fromRaw p ident e =

@@ -38,7 +38,7 @@ initial :: Sidebar
 initial = Sidebar mempty
 
 instance Renderable Sidebar where
-  draw (Sidebar i) = do
+  draw _ = do
     i <- ask @Info
     let
       boxed =

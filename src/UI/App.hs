@@ -44,9 +44,9 @@ handleEvent s e = case e of
         forM_ actions $ \act -> do
           liftIO . Broker.enqueueGameAction (s ^. #brokerage) $ act
         Brick.continue new
-  Brick.AppEvent e -> do
+  Brick.AppEvent evt -> do
     let next fn = Brick.continue (fn s)
-    case e of
+    case evt of
       Start -> Brick.continue s
       Terminate -> Brick.halt s
       Redraw canv -> next (set (#toplevel % #canvas % #data) canv)

@@ -23,3 +23,6 @@ evkey = _Ctor @"EvKey"
 
 _Escape :: Optic An_AffineTraversal NoIx Vty.Event Vty.Event () ()
 _Escape = evkey % _1 % only Vty.KEsc
+
+shiftOn :: Event a -> Bool
+shiftOn e = Vty.MShift `elem` (e ^.. #vty % evkey % _2 % folded)

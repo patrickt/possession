@@ -38,5 +38,4 @@ remove upon from Responder and use arrow notation instead
 
 * Caching
 
-could centralize everything in Game.Info, be the source of truth for the last iteration of the ECS
-how do we get at that info, is there an effect or do we manually propagate it on data
+everything that could possibly be useful should be in a Context. this can be stored in the toplevel state and updated differentially when new info comes in.
