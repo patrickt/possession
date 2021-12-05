@@ -65,6 +65,7 @@ import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
 import Game.Info (Info)
+import Data.Generics.Product (typed)
 
 type GameState = Game.State.State
 
@@ -254,7 +255,7 @@ currentInfo = do
           & #position .~ pure @Last @Position pos
 
   let go :: Info -> Enemy.Enemy -> Info
-      go inf (e :: Enemy.Enemy) = inf & #summary % at (e ^. _1 % position) ?~ e
+      go inf (e :: Enemy.Enemy) = inf & #summary % at (e ^. _1 % typed @Position) ?~ e
 
   Apecs.cfold go info
 

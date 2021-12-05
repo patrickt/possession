@@ -22,26 +22,33 @@ import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 import UI.Widgets.Sidebar (Sidebar)
 import UI.Widgets.Sidebar qualified as Sidebar
+import Game.Info
 
-data Toplevel = Toplevel
-  { toplevelCanvas :: Canvas,
+data Toplevel a = Toplevel
+  { toplevelCanvas :: Canvas (Toplevel a),
     toplevelSidebar :: Sidebar,
-    toplevelModeline :: Modeline
+    toplevelModeline :: Modeline,
+    toplevelParent :: a
   }
   deriving stock (Generic)
 
-instance Show Toplevel where show = const "Toplevel"
-
 makeFieldLabels ''Toplevel
 
-initial :: Toplevel
-initial =
-  Toplevel Canvas.initial Sidebar.initial Modeline.initial
+initial :: a -> Toplevel a
+initial a = x where x = Toplevel (Canvas.initial x) Sidebar.initial Modeline.initial a
 
-instance Responder Toplevel where
+instance HasInfo a => HasInfo (Toplevel a) where
+  info = #parent % info
+
+instance HasInfo a => Responder (Toplevel a) where
   respondTo = within #canvas
 
-instance Renderable Toplevel where
+instance Updateable Toplevel where
+  update p t = go
+   where
+     go = t & #parent .~ p & #canvas %~ update go
+
+instance Renderable (Toplevel a) where
   layout t =
     HSplit
       <$> (t ^. #sidebar % laidOut)

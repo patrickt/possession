@@ -14,13 +14,14 @@ import Data.Glyph (Glyph (Glyph))
 import Data.Hitpoints
 import Data.Monoid
 import Data.Name
-import Data.Position (Position)
+import Data.Position (Position, HasPosition (position))
 import Data.Store.Exts (Store)
 import Data.Text qualified as Text
 import GHC.Generics hiding (to)
 import Optics
 import Raw.Types (Color)
 import Raw.Types qualified as Raw
+import Data.Generics.Product (typed)
 
 data Tag = Enemy
   deriving stock (Generic)
@@ -35,6 +36,9 @@ type Enemy =
 
 instance HasName Enemy where
   name = _1 % _2
+
+instance HasPosition Enemy where
+  position = _1 % typed
 
 fromRaw :: Position -> Raw.Id -> Raw.Enemy -> Enemy
 fromRaw p ident e =

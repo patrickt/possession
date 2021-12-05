@@ -16,7 +16,8 @@ data Event state = Event {eventVty :: Vty.Event, eventState :: state }
 
 makeFieldLabels ''Event
 
-keypress k = #vty % _Ctor @"EvKey" % _1 % only k
+keypress :: Vty.Key -> Fold (Event a) ()
+keypress k = castOptic (#vty % _Ctor @"EvKey" % _1 % only k)
 
 evkey :: Prism' Vty.Event (Vty.Key, [Vty.Modifier])
 evkey = _Ctor @"EvKey"

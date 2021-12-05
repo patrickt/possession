@@ -10,15 +10,16 @@ import Brick qualified
 import Brick.Widgets.Center qualified as Brick
 import Control.Effect.Broker qualified as Broker
 import Control.Monad.IO.Class (liftIO)
+import Data.Foldable
 import Game.Action as Action
 import Optics
 import UI.Render qualified as Render
 import UI.Resource (Event, EventM, Widget)
 import UI.Resource qualified as UI (Resource)
-import UI.State qualified as UI (State)
 import UI.Responder qualified as Responder
-import Data.Foldable
-import qualified UI.Widgets.Modeline as Modeline
+import UI.State qualified as State
+import UI.State qualified as UI (State)
+import UI.Widgets.Modeline qualified as Modeline
 
 draw :: UI.State -> [Widget]
 draw s = pure . Brick.hCenter . Render.runDraw (s ^. #info) $ s
@@ -50,6 +51,6 @@ handleEvent s e = case e of
       Start -> Brick.continue s
       Terminate -> Brick.halt s
       Redraw canv -> next (set (#toplevel % #canvas % #data) canv)
-      Update info -> next (set #info info)
-      Notify msg -> next (over (#toplevel % #modeline) (Modeline.update msg))
+      Update info -> next (State.updateState info)
+      Notify msg -> next (over (#toplevel % #modeline) (Modeline.display msg))
   _ -> Brick.continue s

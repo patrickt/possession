@@ -4,7 +4,7 @@
 module UI.Widgets.Modeline
   ( Modeline,
     initial,
-    update,
+    display,
     lastMessage,
   )
 where
@@ -35,11 +35,11 @@ newtype Modeline = Modeline
 initial :: Modeline
 initial = mempty
 
-update :: Message -> Modeline -> Modeline
-update m (Modeline (firsts :> last'))
+display :: Message -> Modeline -> Modeline
+display m (Modeline (firsts :> last'))
   | Message.mergeable m last' = Modeline (firsts :> mappend last' m)
   | otherwise = Modeline (firsts :> last' :> m)
-update m _ = Modeline (pure m)
+display m _ = Modeline (pure m)
 
 lastMessage :: AffineTraversal' Modeline Message
 lastMessage = #messages % _last

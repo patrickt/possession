@@ -10,8 +10,8 @@
 module Data.Position
   ( V2 (..),
     type Position,
+    HasPosition(..),
     pattern (:-),
-    position,
     randomIn,
     brickLocation,
     adjacentClamped,
@@ -25,12 +25,10 @@ where
 import Apecs (Component (..), Map, Cache)
 import Brick qualified
 import Control.Effect.Random
-import Data.Generics.Product hiding (position)
+import Data.Generics.Product hiding (HasPosition (..))
 import Linear
 import Optics
 import TextShow
-import Control.Monad (guard)
-import Data.Foldable (fold)
 
 type Position = V2 Int
 
@@ -50,8 +48,13 @@ brickLocation = iso fore aft where
   fore (a :- b) = Brick.Location (a + 1, b + 1)
   aft (Brick.Location (a, b)) = (a - 1) :- (b - 1)
 
-position :: forall a. HasType Position a => Lens' a Position
-position = typed
+class HasPosition a where
+  position :: Lens' a Position
+
+  default position :: HasType Position a => Lens' a Position
+  position = typed
+
+instance HasPosition Position where position = castOptic simple
 
 adjacentClamped :: Int -> Position -> [Position]
 adjacentClamped maxim o@(a :- b) = filter scanner do

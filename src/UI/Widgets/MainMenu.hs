@@ -80,10 +80,10 @@ instance Responder (Maybe MainMenu) where
     where
       up = overState (keypress Vty.KUp) (fmap (over #choices Pointed.previous))
       down = overState (keypress Vty.KDown) (fmap (over #choices Pointed.next))
-      selection = upon $ \a -> case a ^? _Just % selected of
-           Just NewGame -> pure Nothing
-           Just Resume -> pure Nothing
-           Just Load -> Nothing `emitting` LoadState
-           Just Save -> Nothing `emitting` SaveState
-           Just Quit -> Nothing `emitting` Terminate
-           _ -> empty
+      selection = switch $ \a -> case a ^? _Just % selected of
+           Just NewGame -> Ok Nothing
+           Just Resume -> Ok Nothing
+           Just Load -> Emit LoadState Nothing
+           Just Save -> Emit SaveState Nothing
+           Just Quit -> Emit Terminate Nothing
+           _ -> Fail

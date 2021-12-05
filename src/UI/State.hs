@@ -11,7 +11,7 @@
 module UI.State
   ( State (State),
     initial,
-  )
+  updateState)
 where
 
 import Control.Concurrent (ThreadId)
@@ -24,9 +24,11 @@ import qualified UI.Widgets.MainMenu as MainMenu
 import qualified UI.Widgets.Toplevel as Toplevel
 import UI.Event
 import Game.Info qualified as Game (Info)
+import Data.Fix
+import Game.Info
 
 data State = State
-  { stateToplevel :: Toplevel.Toplevel,
+  { stateToplevel :: Toplevel.Toplevel State,
     stateMenu :: Maybe MainMenu.MainMenu,
     stateInfo :: Game.Info,
     stateBrokerage :: Brokerage,
@@ -34,9 +36,9 @@ data State = State
   }
   deriving (Generic)
 
-instance Show State where show = const "State"
-
 makeFieldLabels ''State
+
+instance HasInfo State where info = #info
 
 instance Responder State where
   respondTo =
@@ -55,5 +57,10 @@ instance Renderable State where
     Just x -> x ^. laidOut
 
 initial :: Brokerage -> ThreadId -> State
-initial =
-  State Toplevel.initial (Just MainMenu.initial) mempty
+initial x y = z
+  where
+    z = State (Toplevel.initial z) (Just MainMenu.initial) mempty x y
+
+updateState :: Info -> State -> State
+updateState inf s = go where
+  go = s & info .~ inf & #toplevel %~ update go

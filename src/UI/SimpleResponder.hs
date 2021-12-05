@@ -1,86 +1,101 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module UI.SimpleResponder
-  ( Path (..),
-    Responder (..),
-    Event,
-    accept,
-    respond,
-    try,
-    recurse,
-    eval,
+  ( Responder (..),
+    -- try,
+    -- recurse,
+    -- runResponder,
+    -- whenMatches,
+    -- Alternative (..),
+    -- guard,
+    -- emitting,
+    -- overState,
+    -- respond,
+    -- upon,
+    -- (>>>),
+    -- ensuring,
+    within,
+    -- arr,
   )
 where
 
 import Control.Applicative
+import Control.Carrier.Reader
+import Control.Category (Category (..), (<<<), (>>>))
+import Control.Monad
+import Control.Monad.Free
 import Data.Kind (Type)
+import Data.Monoid
+import Data.Profunctor
+import Data.Profunctor.Rep
+import Data.Profunctor.Sieve
+import Data.Profunctor.Traversing
+import Game.Action (GameAction)
 import Graphics.Vty qualified as Vty
 import Optics
-import Game.Action (GameAction)
 import UI.Event
+import Prelude hiding ((.), id)
+import Control.Carrier.NonDet.Church
+import Data.Functor.Identity
+import Control.Carrier.Throw.Either (ThrowC)
 
--- A binary tree of actions that, given some state type and a Vty event,
--- can evaluate to success/failure. If this were of type T -> T -> T,
--- it could implement Profunctor.
-data Path :: Type -> Type where
-  Fail :: Path a
-  Try :: Path a -> Path a -> Path a
-  -- First parameter represents a query operation that, if it succeeds,
-  -- is passed to the second operation, which can in turn succeed/fail.
-  -- The forall'ed `x` variable here prevents functoriality/applicativeness
-  When :: (Event () a -> Maybe x) -> (Event x a -> Maybe a) -> Path a
-  -- Send an action back to the ECS
-  Emit :: GameAction -> Path a -> Path a
+type Chain :: Type -> Type -> Type
+newtype Chain a b = Chain {unChain :: Star Step a b}
 
--- Path is Pointed, but not a functor or applicative
-accept :: a -> Path a
-accept = When Just . const . Just
+runChain :: Chain a b -> a -> Step b
+runChain (Chain (Star f)) = f
 
-instance Semigroup (Path a) where
-  Fail <> a = a
-  a <> Fail = a
-  a <> b = Try a b
+deriving newtype instance Category Chain
+deriving newtype instance Profunctor Chain
 
-instance Monoid (Path a) where mempty = Fail
+class Responder a where
+  respondTo :: Chain a a
 
--- Coalgebra describing how components unfold into an event tree
-class Responder a where respondTo :: a -> Path a
+instance Traversing Chain
 
-respond :: Responder a => Vty.Event -> a -> Maybe a
-respond e a = eval (respondTo a) e a
+type Step = ReaderC Vty.Event (NonDetC (ThrowC GameAction Identity))
 
--- Using two traversals, rewrite the Responder pointed to by the second
--- should the first succeed.
-try ::
-  (Is setter A_Traversal, Is query An_AffineFold, Responder b) =>
-  Optic' query is1 (Event () a) unused ->
-  Optic' setter is2 a b ->
-  Path a
-try getit setit = When (preview getit) (\(Event vty state _) -> traverseOf setit (respond vty) state)
+instance Sieve Chain Step where
 
-recurse :: (Is k A_Traversal, Responder b) => Optic' k is a b -> Path a
-recurse = try (to Just)
+instance Representable Chain where
+  type Rep Chain = ReaderC Vty.Event (NonDetC (ThrowC GameAction Identity))
 
-actions :: Path a -> Vty.Event -> a -> [GameAction]
-actions p e s = go [] p
-  where
-    go xs = \case
-      Fail -> []
-      Try l r -> go xs l <|> go xs r
-      When check _ -> maybe [] (const xs) (check (Event e s ()))
-      Emit evt next -> go (evt:xs) next
+withEvent :: Chain a Vty.Event
+withEvent = tabulate (const ask)
 
-eval :: forall a. Path a -> Vty.Event -> a -> Maybe a
-eval p e s = go p
-  where
-    go :: Path a -> Maybe a
-    go = \case
-      Fail -> Nothing
-      Try a b -> go a <|> go b
-      Emit _ a -> go a
-      When predicate action -> predicate (Event e s ()) >>= action . Event e s
+recurse :: (Responder b, Is k A_Traversal) => Optic k is s t b b -> Chain s t
+recurse setter = wander (traverseOf setter) respondTo
+
+within ::
+  ( JoinKinds A_Lens k1 k2,
+    Responder b1,
+    Is k2 A_Fold,
+    Is k1 A_Traversal
+  ) =>
+  Optic k1 is b2 b2 b1 b1 ->
+  Chain b2 b2
+within setter = ensuring (has (#state % setter)) >>> recurse setter
+
+ensuring :: (Event c -> Bool) -> Chain c c
+ensuring fn = tabulate (\inp -> ask >>= \e -> inp <$ guard (fn (Event e inp)))
+
+upon :: (a -> (Maybe GameAction, a)) -> Chain c c
+upon = undefined
+
+emitting it act = upon $ const (Just act, it)
+
+whenMatches opt go = ensuring (has opt) >>> upon go
+
+overState opt fn = whenMatches opt (pure . fn)
+
+-- runResponder :: Responder a => Vty.Event -> a -> Maybe ([GameAction], a)
+-- runResponder e = run . runReader e . runNonDetA . runState mempty . runKleisli respondTo
+
+-- respond :: Responder b => Vty.Event -> b -> Maybe b
+-- respond a = fmap snd . runResponder a

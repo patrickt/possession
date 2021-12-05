@@ -8,7 +8,7 @@
 module UI.Canvas
   ( Canvas (Canvas),
     initial,
-    update
+    refresh,
   )
 where
 
@@ -28,20 +28,20 @@ import GHC.Generics (Generic)
 import UI.Responder
 import Game.Action
 import UI.Hud qualified as Hud
+import Game.Info (HasInfo (..))
 
-data Canvas = Canvas
+data Canvas a = Canvas
   { canvasData :: Game.Canvas
   , canvasHud :: Maybe Hud.Hud
+  , canvasParent :: a
   } deriving stock Generic
 
 makeFieldLabels ''Canvas
 
-instance Show Canvas where show = const "Canvas"
+initial :: a -> Canvas a
+initial a = Canvas { canvasData = Game.Canvas.empty, canvasHud = Nothing, canvasParent = a }
 
-initial :: Canvas
-initial = Canvas { canvasData = Game.Canvas.empty, canvasHud = Nothing }
-
-instance Renderable Canvas where
+instance Renderable (Canvas a) where
   draw canv =
     let allLines = scanline canv <$> [0 .. Game.Canvas.size]
         withCursor = maybe id (Brick.showCursor UI.Resource.Canvas) (canv ^? #hud % _Just % position % brickLocation)
@@ -51,7 +51,7 @@ instance Renderable Canvas where
         . Brick.raw
         $ Vty.vertCat allLines
 
-instance Responder Canvas where
+instance HasInfo a => Responder (Canvas a) where
   respondTo = quit
     <|> esc
     <|> look
@@ -61,14 +61,17 @@ instance Responder Canvas where
     <|> move Vty.KLeft (negate 1 :- 0)
     <|> move Vty.KRight (1 :- 0)
     where
-      look = overState (keypress (Vty.KChar '*')) (set #hud (Just Hud.initial))
+      --
+      look = overState (keypress (Vty.KChar '*')) (\s -> s & #hud ?~ Hud.initial (s ^. #parent % info))
       esc = ensuring (has (#state % #hud %_Just)) >>> overState (keypress Vty.KEsc) (set #hud Nothing)
-      quit = whenMatches (keypress (Vty.KChar 'q')) (`emitting` Terminate)
-      move k amt = whenMatches (keypress k) (`emitting` Move amt)
+      quit = whenMatches (keypress (Vty.KChar 'q')) Terminate
+      move k amt = whenMatches (keypress k) (Move amt)
 
+instance Updateable Canvas where
+  update = set #parent
 
-scanline :: Canvas -> Int -> Vty.Image
-scanline (Canvas canv _) idx = Vty.horizCat do
+scanline :: Canvas a -> Int -> Vty.Image
+scanline Canvas{canvasData = canv} idx = Vty.horizCat do
   x <- [0 .. Game.Canvas.size]
   pure . drawSprite . Game.Canvas.at canv $ x :- idx
 
@@ -78,5 +81,5 @@ drawSprite (Sprite (Glyph chr) color bgcolor) = Vty.char attr chr
     attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (colorToVty color),
                             Attr.attrBackColor = Attr.SetTo (colorToVty bgcolor)}
 
-update :: Game.Canvas -> Canvas -> Canvas
-update = set #data
+refresh :: Game.Canvas -> Canvas a -> Canvas a
+refresh = set #data

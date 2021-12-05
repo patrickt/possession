@@ -7,7 +7,9 @@ module Data.List.Pointed
     PL.next,
     PL.previous,
     moveTo,
-    focus
+    PL.find,
+    focus,
+    IsList (..),
   )
 where
 

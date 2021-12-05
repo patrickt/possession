@@ -7,11 +7,13 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 
 -- | A rendering-agnostic container for information about the state of the world.
 -- This is created in the ECS loop and sent via a broker to the rendering engine.
 module Game.Info
   ( Info (Info),
+    HasInfo (..)
   )
 where
 
@@ -25,6 +27,7 @@ import GHC.Generics (Generic)
 import Optics
 import Data.Map.Strict (Map)
 import Game.Entity.Enemy (Enemy)
+import Data.Generics.Product
 
 data Info = Info
   { hitpoints :: Last HP,
@@ -38,3 +41,7 @@ data Info = Info
   deriving (Monoid) via GenericMonoid Info
 
 makeFieldLabelsWith noPrefixFieldLabels ''Info
+makeClassy ''Info
+
+instance Data.Position.HasPosition Info where
+  position = #position % coerced % non (0 :: Position)
