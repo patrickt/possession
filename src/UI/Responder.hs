@@ -24,6 +24,7 @@ module UI.Responder
     Res (..),
     switch,
     Updateable (..),
+    andEmit,
   )
 where
 
@@ -43,6 +44,8 @@ import Graphics.Vty qualified as Vty
 import Optics
 import UI.Event
 import Prelude hiding (id)
+
+-- this could be (Chain (a, f a) (f a))
 
 class Updateable f where
   update :: a -> f a -> f a
@@ -96,6 +99,9 @@ overState opt fn = ensuring (has opt) >>> arr fn
 
 ensuring :: (Event a -> Bool) -> Chain a a
 ensuring fn = Chain (tabulate (\a -> ask >>= \e -> a <$ guard (fn (Event e a))))
+
+andEmit :: (a -> GameAction) -> Chain a a
+andEmit fn = tabulate (\a -> a <$ modify (fn a :))
 
 runResponder :: Responder a => Vty.Event -> a -> Maybe ([GameAction], a)
 runResponder e = ($ e) . runNonDetA . runState mempty . runChain respondTo

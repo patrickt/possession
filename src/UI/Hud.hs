@@ -4,6 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-unclutter-valid-hole-fits #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module UI.Hud
@@ -14,30 +15,34 @@ where
 
 import Data.Message qualified as Message
 import Data.Position (Position, pattern (:-), HasPosition (position))
-import Game.Info (Info)
+import Game.Info (Info, HasInfo(..))
 import Optics
 import UI.Widgets.Modeline (Modeline)
 import UI.Widgets.Modeline qualified as Modeline
 import GHC.Generics (Generic)
 import qualified Graphics.Vty as Vty
 import UI.Responder
-import UI.Event (keypress, shiftOn)
+import UI.Event (keypress)
 import Data.Name
 import Data.Maybe
 import Data.List.Pointed qualified as PL
 import qualified Data.Map.Strict as Map
 import Data.List (sort)
+import Game.Action
 
-data Hud = Hud
+data Hud a = Hud
   { hudPosition :: Position
   , hudTargets :: PL.PointedList Position
+  , hudParent :: a
   }
   deriving stock Generic
   deriving anyclass HasPosition
 
 makeFieldLabels ''Hud
 
-instance Responder Hud where
+instance HasInfo a => HasInfo (Hud a) where info = #parent % info
+
+instance HasInfo a => Responder (Hud a) where
   respondTo =
     perEnemy
     <|> standardMovement
@@ -48,18 +53,22 @@ instance Responder Hud where
         <|> move Vty.KDown (0 :- 1)
         <|> move Vty.KLeft (negate 1 :- 0)
         <|> move Vty.KRight (1 :- 0)
-      move k amt = overState (keypress k) (over #position (+amt) :: Hud -> Hud)
+      move k amt = overState (keypress k) (over #position (+amt))
       moveByList k fn =
         ensuring (has (keypress k))
         >>> arr (over #targets fn)
-        >>> arr (\s -> s & #position .~ (s ^. #targets % PL.focus))
+        >>> andEmit (Notify . Message.youSee . nameOfTarget)
+        >>> arr (\s -> s & #position .~ (s ^. #targets % PL.focus & (+ negate 1)))
 
-initial :: Info -> Hud
-initial info = Hud player (fromMaybe initial (PL.find player initial))
+nameOfTarget :: HasInfo a => Hud a -> Name
+nameOfTarget h = h ^? info % #summary % at (hudPosition h) % _Just % name ^. non (Name "something")
+
+initial :: HasInfo a => a -> Hud a
+initial p = Hud player (fromMaybe start (PL.find player start)) p
   where
-    initial = PL.fromList (sort (player : allEnemies))
-    player = info ^. position
-    allEnemies = info ^. #summary % to Map.keys
+    start = PL.fromList (sort (player : allEnemies))
+    player = p ^. info % position
+    allEnemies = p ^. info % #summary % to Map.keys
 
 insertReadout :: Position -> Info -> Modeline -> Modeline
 insertReadout p i m = case i ^? #summary % ix p % name of

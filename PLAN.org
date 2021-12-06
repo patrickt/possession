@@ -39,3 +39,5 @@ remove upon from Responder and use arrow notation instead
 * Caching
 
 everything that could possibly be useful should be in a Context. this can be stored in the toplevel state and updated differentially when new info comes in.
+
+Fix magical +1 in Hud Responder impl

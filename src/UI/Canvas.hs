@@ -32,11 +32,13 @@ import Game.Info (HasInfo (..))
 
 data Canvas a = Canvas
   { canvasData :: Game.Canvas
-  , canvasHud :: Maybe Hud.Hud
+  , canvasHud :: Maybe (Hud.Hud (Canvas a))
   , canvasParent :: a
   } deriving stock Generic
 
 makeFieldLabels ''Canvas
+
+instance HasInfo a => HasInfo (Canvas a) where info = #parent % info
 
 initial :: a -> Canvas a
 initial a = Canvas { canvasData = Game.Canvas.empty, canvasHud = Nothing, canvasParent = a }
@@ -62,7 +64,7 @@ instance HasInfo a => Responder (Canvas a) where
     <|> move Vty.KRight (1 :- 0)
     where
       --
-      look = overState (keypress (Vty.KChar '*')) (\s -> s & #hud ?~ Hud.initial (s ^. #parent % info))
+      look = overState (keypress (Vty.KChar '*')) (\s -> s & #hud ?~ Hud.initial s)
       esc = ensuring (has (#state % #hud %_Just)) >>> overState (keypress Vty.KEsc) (set #hud Nothing)
       quit = whenMatches (keypress (Vty.KChar 'q')) Terminate
       move k amt = whenMatches (keypress k) (Move amt)

@@ -24,7 +24,6 @@ import qualified UI.Widgets.MainMenu as MainMenu
 import qualified UI.Widgets.Toplevel as Toplevel
 import UI.Event
 import Game.Info qualified as Game (Info)
-import Data.Fix
 import Game.Info
 
 data State = State

@@ -23,6 +23,7 @@ data Action (dest :: Dest) where
   -- These can be sent either way
   Start :: Action a
   Terminate :: Action a
+  Notify :: Message -> Action a
   -- These are sent from UI to ECS
   Move :: V2 Int -> Action 'Game
   SaveState :: Action 'Game
@@ -30,7 +31,6 @@ data Action (dest :: Dest) where
   -- These are sent from ECS to UI
   Redraw :: Canvas -> Action 'UI
   Update :: Info -> Action 'UI
-  Notify :: Message -> Action 'UI
 
 instance Show (Action dest) where
   show = \case

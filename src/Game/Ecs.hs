@@ -176,6 +176,7 @@ loop = forever do
       Save.read >>= Save.load
       Broker.notify "Game loaded."
     Terminate -> Broker.sendCommand Terminate
+    Notify a -> Broker.sendCommand (Notify a)
     Start -> pure ()
 
   enemyTurn
