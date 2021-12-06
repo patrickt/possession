@@ -26,13 +26,13 @@ import UI.Event (keypress)
 import Data.Name
 import Data.Maybe
 import Data.List.Pointed qualified as PL
-import qualified Data.Map.Strict as Map
 import Data.List (sort)
 import Game.Action
+import qualified Game.Info as Info
 
 data Hud a = Hud
   { hudPosition :: Position
-  , hudTargets :: PL.PointedList Position
+  , hudTargets :: PL.PointedList (Position, Name)
   , hudParent :: a
   }
   deriving stock Generic
@@ -58,17 +58,17 @@ instance HasInfo a => Responder (Hud a) where
         ensuring (has (keypress k))
         >>> arr (over #targets fn)
         >>> andEmit (Notify . Message.youSee . nameOfTarget)
-        >>> arr (\s -> s & #position .~ (s ^. #targets % PL.focus & (+ negate 1)))
+        >>> arr (\s -> s & #position .~ (s ^. #targets % PL.focus % _1 & (+ negate 1)))
 
-nameOfTarget :: HasInfo a => Hud a -> Name
-nameOfTarget h = h ^? info % #summary % at (hudPosition h) % _Just % name ^. non (Name "something")
+nameOfTarget :: Hud a -> Name
+nameOfTarget = view (#targets % PL.focus % _2)
 
 initial :: HasInfo a => a -> Hud a
-initial p = Hud player (fromMaybe start (PL.find player start)) p
+initial p = Hud (fst player) (fromMaybe start (PL.find player start)) p
   where
-    start = PL.fromList (sort (player : allEnemies))
-    player = p ^. info % position
-    allEnemies = p ^. info % #summary % to Map.keys
+    start = PL.fromList (sort (player : enemies))
+    player = (p ^. info % position, "yourself")
+    enemies = Info.allEnemies (p ^. info)
 
 insertReadout :: Position -> Info -> Modeline -> Modeline
 insertReadout p i m = case i ^? #summary % ix p % name of

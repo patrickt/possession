@@ -14,7 +14,7 @@
 module Game.Info
   ( Info (Info),
     HasInfo (..)
-  )
+  ,allEnemies)
 where
 
 import Data.Amount
@@ -26,8 +26,10 @@ import Data.Position
 import GHC.Generics (Generic)
 import Optics
 import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Game.Entity.Enemy (Enemy)
-import Data.Generics.Product
+import Data.Generics.Product hiding (position)
+import Data.Name (Name, name)
 
 data Info = Info
   { hitpoints :: Last HP,
@@ -45,3 +47,6 @@ makeClassy ''Info
 
 instance Data.Position.HasPosition Info where
   position = #position % coerced % non (0 :: Position)
+
+allEnemies :: Info -> [(Position, Name)]
+allEnemies i = fmap (\e -> (e ^. Data.Position.position, e ^. name)) (Map.elems (summary i))
