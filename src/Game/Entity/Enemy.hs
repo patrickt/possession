@@ -1,8 +1,14 @@
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module Game.Entity.Enemy
   ( Tag (..),
-    Enemy,
+    Enemy (..),
+    _Enemy,
     fromRaw,
   )
 where
@@ -14,46 +20,60 @@ import Data.Glyph (Glyph (Glyph))
 import Data.Hitpoints
 import Data.Monoid
 import Data.Name
-import Data.Position (Position, HasPosition (position))
+import Data.Position (HasPosition (position), Position)
 import Data.Store.Exts (Store)
 import Data.Text qualified as Text
 import GHC.Generics hiding (to)
+import Data.Generics.Sum
 import Optics
 import Raw.Types (Color)
 import Raw.Types qualified as Raw
-import Data.Generics.Product (typed)
+import Data.Maybe (fromJust)
 
-data Tag = Enemy
+data Tag = EnemyTag
   deriving stock (Generic)
   deriving anyclass (Store)
 
+data Enemy = Enemy
+  { enemyTag :: Tag,
+    enemyName :: Name,
+    enemyColor :: Color,
+    enemyGlyph :: Glyph,
+    enemyId :: Raw.Id,
+    enemyPosition :: Position,
+    enemyHearing :: Hearing,
+    enemyCollision :: Raw.Collision,
+    enemyStrategy :: Raw.Strategy,
+    enemyHP :: HP,
+    enemyGold :: Amount,
+    enemyXP :: XP
+  }
+  deriving stock Generic
+  deriving anyclass Store
+
+makeFieldLabels ''Enemy
+
+_Enemy :: Iso' Enemy _
+_Enemy = iso (fromJust . preview (_Ctor @"Enemy")) (review (_Ctor @"Enemy"))
+
 instance Apecs.Component Tag where type Storage Tag = Map Tag
 
-type Enemy =
-  ( (Tag, Name, Color, Glyph, Raw.Id, Position, Hearing),
-    (Raw.Collision, Raw.Strategy, HP, Amount, XP)
-  )
+instance HasName Enemy where name = #name
 
-instance HasName Enemy where
-  name = _1 % _2
-
-instance HasPosition Enemy where
-  position = _1 % typed
+instance HasPosition Enemy where position = #position
 
 fromRaw :: Position -> Raw.Id -> Raw.Enemy -> Enemy
 fromRaw p ident e =
-  ( ( Enemy,
-      e ^. #name & Name,
-      e ^. #color,
-      e ^. #glyph & Text.head & Glyph,
-      ident,
-      p,
-      e ^. #hearing & Hearing
-    ),
-    ( e ^. #onCollide,
-      e ^. #strategy,
-      HP 5 5,
-      e ^. #canDrop & Amount,
-      e ^. #yieldsXP % to Sum & flip XP 100
-    )
-  )
+  Enemy
+    EnemyTag
+    (e ^. #name & Name)
+    (e ^. #color)
+    (e ^. #glyph & Text.head & Glyph)
+    ident
+    p
+    (e ^. #hearing & Hearing)
+    (e ^. #onCollide)
+    (e ^. #strategy)
+    (HP 5 5)
+    (e ^. #canDrop & Amount)
+    (e ^. #yieldsXP % to Sum & flip XP 100)

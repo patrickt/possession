@@ -4,7 +4,6 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module UI.Responder
   ( Responder (..),
@@ -45,11 +44,6 @@ import Optics
 import UI.Event
 import Prelude hiding (id)
 
--- this could be (Chain (a, f a) (f a))
-
-class Updateable f where
-  update :: a -> f a -> f a
-
 type ResponderM = StateC [GameAction] (NonDetC ((->) Vty.Event))
 
 newtype Chain a b = Chain {unChain :: Star ResponderM a b}
@@ -75,6 +69,17 @@ class Responder a where
 recurse :: (Responder b, Is k A_Traversal) => Optic k is s t b b -> Chain s t
 recurse setter = wander (traverseOf setter) respondTo
 
+try ::
+  ( JoinKinds A_Lens l k,
+    JoinKinds A_Lens k1 k2,
+    Responder child,
+    Is k A_Fold,
+    Is k2 A_Fold,
+    Is k1 A_Traversal
+  ) =>
+  Optic' l is1 parent ok ->
+  Optic' k1 is2 parent child ->
+  Chain parent parent
 try getit setit = ensuring (has (#state % getit)) >>> within setit
 
 within ::
@@ -89,6 +94,7 @@ within setter = ensuring (has (#state % setter)) >>> recurse setter
 
 data Res a = Ok a | Fail | Emit GameAction a
 
+switch :: (t -> Res c) -> Chain t c
 switch fn = tabulate (\a -> case fn a of Ok x -> pure x; Fail -> empty @ResponderM; Emit e x -> x <$ modify (e :))
 
 whenMatches :: (Is k A_Fold) => Optic' k is (Event a) x -> GameAction -> Chain a a
@@ -108,3 +114,6 @@ runResponder e = ($ e) . runNonDetA . runState mempty . runChain respondTo
 
 respond :: Responder b => Vty.Event -> b -> Maybe b
 respond a = fmap snd . runResponder a
+
+class Updateable f where
+  update :: a -> f a -> f a

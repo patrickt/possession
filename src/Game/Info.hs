@@ -42,11 +42,11 @@ data Info = Info
   deriving (Semigroup) via GenericSemigroup Info
   deriving (Monoid) via GenericMonoid Info
 
-makeFieldLabelsWith noPrefixFieldLabels ''Info
+makeFieldLabelsNoPrefix ''Info
 makeClassy ''Info
 
 instance Data.Position.HasPosition Info where
   position = #position % coerced % non (0 :: Position)
 
 allEnemies :: Info -> [(Position, Name)]
-allEnemies i = fmap (\e -> (e ^. Data.Position.position, e ^. name)) (Map.elems (summary i))
+allEnemies = fmap (\e -> (e ^. Data.Position.position, e ^. name)) . Map.elems . summary

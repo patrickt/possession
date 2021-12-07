@@ -4,6 +4,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- | Provides the high-level constructs associated with the
 -- game thread. Receives 'Action' values from the UI and sends
@@ -66,6 +67,7 @@ import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
 import Game.Info (Info)
 import Data.Generics.Product (typed)
+import Apecs.Exts (tupled)
 
 type GameState = Game.State.State
 
@@ -114,7 +116,7 @@ setup = do
   -- Fill in some enemies
   let mkEnemy idx (e :: Raw.Enemy) = do
         pos <- findUnoccupied
-        Apecs.newEntity (Enemy.fromRaw pos (Raw.Id idx) e)
+        Apecs.newEntity (Apecs.tupled @"Enemy" (Enemy.fromRaw pos (Raw.Id idx) e))
 
   foes <- use @Raws #enemies
   itraverse_ mkEnemy foes
@@ -129,7 +131,7 @@ enemyTurn = do
   let isEmpty x = Map.lookup x lookupTable == Just Dungeon.Off
   let neighborsOf p = filter isEmpty (Position.adjacentClamped Canvas.size p)
 
-  Apecs.cmapM_ \(Enemy.Enemy, e :: Entity, pos :: Position, Hearing hearingRadius, strat :: Strategy) ->
+  Apecs.cmapM_ \(Enemy.EnemyTag, e :: Entity, pos :: Position, Hearing hearingRadius, strat :: Strategy) ->
     when (Position.dist pos pp < fromIntegral hearingRadius && strat == FightOnSight) do
       let pfctx = PF.Context pos pp (Position.dist pos) (\_ _ -> 1) neighborsOf
       let path = PF.pathfind' pfctx
@@ -196,7 +198,7 @@ playerAttack ent = do
     then Apecs.set ent new
     else do
       notify (Message.fromText ("You kill the " <> Name.text name <> "."))
-      Apecs.remove @Enemy.Enemy ent
+      --Apecs.remove (tupled ent)
 
       Apecs.append player xp
 
@@ -255,8 +257,7 @@ currentInfo = do
           & #xp .~ xp
           & #position .~ pure @Last @Position pos
 
-  let go :: Info -> Enemy.Enemy -> Info
-      go inf (e :: Enemy.Enemy) = inf & #summary % at (e ^. _1 % typed @Position) ?~ e
+  let go inf (review Enemy._Enemy -> e :: Enemy.Enemy) = inf & #summary % at (e ^. position) ?~ e
 
   Apecs.cfold go info
 

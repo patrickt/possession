@@ -49,6 +49,7 @@ library
   import:          shared
   exposed-modules:
     Apecs.Exts
+    Apecs.THTuples
     Control.Carrier.Trace.Brokered
     Control.Effect.Broker
     Data.Aeson.Exts
@@ -74,6 +75,7 @@ library
     Game.Flag
     Game.Info
     Game.Pathfind
+    Game.Query
     Game.Save
     Game.Sprite
     Game.State
