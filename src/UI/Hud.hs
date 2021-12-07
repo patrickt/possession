@@ -15,10 +15,8 @@ where
 
 import Data.Message qualified as Message
 import Data.Position (Position, pattern (:-), HasPosition (position))
-import Game.Info (Info, HasInfo(..))
+import Game.Info (HasInfo(..))
 import Optics
-import UI.Widgets.Modeline (Modeline)
-import UI.Widgets.Modeline qualified as Modeline
 import GHC.Generics (Generic)
 import qualified Graphics.Vty as Vty
 import UI.Responder
@@ -62,7 +60,7 @@ nameOfTarget :: Hud a -> Name
 nameOfTarget = view (#targets % PL.focus % _2)
 
 centerOnTarget :: Hud a -> Hud a
-centerOnTarget s = s & #position .~ (s ^. #targets % PL.focus % _1 & (+ negate 1))
+centerOnTarget s = s & #position .~ (s ^. #targets % PL.focus % _1)
 
 initial :: HasInfo a => a -> Hud a
 initial p = Hud (fst player) (fromMaybe start (PL.find player start)) p
@@ -70,8 +68,3 @@ initial p = Hud (fst player) (fromMaybe start (PL.find player start)) p
     start = PL.fromList (sort (player : enemies))
     player = (p ^. info % position, "yourself")
     enemies = Info.allEnemies (p ^. info)
-
-insertReadout :: Position -> Info -> Modeline -> Modeline
-insertReadout p i m = case i ^? #summary % ix p % name of
-  Just n -> m & Modeline.display (Message.youSee n)
-  _ -> m

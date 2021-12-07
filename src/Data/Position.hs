@@ -45,8 +45,8 @@ pattern (:-) a b = V2 a b
 
 brickLocation :: Iso' Position Brick.Location
 brickLocation = iso fore aft where
-  fore (a :- b) = Brick.Location (a + 1, b + 1)
-  aft (Brick.Location (a, b)) = (a - 1) :- (b - 1)
+  fore (a :- b) = Brick.Location (a, b)
+  aft (Brick.Location (a, b)) = a :- b
 
 class HasPosition a where
   position :: Lens' a Position

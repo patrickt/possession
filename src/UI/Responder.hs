@@ -16,7 +16,6 @@ module UI.Responder
     guard,
     overState,
     respond,
-    arr,
     (>>>),
     ensuring,
     within,
@@ -28,11 +27,10 @@ module UI.Responder
 where
 
 import Control.Applicative
-import Control.Arrow
 import Control.Carrier.NonDet.Church
 import Control.Carrier.Reader
 import Control.Carrier.State.Strict
-import Control.Category (Category (id))
+import Control.Category
 import Data.Coerce
 import Data.Profunctor
 import Data.Profunctor.Rep
@@ -42,7 +40,7 @@ import Game.Action (GameAction)
 import Graphics.Vty qualified as Vty
 import Optics
 import UI.Event
-import Prelude hiding (id)
+import Prelude hiding (id, (.))
 
 type ResponderM = StateC [GameAction] (NonDetC ((->) Vty.Event))
 
