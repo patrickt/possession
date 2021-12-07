@@ -47,6 +47,7 @@ import Game.Canvas qualified as Canvas
 import Game.Canvas qualified as Game (Canvas)
 import Game.Dungeon hiding (at)
 import Game.Dungeon qualified as Dungeon hiding (at)
+import Game.Entity.Enemy (_Enemy)
 import Game.Entity.Enemy qualified as Enemy
 import Game.Entity.Player qualified as Player
 import Game.Entity.Terrain qualified as Terrain
@@ -195,7 +196,7 @@ playerAttack ent = do
     then Apecs.set ent new
     else do
       notify (Message.fromText ("You kill the " <> Name.text name <> "."))
-      --Apecs.remove (tupled ent)
+      Apecs.removing _Enemy ent
 
       Apecs.append player xp
 
