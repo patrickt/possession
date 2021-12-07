@@ -55,13 +55,14 @@ instance HasInfo a => Responder (Hud a) where
         <|> move Vty.KRight (1 :- 0)
       move k amt = overState (keypress k) (over #position (+amt))
       moveByList k fn =
-        ensuring (has (keypress k))
-        >>> arr (over #targets fn)
-        >>> andEmit (Notify . Message.youSee . nameOfTarget)
-        >>> arr (\s -> s & #position .~ (s ^. #targets % PL.focus % _1 & (+ negate 1)))
+        rmap (over #targets fn) (ensuring (has (keypress k)))
+        >>> rmap centerOnTarget (andEmit (Notify . Message.youSee . nameOfTarget))
 
 nameOfTarget :: Hud a -> Name
 nameOfTarget = view (#targets % PL.focus % _2)
+
+centerOnTarget :: Hud a -> Hud a
+centerOnTarget s = s & #position .~ (s ^. #targets % PL.focus % _1 & (+ negate 1))
 
 initial :: HasInfo a => a -> Hud a
 initial p = Hud (fst player) (fromMaybe start (PL.find player start)) p

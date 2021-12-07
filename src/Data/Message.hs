@@ -21,16 +21,15 @@ module Data.Message
 where
 
 import Data.Function
+import Data.Monoid qualified
+import Data.Monoid.Generic
 import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Semigroup
-import Data.Semigroup.Generic
 import Data.String
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Optics
-import qualified Data.Monoid
-import Data.Monoid.Generic
 
 data Urgency = Debug | Info | Warning | Danger
   deriving stock (Eq, Show, Bounded, Ord, Generic)

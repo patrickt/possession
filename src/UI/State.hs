@@ -44,7 +44,7 @@ instance Responder State where
   respondTo =
     let
       shouldPop = ensuring (\evt -> has (#state % #menu % _Nothing) evt && has (#vty % _Escape) evt)
-      bringUpMenu = shouldPop >>> arr (set #menu (Just MainMenu.inGame))
+      bringUpMenu = set #menu (Just MainMenu.inGame) `rmap` shouldPop
       menuOpen = try (#menu % _Just) #menu
       recur = recurse #toplevel
     in menuOpen <|> recur <|> bringUpMenu

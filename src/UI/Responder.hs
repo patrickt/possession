@@ -8,6 +8,7 @@
 module UI.Responder
   ( Responder (..),
     try,
+    Profunctor (..),
     recurse,
     runResponder,
     whenMatches,
@@ -23,7 +24,7 @@ module UI.Responder
     Res (..),
     switch,
     andEmit,
-  )
+  getEvent)
 where
 
 import Control.Applicative
@@ -31,7 +32,7 @@ import Control.Arrow
 import Control.Carrier.NonDet.Church
 import Control.Carrier.Reader
 import Control.Carrier.State.Strict
-import Control.Category (Category)
+import Control.Category (Category (id))
 import Data.Coerce
 import Data.Profunctor
 import Data.Profunctor.Rep
@@ -47,10 +48,6 @@ type ResponderM = StateC [GameAction] (NonDetC ((->) Vty.Event))
 
 newtype Chain a b = Chain {unChain :: Star ResponderM a b}
   deriving newtype (Functor, Applicative, Alternative, Category, Profunctor, Strong, Traversing, Choice)
-
-instance Arrow Chain where
-  arr f = tabulate (pure . f)
-  first = first'
 
 instance Sieve Chain ResponderM where
   sieve = coerce
@@ -100,10 +97,13 @@ whenMatches :: (Is k A_Fold) => Optic' k is (Event a) x -> GameAction -> Chain a
 whenMatches opt act = ensuring (has opt) >>> switch (Emit act)
 
 overState :: (Is k A_Fold) => Optic' k is (Event s) x -> (s -> s) -> Chain s s
-overState opt fn = ensuring (has opt) >>> arr fn
+overState opt = flip rmap (ensuring (has opt))
+
+getEvent :: forall a . Chain a (Event a)
+getEvent = tabulate (\a -> Event <$> ask <*> pure a)
 
 ensuring :: (Event a -> Bool) -> Chain a a
-ensuring fn = Chain (tabulate (\a -> ask >>= \e -> a <$ guard (fn (Event e a))))
+ensuring fn = go *> id where go = getEvent >>> tabulate (guard . fn)
 
 andEmit :: (a -> GameAction) -> Chain a a
 andEmit fn = tabulate (\a -> a <$ modify (fn a :))
