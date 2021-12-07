@@ -20,7 +20,6 @@ module Data.Message
   )
 where
 
-import Data.Aeson.Exts
 import Data.Function
 import Data.Name (Name)
 import Data.Name qualified as Name
@@ -35,7 +34,6 @@ import Data.Monoid.Generic
 
 data Urgency = Debug | Info | Warning | Danger
   deriving stock (Eq, Show, Bounded, Ord, Generic)
-  deriving anyclass (FromJSON, ToJSON)
 
 data Message = Message
   { messageContents :: Data.Monoid.Last Text,
@@ -43,7 +41,6 @@ data Message = Message
     messageTimes :: Sum Int
   }
   deriving stock (Generic)
-  deriving anyclass (FromJSON, ToJSON)
   deriving (Semigroup) via GenericSemigroup Message
   deriving (Monoid) via GenericMonoid Message
 
@@ -65,4 +62,5 @@ debug :: String -> Message
 debug s = Message (pure (fromString s)) (pure Debug) 1
 
 youSee :: Name -> Message
+youSee "yourself" = Message (pure "You see yourself.") (pure Info) 1
 youSee n = Message (pure ("You see " <> Name.definiteArticle n <> " " <> Name.text n <> ".")) (pure Info) 1

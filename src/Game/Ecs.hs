@@ -65,9 +65,6 @@ import Raws (Raws)
 import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
-import Game.Info (Info)
-import Data.Generics.Product (typed)
-import Apecs.Exts (tupled)
 
 type GameState = Game.State.State
 
