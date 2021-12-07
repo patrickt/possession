@@ -14,6 +14,7 @@ import Dhall (FromDhall)
 import Data.Store (Store)
 import Apecs (Component (..), Map)
 import Optics
+import Data.Generics.Product.Typed
 
 newtype Name = Name {text :: Text}
   deriving stock (Eq, Ord)
@@ -23,6 +24,9 @@ instance Apecs.Component Name where type Storage Name = Map Name
 
 class HasName a where
   name :: Lens' a Name
+
+  default name :: HasType Name a => Lens' a Name
+  name = typed
 
 definiteArticle :: Name -> Text
 definiteArticle (Name n)

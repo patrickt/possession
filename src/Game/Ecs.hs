@@ -114,7 +114,7 @@ setup = do
   -- Fill in some enemies
   let mkEnemy idx (e :: Raw.Enemy) = do
         pos <- findUnoccupied
-        Apecs.newEntity (Apecs.tupled @"Enemy" (Enemy.fromRaw pos (Raw.Id idx) e))
+        Apecs.newEntity (re _Enemy # Enemy.fromRaw pos (Raw.Id idx) e)
 
   foes <- use @Raws #enemies
   itraverse_ mkEnemy foes

@@ -20,7 +20,7 @@ import Data.Glyph (Glyph (Glyph))
 import Data.Hitpoints
 import Data.Monoid
 import Data.Name
-import Data.Position (HasPosition (position), Position)
+import Data.Position (Position, HasPosition (..))
 import Data.Store.Exts (Store)
 import Data.Text qualified as Text
 import GHC.Generics hiding (to)
@@ -49,7 +49,7 @@ data Enemy = Enemy
     enemyXP :: XP
   }
   deriving stock Generic
-  deriving anyclass Store
+  deriving anyclass (HasPosition, HasName, Store)
 
 makeFieldLabels ''Enemy
 
@@ -57,10 +57,6 @@ _Enemy :: Iso' Enemy _
 _Enemy = iso (fromJust . preview (_Ctor @"Enemy")) (review (_Ctor @"Enemy"))
 
 instance Apecs.Component Tag where type Storage Tag = Map Tag
-
-instance HasName Enemy where name = #name
-
-instance HasPosition Enemy where position = #position
 
 fromRaw :: Position -> Raw.Id -> Raw.Enemy -> Enemy
 fromRaw p ident e =
