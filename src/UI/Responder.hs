@@ -23,7 +23,8 @@ module UI.Responder
     Res (..),
     switch,
     andEmit,
-  getEvent)
+    withEvent,
+  )
 where
 
 import Control.Applicative
@@ -97,11 +98,11 @@ whenMatches opt act = ensuring (has opt) >>> switch (Emit act)
 overState :: (Is k A_Fold) => Optic' k is (Event s) x -> (s -> s) -> Chain s s
 overState opt = flip rmap (ensuring (has opt))
 
-getEvent :: forall a . Chain a (Event a)
-getEvent = tabulate (\a -> Event <$> ask <*> pure a)
+withEvent :: forall a. Chain a (Event a)
+withEvent = tabulate (\a -> Event <$> ask <*> pure a)
 
 ensuring :: (Event a -> Bool) -> Chain a a
-ensuring fn = go *> id where go = getEvent >>> tabulate (guard . fn)
+ensuring fn = go *> id where go = withEvent >>> tabulate (guard . fn)
 
 andEmit :: (a -> GameAction) -> Chain a a
 andEmit fn = tabulate (\a -> a <$ modify (fn a :))
