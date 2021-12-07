@@ -224,6 +224,7 @@ collideWith ent = do
     Attack -> playerAttack ent
     Invalid -> Broker.notify "You can't go that way."
     PickUp -> playerPickUp ent
+    DoNothing -> pure ()
 
 movePlayer ::
   ( Has (State GameState) sig m,

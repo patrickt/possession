@@ -1,1 +1,1 @@
-< Invalid | Attack | PickUp >
+< Invalid | Attack | PickUp | DoNothing >

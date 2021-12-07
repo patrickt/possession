@@ -35,7 +35,7 @@ data Hud a = Hud
   , hudTargets :: PL.PointedList (Position, Name)
   , hudParent :: a
   }
-  deriving stock Generic
+  deriving stock (Functor, Generic)
   deriving anyclass HasPosition
 
 makeFieldLabels ''Hud

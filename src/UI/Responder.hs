@@ -22,7 +22,6 @@ module UI.Responder
     tabulate,
     Res (..),
     switch,
-    Updateable (..),
     andEmit,
   )
 where
@@ -114,6 +113,3 @@ runResponder e = ($ e) . runNonDetA . runState mempty . runChain respondTo
 
 respond :: Responder b => Vty.Event -> b -> Maybe b
 respond a = fmap snd . runResponder a
-
-class Updateable f where
-  update :: a -> f a -> f a

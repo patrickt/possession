@@ -34,7 +34,7 @@ data Canvas a = Canvas
   { canvasData :: Game.Canvas
   , canvasHud :: Maybe (Hud.Hud (Canvas a))
   , canvasParent :: a
-  } deriving stock Generic
+  } deriving stock (Functor, Generic)
 
 makeFieldLabels ''Canvas
 
@@ -68,9 +68,6 @@ instance HasInfo a => Responder (Canvas a) where
       esc = ensuring (has (#state % #hud %_Just)) >>> overState (keypress Vty.KEsc) (set #hud Nothing)
       quit = whenMatches (keypress (Vty.KChar 'q')) Terminate
       move k amt = whenMatches (keypress k) (Move amt)
-
-instance Updateable Canvas where
-  update = set #parent
 
 scanline :: Canvas a -> Int -> Vty.Image
 scanline Canvas{canvasData = canv} idx = Vty.horizCat do

@@ -30,7 +30,7 @@ data Toplevel a = Toplevel
     toplevelModeline :: Modeline,
     toplevelParent :: a
   }
-  deriving stock (Generic)
+  deriving stock (Generic, Functor)
 
 makeFieldLabels ''Toplevel
 
@@ -42,11 +42,6 @@ instance HasInfo a => HasInfo (Toplevel a) where
 
 instance HasInfo a => Responder (Toplevel a) where
   respondTo = within #canvas
-
-instance Updateable Toplevel where
-  update p t = go
-   where
-     go = t & #parent .~ p & #canvas %~ update go
 
 instance Renderable (Toplevel a) where
   layout t =

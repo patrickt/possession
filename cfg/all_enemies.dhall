@@ -8,7 +8,7 @@ let Strategy = ./Strategy.dhall
 
 in    [ { name = "gibbering idiot"
         , glyph = "g"
-        , onCollide = Collision.Attack
+        , onCollide = Collision.DoNothing
         , color = Color.Yellow
         , strategy = Strategy.Wander
         , canDrop = 5
@@ -24,7 +24,7 @@ in    [ { name = "gibbering idiot"
         , yieldsXP = 5
         , hearing = 20
         }
-      , { name = "battle-scared veteran"
+      , { name = "battle-scarred veteran"
         , glyph = "H"
         , onCollide = Collision.Attack
         , color = Color.Red

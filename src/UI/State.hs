@@ -6,6 +6,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE BlockArguments #-}
+{-# OPTIONS_GHC -funclutter-valid-hole-fits #-}
 
 -- | Top-level state container used by the Brick app.
 module UI.State
@@ -61,5 +62,7 @@ initial x y = z
     z = State (Toplevel.initial z) (Just MainMenu.initial) mempty x y
 
 updateState :: Info -> State -> State
-updateState inf s = go where
-  go = s & info .~ inf & #toplevel %~ update go
+updateState i =  impose . set info i
+
+impose :: State -> State
+impose it = it { stateToplevel = fmap (const it) (stateToplevel it) }
