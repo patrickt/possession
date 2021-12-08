@@ -193,7 +193,7 @@ loop = forever do
   refreshInfo
   canv <- draw
 
-  view (info @GameState) >>= Broker.sendCommand . Update
+  use (info @GameState) >>= Broker.sendCommand . Update
   Broker.sendCommand (Redraw canv)
 
 refreshInfo :: (MonadIO m, Has (State GameState) sig m) => WorldT m ()
