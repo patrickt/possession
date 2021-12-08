@@ -25,7 +25,7 @@ import Control.Effect.Broker
     runBroker,
   )
 import Control.Effect.Broker qualified as Broker
-import Control.Effect.Optics (use)
+import Control.Effect.Optics
 import Control.Effect.Random (Random)
 import Control.Monad (forever, guard, when)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -38,7 +38,7 @@ import Data.Hitpoints as HP (HP, injure, isAlive)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Message qualified as Message
-import Data.Monoid (Alt (getAlt), Last)
+import Data.Monoid (Alt (getAlt))
 import Data.Name qualified as Name
 import Data.Position (Position, position)
 import Data.Position qualified as Position
@@ -56,9 +56,10 @@ import Game.Info qualified as Game (Info)
 import Game.Pathfind qualified as PF
 import Game.Save qualified as Save
 import Game.State qualified
+import Game.World (WorldT)
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
-import Optics hiding (use)
+import Optics hiding (modifying, view, use, assign)
 import Raw.Types (Collision (..), Strategy (..))
 import Raw.Types qualified as Color (Color (..))
 import Raw.Types qualified as Raw
@@ -66,6 +67,9 @@ import Raws (Raws)
 import Raws qualified
 import System.Random.MWC qualified as MWC
 import TextShow (TextShow (showt))
+import qualified Game.Info as Info
+import Game.Info (HasInfo (info))
+import Data.Generics.Product (typed)
 
 type GameState = Game.State.State
 
@@ -97,7 +101,7 @@ setup ::
     Has Random sig m,
     MonadIO m
   ) =>
-  Apecs.SystemT Game.World m ()
+  WorldT m ()
 setup = do
   -- Build some walls
   for_ Canvas.borders (Apecs.newEntity_ . Terrain.wall)
@@ -118,8 +122,10 @@ setup = do
 
   foes <- use @Raws #enemies
   itraverse_ mkEnemy foes
+  recalculateInfo >>= assign (info @GameState)
 
-enemyTurn :: (Has Broker sig m, MonadIO m, Has Trace sig m) => Apecs.SystemT Game.World m ()
+
+enemyTurn :: (Has Broker sig m, MonadIO m, Has Trace sig m) => WorldT m ()
 enemyTurn = do
   pp <- playerPosition
 
@@ -134,17 +140,20 @@ enemyTurn = do
       let pfctx = PF.Context pos pp (Position.dist pos) (\_ _ -> 1) neighborsOf
       let path = PF.pathfind' pfctx
       case path of
-        (_ : y : _) -> Apecs.set e y
+        (_ : y : _) -> do
+          Apecs.set e y
+
+          Apecs.set e Flag.Dirty
         _ -> pure ()
 
-findUnoccupied :: (MonadIO m, Has Random sig m) => Apecs.SystemT Game.World m Position
+findUnoccupied :: (MonadIO m, Has Random sig m) => WorldT m Position
 findUnoccupied = do
   pos <- Position.randomIn 1 50
   occ <- occupied pos
   if occ then findUnoccupied else pure pos
 
 -- | Renders a canvas from the current system, for passing back to the display thread.
-draw :: (Has Trace sig m, MonadIO m) => Apecs.SystemT Game.World m Game.Canvas
+draw :: (Has Trace sig m, MonadIO m) => WorldT m Game.Canvas
 draw = Apecs.cfold go Canvas.empty
   where
     go c (pos, chr, color) = Canvas.update c pos (Canvas.Sprite chr color Color.Black)
@@ -158,7 +167,7 @@ loop ::
     Has (State Raws) sig m,
     Has Trace sig m
   ) =>
-  Apecs.SystemT Game.World m ()
+  WorldT m ()
 loop = forever do
   next <- Broker.popAction
   debug <- use @GameState #debugMode
@@ -181,14 +190,21 @@ loop = forever do
 
   enemyTurn
 
+  refreshInfo
   canv <- draw
-  newinfo <- currentInfo
-  Broker.sendCommand (Update newinfo)
+
+  view (info @GameState) >>= Broker.sendCommand . Update
   Broker.sendCommand (Redraw canv)
 
-playerAttack :: (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) => Entity -> Apecs.SystemT Game.World m ()
+refreshInfo :: (MonadIO m, Has (State GameState) sig m) => WorldT m ()
+refreshInfo = do
+  (dirties :: [(Flag.Dirty, (Position, Entity))]) <- Apecs.cfold (flip (:)) []
+  let newInfo = mempty & Info.atlas .~ Map.fromList (fmap snd dirties)
+  modifying @_ @GameState info (<> newInfo)
+
+playerAttack :: (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) => Entity -> WorldT m ()
 playerAttack ent = do
-  (hp, pos :: Position, canDrop :: Amount, xp :: XP, name, _e :: Entity) <- Apecs.get ent
+  (hp, pos :: Position, canDrop :: Amount, xp :: XP, name) <- Apecs.get ent
   dam :: Int <- Random.uniformR (1, 5)
   Broker.notify (Message.fromText ("You attack for " <> showt dam <> " damage."))
   let new = HP.injure dam hp
@@ -204,7 +220,7 @@ playerAttack ent = do
         amt <- Random.uniformR (1, canDrop)
         Apecs.newEntity_ (amt, pos :: Position, Glyph '$', Color.Brown, PickUp)
 
-playerPickUp :: (Has (State GameState) sig m, Has Broker sig m, MonadIO m) => Entity -> Apecs.SystemT Game.World m ()
+playerPickUp :: (Has (State GameState) sig m, Has Broker sig m, MonadIO m) => Entity -> WorldT m ()
 playerPickUp ent = do
   (mValue, pos :: Position) <- Apecs.get ent
   case mValue :: Maybe Amount of
@@ -218,7 +234,7 @@ playerPickUp ent = do
 collideWith ::
   (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) =>
   Apecs.Entity ->
-  Apecs.SystemT Game.World m ()
+  WorldT m ()
 collideWith ent = do
   cb <- Apecs.get ent
   case cb of
@@ -233,44 +249,45 @@ movePlayer ::
     MonadIO m
   ) =>
   V2 Int ->
-  Apecs.SystemT Game.World m ()
+  WorldT m ()
 movePlayer dx = do
   debug <- use @GameState #debugMode
   offset <- (if debug then pure else Position.offsetRandomly) dx
 
   Apecs.modify player (offset +)
+  Apecs.set player Flag.Dirty
 
-currentInfo ::
+recalculateInfo ::
   ( MonadIO m,
     Has (State GameState) sig m
   ) =>
-  Apecs.SystemT Game.World m Game.Info
-currentInfo = do
+  WorldT m Game.Info
+recalculateInfo = do
   (hp :: HP, gold, xp, pos) <- Apecs.get player
   -- use the info as the accumulator itself
   -- when there's a Selection present, emit something other than mempty
-  let info =
+  let zero =
         mempty
-          & #hitpoints .~ pure @Last hp
-          & #gold .~ pure gold
-          & #xp .~ xp
-          & #position .~ pure @Last @Position pos
+          & Info.hitpoints .~ hp
+          & Info.gold .~ gold
+          & Info.xp .~ xp
+          & Info.position .~ pos
 
-  let go inf (review Enemy._Enemy -> e :: Enemy.Enemy) = inf & #summary % at (e ^. position) ?~ e
+  let go inf e = inf & Info.enemyAt (e ^. typed) % _Enemy .~ e
 
-  Apecs.cfold go info
+  Apecs.cfold go zero
 
 player :: Entity
 player = Apecs.global
 
-playerPosition :: MonadIO m => Apecs.SystemT Game.World m Position
+playerPosition :: MonadIO m => WorldT m Position
 playerPosition = Apecs.get player
 
-occupant :: MonadIO m => Position -> Apecs.SystemT Game.World m (Maybe Apecs.Entity)
+occupant :: MonadIO m => Position -> WorldT m (Maybe Apecs.Entity)
 occupant p = fmap snd . getAlt <$> Apecs.cfoldMap go
   where
     go :: (Position, Apecs.Entity) -> Alt Maybe (Position, Apecs.Entity)
     go x = x <$ guard (fst x == p)
 
-occupied :: MonadIO m => Position -> Apecs.SystemT Game.World m Bool
+occupied :: MonadIO m => Position -> WorldT m Bool
 occupied = fmap isJust . occupant

@@ -13,7 +13,7 @@ import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
 
 data HP = HP {current :: !Integer, total :: !Natural}
-  deriving stock (Show, Generic)
+  deriving stock (Show, Generic, Eq)
   deriving anyclass (Store)
 
 instance Apecs.Component HP where type Storage HP = Map HP

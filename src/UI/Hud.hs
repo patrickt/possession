@@ -14,7 +14,7 @@ module UI.Hud
 where
 
 import Data.Message qualified as Message
-import Data.Position (Position, pattern (:-), HasPosition (position))
+import Data.Position (Position, pattern (:-), HasPosition)
 import Game.Info (HasInfo(..))
 import Optics
 import GHC.Generics (Generic)
@@ -66,5 +66,5 @@ initial :: HasInfo a => a -> Hud a
 initial p = Hud (fst player) (fromMaybe start (PL.find player start)) p
   where
     start = PL.fromList (sort (player : enemies))
-    player = (p ^. info % position, "yourself")
+    player = (p ^? Info.position ^. non 0, "yourself")
     enemies = Info.allEnemies (p ^. info)

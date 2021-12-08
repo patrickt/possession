@@ -55,7 +55,8 @@ makeWorld "World"
 
     -- tags
     ''Enemy.Tag,
-    ''Terrain.Tag
+    ''Terrain.Tag,
+    ''Flag.Dirty
   ]
 
 type WorldT = Apecs.SystemT World

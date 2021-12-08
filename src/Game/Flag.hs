@@ -28,6 +28,8 @@ data Dirty = Dirty
   deriving stock (Eq, Show, Enum, Generic)
   deriving anyclass (Flag, Store)
 
+instance Component Dirty where type Storage Dirty = Map Dirty
+
 data Impassable = Impassable
   deriving stock (Eq, Show, Enum, Generic)
   deriving anyclass (Flag, Store)

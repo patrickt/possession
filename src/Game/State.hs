@@ -18,14 +18,19 @@ import Data.Map.Strict (Map)
 import Data.Position (Position)
 import GHC.Generics (Generic)
 import Optics
+import Game.Info
+import Data.Generics.Product (typed)
 
 data State = State
   { stateDebugMode :: Bool,
-    stateAtlas :: Map Position Entity
+    stateAtlas :: Map Position Entity,
+    stateInfo :: Info
   }
-  deriving (Generic)
+  deriving stock (Generic)
+
+instance HasInfo State where info = typed
 
 initial :: State
-initial = State True mempty
+initial = State True mempty mempty
 
 makeFieldLabels ''State
