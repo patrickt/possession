@@ -24,11 +24,9 @@ import Data.Position (Position, HasPosition (..))
 import Data.Store.Exts (Store)
 import Data.Text qualified as Text
 import GHC.Generics hiding (to)
-import Data.Generics.Sum
 import Optics
 import Raw.Types (Color)
 import Raw.Types qualified as Raw
-import Data.Maybe (fromJust)
 
 data Tag = EnemyTag
   deriving stock (Generic)
