@@ -27,10 +27,14 @@ import GHC.Generics hiding (to)
 import Optics
 import Raw.Types (Color)
 import Raw.Types qualified as Raw
+import Apecs.Exts (Unique)
 
 data Tag = EnemyTag
   deriving stock (Generic)
   deriving anyclass (Store)
+
+instance Semigroup Tag where _ <> _ = EnemyTag
+instance Monoid Tag where mempty = EnemyTag
 
 data Enemy = Enemy
   { enemyTag :: Tag,
@@ -52,7 +56,7 @@ data Enemy = Enemy
 makeFieldLabels ''Enemy
 makePrisms ''Enemy
 
-instance Apecs.Component Tag where type Storage Tag = Map Tag
+instance Apecs.Component Tag where type Storage Tag = Unique Tag
 
 fromRaw :: Position -> Raw.Id -> Raw.Enemy -> Enemy
 fromRaw p ident e =

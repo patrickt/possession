@@ -13,13 +13,16 @@ import qualified Raw.Types as Raw
 import qualified Game.Flag as Flag
 import GHC.Generics
 import Data.Store.Exts (Store)
-import Apecs (Component (..), Map)
+import Apecs (Component (..), Unique)
 
 data Tag = Wall
   deriving stock Generic
   deriving anyclass Store
 
-instance Apecs.Component Tag where type Storage Tag = Map Tag
+instance Semigroup Tag where _ <> _ = Wall
+instance Monoid Tag where mempty = Wall
+
+instance Apecs.Component Tag where type Storage Tag = Unique Tag
 
 type Terrain = (Tag, Position, Glyph, Raw.Color, Raw.Collision, Flag.Persist)
 
