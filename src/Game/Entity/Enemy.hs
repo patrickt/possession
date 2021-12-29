@@ -52,9 +52,7 @@ data Enemy = Enemy
   deriving anyclass (HasPosition, HasName, Store)
 
 makeFieldLabels ''Enemy
-
-_Enemy :: Iso' Enemy _
-_Enemy = iso (fromJust . preview (_Ctor @"Enemy")) (review (_Ctor @"Enemy"))
+makePrisms ''Enemy
 
 instance Apecs.Component Tag where type Storage Tag = Map Tag
 
