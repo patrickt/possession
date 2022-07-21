@@ -54,6 +54,7 @@ library
     Control.Effect.Broker
     Data.Aeson.Exts
     Data.Amount
+    Data.Color
     Data.Experience
     Data.Glyph
     Data.Hitpoints
@@ -91,6 +92,7 @@ library
     UI.Event
     -- UI.GameOver
     UI.Hud
+    UI.Markup
     UI.Render
     UI.Resource
     UI.Responder

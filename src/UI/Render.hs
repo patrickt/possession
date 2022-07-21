@@ -7,30 +7,23 @@ module UI.Render
   ( Renderable (..),
     laidOut,
     RTree (..),
-    withForeground,
-    colorToVty,
     (<+>),
     (<=>),
   runDraw)
 where
 
 import Brick qualified
-import Brick.Markup
-import Brick.Util (fg)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH
 import Data.Maybe (fromMaybe)
 import Data.Message
 import Data.Message qualified as Message
 import Data.Semigroup
-import Data.Text.Markup ((@@))
-import Data.Text.Markup qualified as Markup
-import Graphics.Vty qualified as Vty
-import Graphics.Vty.Attributes qualified as Attr
 import Optics
-import Raw.Types qualified as Color (Color (..))
+import Data.Color qualified as Color
 import TextShow
 import UI.Resource
+import UI.Markup as Markup
 import qualified Brick.Widgets.Border as Brick
 import Control.Applicative
 import Control.Monad
@@ -38,9 +31,9 @@ import Game.Info (Info)
 
 data RTree
   = Leaf Widget
-  | HSplit RTree RTree
-  | VSplit RTree RTree
-  | Modal (Maybe RTree) RTree
+  | HSplit RTree !RTree
+  | VSplit RTree !RTree
+  | Modal (Maybe RTree) !RTree
 
 makeBaseFunctor ''RTree
 
@@ -77,25 +70,11 @@ instance Renderable RTree where
 instance Renderable Message where
   draw m =
     let foreground = case m ^. #urgency % coerced of
-          Info -> mempty
-          Warning -> fg Vty.yellow
-          Danger -> fg Vty.red
-          Debug -> fg Vty.green
+          Info -> Markup.text
+          Warning -> Markup.fg Color.Yellow
+          Danger -> Markup.fg Color.Red
+          Debug -> Markup.fg Color.Green
         toAppend = case m ^. #times of
           1 -> ""
           n -> " (" <> showt (getSum n) <> "x)"
-     in pure $ markup ((Message.contents m @@ foreground) <> Markup.fromText toAppend)
-
-withForeground :: Color.Color -> Brick.Widget a -> Brick.Widget a
-withForeground color = Brick.modifyDefAttr attr
-  where
-    attr a = a {Attr.attrForeColor = Attr.SetTo (colorToVty color)}
-
-colorToVty :: Color.Color -> Vty.Color
-colorToVty = \case
-  Color.Black -> Vty.black
-  Color.Grey -> Vty.rgbColor @Int 221 221 221
-  Color.White -> Vty.white
-  Color.Red -> Vty.red
-  Color.Yellow -> Vty.brightYellow
-  Color.Brown -> Vty.rgbColor @Int 0x78 0x58 0x32
+     in pure $ markup ((Message.contents m & foreground) <> Markup.text toAppend)

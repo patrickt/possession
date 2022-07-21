@@ -6,7 +6,7 @@ import Control.Monad (void)
 import Game.Ecs qualified as Ecs
 import Game.World qualified as Game
 import Graphics.Vty qualified as Vty
-import Optics ((^?))
+import Optics ((^?), backwards)
 import UI.App qualified as App
 import UI.State qualified
 

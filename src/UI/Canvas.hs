@@ -29,6 +29,7 @@ import UI.Responder
 import Game.Action
 import UI.Hud qualified as Hud
 import Game.Info (HasInfo (..))
+import qualified Data.Color as Color
 
 data Canvas a = Canvas
   { canvasData :: Game.Canvas
@@ -77,8 +78,8 @@ scanline Canvas{canvasData = canv} idx = Vty.horizCat do
 drawSprite :: Sprite -> Vty.Image
 drawSprite (Sprite (Glyph chr) color bgcolor) = Vty.char attr chr
   where
-    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (colorToVty color),
-                            Attr.attrBackColor = Attr.SetTo (colorToVty bgcolor)}
+    attr = Attr.currentAttr {Attr.attrForeColor = Attr.SetTo (Color.toVty color),
+                            Attr.attrBackColor = Attr.SetTo (Color.toVty bgcolor)}
 
 refresh :: Game.Canvas -> Canvas a -> Canvas a
 refresh = set #data

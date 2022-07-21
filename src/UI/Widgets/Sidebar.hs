@@ -11,22 +11,19 @@ module UI.Widgets.Sidebar
   )
 where
 
+import Prelude hiding ((&&))
 import Brick qualified
-import Brick.Markup qualified as Markup
-import Brick.Util (fg)
 import Data.Experience (XP (..))
 import Data.Experience qualified as Experience
+import Data.Color
 import Data.Hitpoints
 import Data.Monoid
 import Data.Semigroup (Max (..))
-import Data.Text.Markup ((@@))
-import Data.Text.Markup qualified as Markup
 import GHC.Generics (Generic)
 import Game.Info
-import Graphics.Vty qualified as Vty
 import Optics
-import TextShow (showt)
 import UI.Render
+import UI.Markup
 import Control.Effect.Reader
 
 newtype Sidebar = Sidebar ()
@@ -44,7 +41,7 @@ instance Renderable Sidebar where
       boxed =
         Brick.vBox $
           fmap
-            Markup.markup
+            markup
             [ renderedHP,
               renderedGold,
               renderedLevel,
@@ -53,17 +50,13 @@ instance Renderable Sidebar where
 
       renderedHP = case i ^. #hitpoints % coerced of
         Nothing -> boldhp <> "- / -"
-        Just (HP curr max') -> boldhp <> (showt curr @@ fg Vty.green) <> " / " <> (showt max' @@ fg Vty.green)
-      boldhp = "HP: " @@ bold
+        Just (HP curr max') -> boldhp <> curr && fg Green <> " / " <> max' && fg Green
+      boldhp = "HP: " & bold
 
-      bold = mempty `Vty.withStyle` Vty.bold
-
-      renderedGold = ("GP: " @@ bold) <> (showt (i ^. #gold % to getSum) @@ fg Vty.yellow)
+      renderedGold = ("GP: " & bold) <> (i ^. #gold % to getSum) && fg Yellow
 
       renderedXP = case i ^. #xp of
-        XP (Sum curr) (Max next) -> ("XP: " @@ bold) <> showm curr <> " (next: " <> showm next <> ")"
+        XP (Sum curr) (Max next) -> ("XP: " & bold) <> shown curr <> " (next: " <> shown next <> ")"
 
-      renderedLevel = ("Level: " @@ bold) <> showm (i ^. #xp & Experience.level)
-
-      showm = Markup.fromText . showt
+      renderedLevel = ("Level: " & bold) <> (i ^. #xp & Experience.level & shown)
     pure boxed

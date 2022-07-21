@@ -16,6 +16,7 @@ import Optics
 import UI.Render qualified as Render
 import UI.Resource (Event, EventM, Widget)
 import UI.Resource qualified as UI (Resource)
+import Graphics.Vty qualified as Vty
 import UI.Responder qualified as Responder
 import UI.State qualified as State
 import UI.State qualified as UI (State)
@@ -30,7 +31,7 @@ app =
     { Brick.appDraw = draw,
       Brick.appChooseCursor = Brick.showFirstCursor,
       Brick.appHandleEvent = handleEvent,
-      Brick.appAttrMap = \_ -> Brick.attrMap mempty mempty,
+      Brick.appAttrMap = \_ -> Brick.attrMap Vty.defAttr mempty,
       Brick.appStartEvent = \s -> do
         liftIO $ Broker.enqueueGameAction (s ^. #brokerage) Action.Start
         pure s
