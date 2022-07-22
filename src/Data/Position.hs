@@ -33,8 +33,7 @@ import TextShow
 type Position = V2 Int
 
 instance TextShow Position where
-  showt (a :- b) = "(" <> showt a <> "," <> showt b <> ")"
-  showb = error "unimplemented"
+  showb (a :- b) = "(" <> showb a <> "," <> showb b <> ")"
 
 instance Apecs.Component Position where type Storage Position = Cache 3600 (Map Position)
 

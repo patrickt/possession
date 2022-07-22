@@ -1,6 +1,7 @@
 module Data.Color
     ( Color (..)
     , toVty
+    , settingTo
     ) where
 
 import Raw.Types (Color (..))
@@ -15,3 +16,6 @@ toVty = \case
   Yellow -> Vty.brightYellow
   Green -> Vty.green
   Brown -> Vty.rgbColor @Int 0x78 0x58 0x32
+
+settingTo :: Maybe Color -> Vty.MaybeDefault Vty.Color
+settingTo = maybe Vty.Default (Vty.SetTo . toVty)

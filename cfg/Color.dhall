@@ -1,1 +1,1 @@
-< Black | Grey | White | Yellow | Brown | Red | Green>
+< Black | Grey | White | Yellow | Brown | Red | Green >

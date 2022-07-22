@@ -8,8 +8,8 @@ import Data.Glyph
 
 -- Glyph is wrong here, we should parameterize this or something.
 
-data Sprite = Sprite Glyph Color Color
+data Sprite = Sprite Glyph (Maybe Color) (Maybe Color)
   deriving Show
 
 blankSprite :: Sprite
-blankSprite = Sprite (Glyph '.') White Black
+blankSprite = Sprite (Glyph '.') Nothing Nothing
