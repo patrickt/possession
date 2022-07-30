@@ -230,6 +230,7 @@ playerPickUp ent = do
       Broker.notify (Message.fromText ("You pick up " <> showt x <> " gold."))
       Apecs.destroy ent (Apecs.Proxy @(Amount, Position, Glyph, Color.Color, Collision))
       Apecs.set player pos
+      recalculateInfo >>= assign (info @GameState)
 
 collideWith ::
   (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) =>
