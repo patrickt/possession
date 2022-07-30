@@ -8,8 +8,10 @@ module Data.Store.Exts
 import Data.Store (Store)
 import Data.Semigroup (Max (..))
 import Linear (V2 (..))
+import Apecs (Entity (..))
 import Apecs.Util (EntityCounter (..))
 
 deriving newtype instance Store a => Store (Max a)
 deriving newtype instance Store EntityCounter
 deriving anyclass instance Store a => Store (V2 a)
+deriving newtype instance Store Entity

@@ -25,6 +25,7 @@ import Data.Amount
 import Data.Experience
 import Data.Glyph
 import Data.Hitpoints
+import Game.Entity.Inventory
 import Game.Entity.Enemy qualified as Enemy (Tag)
 import Game.Entity.Terrain qualified as Terrain (Tag)
 import Data.Name (Name)
@@ -43,6 +44,9 @@ makeWorld "World"
     ''Name,
     ''Position,
     ''Raw.Id,
+
+    -- relations
+    ''Inventory,
 
     -- behaviors
     ''Collision,

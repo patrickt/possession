@@ -27,4 +27,4 @@ instance Apecs.Component Tag where type Storage Tag = Unique Tag
 type Terrain = (Tag, Position, Glyph, Raw.Color, Raw.Collision, Flag.Persist)
 
 wall :: Position -> Terrain
-wall p = (Wall, p, Glyph '#', Color.White, Raw.Invalid, Flag.Persist)
+wall p = (Wall, p, Glyph '#', Color.White, Raw.NeedsDig, Flag.Persist)

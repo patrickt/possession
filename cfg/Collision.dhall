@@ -1,1 +1,1 @@
-< Invalid | Attack | PickUp | DoNothing >
+< NeedsDig | Invalid | Attack | PickUp | DoNothing >

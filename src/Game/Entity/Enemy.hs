@@ -13,7 +13,7 @@ module Game.Entity.Enemy
   )
 where
 
-import Apecs (Component (..), Map)
+import Apecs (Component (..))
 import Data.Amount
 import Data.Experience (XP (XP))
 import Data.Glyph (Glyph (Glyph))

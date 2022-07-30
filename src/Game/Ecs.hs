@@ -32,6 +32,7 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Amount
 import Data.Experience (XP (..))
 import Data.Foldable (for_)
+import Data.Foldable.Extra (anyM)
 import Data.Foldable.WithIndex (iforM_)
 import Data.Glyph (Glyph (..))
 import Data.Hitpoints as HP (HP, injure, isAlive)
@@ -49,6 +50,7 @@ import Game.Dungeon hiding (at)
 import Game.Dungeon qualified as Dungeon hiding (at)
 import Game.Entity.Enemy (_Enemy)
 import Game.Entity.Enemy qualified as Enemy
+import Game.Entity.Inventory (Inventory (..))
 import Game.Entity.Player qualified as Player
 import Game.Entity.Terrain qualified as Terrain
 import Game.Flag qualified as Flag
@@ -70,6 +72,7 @@ import TextShow (TextShow (showt))
 import qualified Game.Info as Info
 import Game.Info (HasInfo (info))
 import Data.Generics.Product (typed)
+import Control.Monad.Extra (ifM)
 
 type GameState = Game.State.State
 
@@ -233,16 +236,27 @@ playerPickUp ent = do
       recalculateInfo >>= assign (info @GameState)
 
 collideWith ::
-  (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m) =>
+  (MonadIO m, Has Broker sig m, Has Random sig m, Has (State GameState) sig m, Has (State Raws) sig m) =>
   Apecs.Entity ->
   WorldT m ()
 collideWith ent = do
   cb <- Apecs.get ent
+  let nope = Broker.notify "You can't go that way."
   case cb of
     Attack -> playerAttack ent
-    Invalid -> Broker.notify "You can't go that way."
     PickUp -> playerPickUp ent
     DoNothing -> pure ()
+    Invalid -> nope
+    NeedsDig -> do
+      let onDig = do
+            Broker.notify "You dig through the wall."
+            Apecs.destroy ent (Apecs.Proxy @Terrain.Terrain)
+
+      ifM
+        playerCanDig
+        onDig
+        nope
+
 
 movePlayer ::
   ( Has (State GameState) sig m,
@@ -283,6 +297,13 @@ player = Apecs.global
 
 playerPosition :: MonadIO m => WorldT m Position
 playerPosition = Apecs.get player
+
+playerCanDig :: (Has (State Raws) sig m, MonadIO m) => WorldT m Bool
+playerCanDig = do
+  Inventory inv <- Apecs.get player
+  flip anyM inv \item -> do
+    found <- Raws.getRaw #items item
+    pure (Raw.AllowsDig == found ^. #properties)
 
 occupant :: MonadIO m => Position -> WorldT m (Maybe Apecs.Entity)
 occupant p = fmap snd . getAlt <$> Apecs.cfoldMap go
