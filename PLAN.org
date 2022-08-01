@@ -39,6 +39,8 @@ figure out solution for caching things like position-entity maps
 
 remove upon from Responder and use arrow notation instead
 
+implementing Dirty was a bad idea
+
 * Caching
 
 everything that could possibly be useful should be in a Context. this can be stored in the toplevel state and updated differentially when new info comes in.

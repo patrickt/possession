@@ -14,7 +14,7 @@ module Game.Ecs (start) where
 import Apecs (Entity)
 import Apecs.Exts qualified as Apecs
 import Control.Carrier.Random.Lifted qualified as Random
-import Control.Carrier.Reader (runReader)
+import Control.Carrier.Reader (runReader, local)
 import Control.Carrier.State.Strict (State, evalState)
 import Control.Carrier.Trace.Brokered
 import Control.Concurrent (ThreadId, forkIO)
@@ -58,7 +58,7 @@ import Game.Info qualified as Game (Info)
 import Game.Pathfind qualified as PF
 import Game.Save qualified as Save
 import Game.State qualified
-import Game.World (WorldT)
+import Game.World (WorldT, initWorld)
 import Game.World qualified as Game (World)
 import Linear (V2 (..))
 import Optics hiding (modifying, view, use, assign)
@@ -185,8 +185,10 @@ loop = forever do
       Save.save >>= Save.write
       Broker.notify "Game saved."
     LoadState -> do
-      Save.read >>= Save.load
-      Broker.notify "Game loaded."
+      blank <- liftIO Game.World.initWorld
+      local (const blank) do
+        Save.read >>= Save.load
+        Broker.notify "Game loaded."
     Terminate -> Broker.sendCommand Terminate
     Notify a -> Broker.sendCommand (Notify a)
     Start -> pure ()
@@ -303,7 +305,7 @@ playerCanDig = do
   Inventory inv <- Apecs.get player
   flip anyM inv \item -> do
     found <- Raws.getRaw #items item
-    pure (Raw.AllowsDig == found ^. #properties)
+    pure (elemOf (#properties % folded) Raw.AllowsDig found)
 
 occupant :: MonadIO m => Position -> WorldT m (Maybe Apecs.Entity)
 occupant p = fmap snd . getAlt <$> Apecs.cfoldMap go

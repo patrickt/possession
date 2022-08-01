@@ -7,8 +7,8 @@ module Apecs.Exts
     cfoldMap,
     append,
     remove,
+    removeAll,
     removing,
-    tupled,
   )
 where
 
@@ -19,14 +19,14 @@ import Data.Generics.Sum
 import Data.Maybe (fromJust)
 import Optics
 
-tupled :: forall ctor a b. AsConstructor ctor a a b b => a -> b
-tupled = fromJust . preview (_Ctor @ctor)
-
 cfoldMap :: forall w m c a. (Apecs.Members w m c, Apecs.Get w m c, Monoid a) => (c -> a) -> Apecs.SystemT w m a
 cfoldMap f = Apecs.cfold (\a b -> a <> f b) mempty
 
 append :: forall w m cx. (Get w m cx, Set w m cx, Semigroup cx) => Entity -> cx -> SystemT w m ()
 append e v = Apecs.modify e (<> v)
+
+removeAll :: forall c w m. (Get w m c, Members w m c, Set w m c, Destroy w m c) => SystemT w m ()
+removeAll = cmap @_ @_ @c (\a -> Not @c)
 
 remove :: forall c w m. Destroy w m c => Entity -> SystemT w m ()
 remove e = destroy e (Proxy @c)

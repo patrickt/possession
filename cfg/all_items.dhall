@@ -7,7 +7,7 @@ let ItemProperty = ./ItemProperty.dhall
 in  [ { name = "shovel"
       , glyph = "s"
       , color = Color.Brown
-      , properties = ItemProperty.AllowsDig
+      , properties = [ ItemProperty.AllowsDig ]
       , value = 10
       }
     ]

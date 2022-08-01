@@ -16,7 +16,7 @@ import Data.Store.Exts (Store)
 import Apecs (Component (..), Unique)
 
 data Tag = Wall
-  deriving stock Generic
+  deriving stock (Generic, Show)
   deriving anyclass Store
 
 instance Semigroup Tag where _ <> _ = Wall

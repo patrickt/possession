@@ -14,12 +14,12 @@ module Game.Save
   )
 where
 
-import Apecs qualified
-import Apecs.Exts ()
+import Apecs.Exts qualified as Apecs
 import Apecs.Util (global)
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.ByteString qualified as ByteString
+import Game.Entity.Enemy (_Enemy)
 import Game.Entity.Player (Player)
 import Data.Store (Store)
 import Data.Store qualified as Store
@@ -38,6 +38,8 @@ import Control.Effect.State
 import Raws (Raws)
 import Optics
 import Data.Maybe (fromJust)
+import Data.Position (Position)
+import Control.Effect.Trace
 
 data Save = Save
   { version :: Int
@@ -55,25 +57,28 @@ instance Exception PersistenceError where
   displayException = \case
     BadVersion n -> "bad save version: expected " <> show World.VERSION <> ", got " <> show n
 
-_Enemy :: Prism' Enemy _
-_Enemy = _Ctor @"Enemy"
-
 (^?!) :: Is k An_AffineFold => s -> Optic' k is s a -> a
 a ^?! b = fromJust (a ^? b)
 
-save :: (Has (State Raws) sig m, MonadIO m) => Apecs.SystemT World.World m Save
-save = Save World.VERSION
-  <$> Apecs.get Apecs.global
-  <*> Apecs.cfold (\acc it -> review _Enemy it : acc) []
-  <*> Apecs.cfold (flip (:)) []
-  <*> get
+save :: (Has (State Raws) sig m, MonadIO m, Has Trace sig m) => Apecs.SystemT World.World m Save
+save = do
+  s <- Save World.VERSION
+       <$> Apecs.get Apecs.global
+       <*> Apecs.cfold (\acc it -> review _Enemy it : acc) []
+       <*> Apecs.cfold (flip (:)) []
+       <*> get
+
+  trace ("count of saves: " <> show (length (terrain s)))
+  trace ("count of enemies: " <> show (length (terrain s)))
+  pure s
 
 
-load :: (Has (State Raws) sig m, MonadIO m) => Save -> WorldT m ()
+load :: (Has Trace sig m, Has (State Raws) sig m, MonadIO m) => Save -> WorldT m ()
 load (Save ver gp enem terr r) = do
   when (ver /= World.VERSION) (throw (BadVersion ver))
   Apecs.set global gp
-  traverse_ (Apecs.newEntity_ . (^?! _Enemy)) enem
+
+  traverse_ (Apecs.newEntity_ . preview _Enemy) enem
   traverse_ Apecs.newEntity_ terr
   put r
 
