@@ -14,6 +14,7 @@ main = do
   let go (Dungeon x) = do
         drawIO x
         putStrLn "****"
+        putStr "press enter to continue"
         void getLine
         go (Dungeon (extend step x))
   randomly >>= go

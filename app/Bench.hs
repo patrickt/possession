@@ -6,6 +6,7 @@ import Data.Foldable
 import Data.Monoid
 import Control.Comonad
 import System.Random
+import Control.DeepSeq
 
 iter :: Dungeon -> Int -> Dungeon
 iter g n = Dungeon . appEndo go . getDungeon $ g
@@ -15,7 +16,7 @@ iter g n = Dungeon . appEndo go . getDungeon $ g
 main :: IO ()
 main = do
   setStdGen (mkStdGen 12345)
-  x <- randomly
+  x <- force <$> randomly
   let y = iter x
   defaultMain [
     bgroup "fib" [ bench "20" $ nf y 20

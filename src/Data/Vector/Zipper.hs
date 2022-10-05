@@ -9,7 +9,6 @@ where
 
 import Control.Comonad
 import Control.DeepSeq
-import Control.Parallel.Strategies
 import Data.Foldable.WithIndex
 import Data.Functor.Identity
 import Data.Functor.WithIndex.Instances ()
@@ -23,7 +22,7 @@ data Zipper a = Zipper
     focus :: a,
     after :: Vector a
   }
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Eq, Generic, Functor, Foldable)
   deriving anyclass (NFData)
 
 instance Pretty a => Pretty (Zipper a) where
@@ -37,25 +36,6 @@ zindex n Zipper{..} =
     | n < leftlen -> before ! n
     | shifted == 0 -> focus
     | otherwise -> after ! (n - 1)
-
--- TODO: Check to see if this actually is meaningfully faster
-instance Functor Zipper where
-  fmap f Zipper {..} =
-    Zipper
-      { before = fmap f (before `using` parTraversable rseq),
-        focus = f focus,
-        after = fmap f (after `using` parTraversable rseq)
-      }
-
-instance Foldable Zipper where
-  foldMap f Zipper {..} =
-    mconcat
-      [ foldMap f (before `using` parTraversable rseq),
-        f focus,
-        foldMap f (after `using` parTraversable rseq)
-      ]
-
-  length Zipper {..} = length before + 1 + length after
 
 instance Comonad Zipper where
   -- O(1)
