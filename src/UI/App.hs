@@ -30,26 +30,28 @@ app =
       Brick.appChooseCursor = Brick.showFirstCursor,
       Brick.appHandleEvent = handleEvent,
       Brick.appAttrMap = \_ -> Brick.attrMap Vty.defAttr mempty,
-      Brick.appStartEvent = \s -> do
+      Brick.appStartEvent = do
+        s <- Brick.get
         liftIO $ Broker.enqueueGameAction (s ^. #brokerage) Action.Start
-        pure s
     }
 
-handleEvent :: UI.State -> Event -> EventM UI.State
-handleEvent s e = case e of
-  Brick.VtyEvent vty -> do
-    case Responder.runResponder vty s of
-      Nothing -> Brick.continue s
-      Just (actions, new) -> do
-        forM_ actions $ \act -> do
-          liftIO . Broker.enqueueGameAction (s ^. #brokerage) $ act
-        Brick.continue new
-  Brick.AppEvent evt -> do
-    let next fn = Brick.continue (fn s)
-    case evt of
-      Start -> Brick.continue s
-      Terminate -> Brick.halt s
-      Redraw canv -> next (set (#toplevel % #canvas % #data) canv)
-      Update info -> next (State.updateState info)
-      Notify msg -> next (over (#toplevel % #modeline) (Modeline.display msg))
-  _ -> Brick.continue s
+handleEvent :: Brick.BrickEvent UI.Resource UIAction -> EventM UI.State ()
+handleEvent e = do
+  s <- Brick.get
+  case e of
+    Brick.VtyEvent vty -> do
+      case Responder.runResponder vty s of
+        Nothing -> pure ()
+        Just (actions, new) -> do
+          forM_ actions $ \act -> do
+            liftIO . Broker.enqueueGameAction (s ^. #brokerage) $ act
+          Brick.put new
+    Brick.AppEvent evt -> do
+      let next fn = Brick.put (fn s)
+      case evt of
+        Start -> pure ()
+        Terminate -> Brick.halt
+        Redraw canv -> next (set (#toplevel % #canvas % #data) canv)
+        Update info -> next (State.updateState info)
+        Notify msg -> next (over (#toplevel % #modeline) (Modeline.display msg))
+    _ -> pure ()

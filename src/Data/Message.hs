@@ -23,14 +23,13 @@ where
 
 import Data.Function
 import Data.Monoid qualified
-import Data.Monoid.Generic
 import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Semigroup
 import Data.Text.Lazy qualified as Lazy
 import Data.String
 import Data.Text (Text)
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import Optics
 
 data Urgency = Debug | Info | Warning | Danger
@@ -42,8 +41,7 @@ data Message = Message
     messageTimes :: Sum Int
   }
   deriving stock (Generic)
-  deriving (Semigroup) via GenericSemigroup Message
-  deriving (Monoid) via GenericMonoid Message
+  deriving (Semigroup, Monoid) via Generically Message
 
 instance IsString Message where
   fromString s = Message (pure (fromString s)) (pure Info) 1

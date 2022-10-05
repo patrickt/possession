@@ -13,10 +13,9 @@ import Brick qualified
 import Brick.Widgets.List qualified as Brick
 import Brick.Widgets.Center qualified as Brick
 import Data.Message ( Message )
-import Data.Monoid.Generic
 import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import UI.Render ( Renderable(..), runDraw )
 import UI.Resource qualified as Resource
 import Optics
@@ -29,8 +28,7 @@ newtype Modeline = Modeline
   { messages :: Seq Message
   }
   deriving stock (Generic)
-  deriving (Semigroup) via GenericSemigroup Modeline
-  deriving (Monoid) via GenericMonoid Modeline
+  deriving (Semigroup, Monoid) via Generically Modeline
 
 initial :: Modeline
 initial = mempty

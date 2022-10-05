@@ -25,11 +25,10 @@ import Data.Hitpoints (HP (HP))
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Monoid
-import Data.Monoid.Generic
 import Data.Name (Name, name)
 import Data.Position hiding (position)
 import Data.Position qualified as P
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import Game.Entity.Enemy (Enemy)
 import Optics
 import Apecs.Exts (Entity)
@@ -43,8 +42,7 @@ data Info = Info
     infoAtlas :: Dual (Map Position Entity)
   }
   deriving stock (Generic)
-  deriving (Semigroup) via GenericSemigroup Info
-  deriving (Monoid) via GenericMonoid Info
+  deriving (Semigroup, Monoid) via Generically Info
 
 makeFieldLabels ''Info
 makeClassy ''Info

@@ -11,12 +11,11 @@ import Data.Either.Validation
 import Data.List (genericLength)
 import Data.Maybe
 import Data.Monoid
-import Data.Monoid.Generic
 import Data.Semigroup (Max)
 import Data.Store.Exts (Store)
 import Dhall qualified
 import Dhall.Exts ()
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import Numeric.Natural (Natural)
 import Optics.IxFold
 import Apecs (Component (..), Map)
@@ -26,7 +25,7 @@ import Apecs (Component (..), Map)
 data XP = XP {_current :: Sum Natural, _toNextLevel :: Max Natural}
   deriving stock (Show, Generic)
   deriving anyclass (Store)
-  deriving (Semigroup) via GenericSemigroup XP
+  deriving (Semigroup) via Generically XP
 
 instance Monoid XP where mempty = XP 0 0
 instance Apecs.Component XP where type Storage XP = Map XP

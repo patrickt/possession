@@ -17,6 +17,8 @@ extra-source-files: CHANGELOG.md
 common shared
   build-depends:    base
                   , vector
+                  , random
+
   default-language: Haskell2010
   default-extensions:
       DefaultSignatures
@@ -126,14 +128,12 @@ library
     , fused-effects
     , fused-effects-mwc-random
     , fused-effects-optics
-    , generic-monoid
     , generic-optics
     , indexed-traversable
     , indexed-traversable-instances
     , linear
     , mwc-random
     , unagi-chan
-    , random
     , prettyprinter
     , optics
     , optics-th
@@ -146,8 +146,7 @@ library
     , recursion-schemes
     , tactics
     , store
-    -- stupid workaround
-    , network == 3.1.2.2
+    , network
     , stm
     , template-haskell
     , text
@@ -181,7 +180,7 @@ benchmark possession-benchmark
   build-depends:
     , deepseq
     , possession
-    , gauge
+    , tasty-bench
     , comonad
 
 test-suite possession-test

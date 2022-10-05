@@ -1,0 +1,9 @@
+Benchmark possession-benchmark: RUNNING...
+All
+  fib
+    20: OK (3.36s)
+      1.112 s ±  85 ms
+    40: OK (6.86s)
+      2.281 s ±  53 ms
+    60: OK (10.73s)
+      3.587 s ± 202 ms

@@ -21,4 +21,4 @@ data Resource
 
 type Widget = Brick.Widget Resource
 type Event = Brick.BrickEvent Resource UIAction
-type EventM s = Brick.EventM Resource (Brick.Next s)
+type EventM = Brick.EventM Resource
