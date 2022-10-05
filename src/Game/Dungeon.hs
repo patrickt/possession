@@ -1,8 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ImportQualifiedPost #-}
 module Game.Dungeon
   ( Dungeon (..)
   , Cell (..)

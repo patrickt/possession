@@ -33,12 +33,9 @@ import Data.Foldable (traverse_)
 import Control.Exception (Exception (displayException), throw)
 import Game.Entity.Enemy (Enemy)
 import Game.Entity.Terrain (Terrain)
-import Data.Generics.Sum
 import Control.Effect.State
 import Raws (Raws)
 import Optics
-import Data.Maybe (fromJust)
-import Data.Position (Position)
 import Control.Effect.Trace
 
 data Save = Save
@@ -56,9 +53,6 @@ newtype PersistenceError = BadVersion Int
 instance Exception PersistenceError where
   displayException = \case
     BadVersion n -> "bad save version: expected " <> show World.VERSION <> ", got " <> show n
-
-(^?!) :: Is k An_AffineFold => s -> Optic' k is s a -> a
-a ^?! b = fromJust (a ^? b)
 
 save :: (Has (State Raws) sig m, MonadIO m, Has Trace sig m) => Apecs.SystemT World.World m Save
 save = do

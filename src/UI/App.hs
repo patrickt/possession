@@ -12,7 +12,7 @@ import Data.Foldable
 import Game.Action as Action
 import Optics
 import UI.Render qualified as Render
-import UI.Resource (Event, EventM, Widget)
+import UI.Resource (EventM, Widget)
 import UI.Resource qualified as UI (Resource)
 import Graphics.Vty qualified as Vty
 import UI.Responder qualified as Responder

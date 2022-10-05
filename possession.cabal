@@ -19,31 +19,16 @@ common shared
                   , vector
                   , random
 
-  default-language: Haskell2010
+  default-language: GHC2021
   default-extensions:
       DefaultSignatures
       DeriveAnyClass
-      DeriveGeneric
-      DeriveTraversable
       DerivingStrategies
       DerivingVia
-      ExistentialQuantification
-      FlexibleContexts
-      FlexibleInstances
-      GeneralizedNewtypeDeriving
-      ImportQualifiedPost
-      KindSignatures
       LambdaCase
-      MultiParamTypeClasses
       MultiWayIf
       OverloadedLabels
-      RankNTypes
-      ScopedTypeVariables
-      StandaloneDeriving
       PatternSynonyms
-      TypeApplications
-      TypeOperators
-      TypeSynonymInstances
       TypeFamilies
   ghc-options:      -Wall
 
