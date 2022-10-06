@@ -189,8 +189,8 @@ loop = forever do
       local (const blank) do
         Save.read >>= Save.load
         Broker.notify "Game loaded."
-    Terminate -> Broker.sendCommand Terminate
-    Notify a -> Broker.sendCommand (Notify a)
+    Terminate -> Broker.pushToUI Terminate
+    Notify a -> Broker.pushToUI (Notify a)
     Start -> pure ()
 
   enemyTurn
@@ -198,8 +198,8 @@ loop = forever do
   refreshInfo
   canv <- draw
 
-  use (info @GameState) >>= Broker.sendCommand . Update
-  Broker.sendCommand (Redraw canv)
+  use (info @GameState) >>= Broker.pushToUI . Update
+  Broker.pushToUI (Redraw canv)
 
 refreshInfo :: (MonadIO m, Has (State GameState) sig m) => WorldT m ()
 refreshInfo = do

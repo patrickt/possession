@@ -5,6 +5,7 @@
 module Game.Action
   ( Action (..),
     Dest (..),
+    -- ** Synonyms for when I don't want to turn on @DataKinds@
     GameAction,
     UIAction,
   )
@@ -20,15 +21,15 @@ data Dest = Game | UI
 -- The type parameter here indicates the direction
 -- in which this request can flow. NoOp is bidirectional.
 data Action (dest :: Dest) where
-  -- These can be sent either way
+  -- UI ↔ ECS
   Start :: Action a
   Terminate :: Action a
   Notify :: Message -> Action a
-  -- These are sent from UI to ECS
+  -- UI → ECS
   Move :: V2 Int -> Action 'Game
   SaveState :: Action 'Game
   LoadState :: Action 'Game -- Should be Save -> Action Game
-  -- These are sent from ECS to UI
+  -- UI ← ECS
   Redraw :: Canvas -> Action 'UI
   Update :: Info -> Action 'UI
 

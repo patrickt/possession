@@ -25,6 +25,7 @@ common shared
       DeriveAnyClass
       DerivingStrategies
       DerivingVia
+      GADTs
       LambdaCase
       MultiWayIf
       OverloadedLabels

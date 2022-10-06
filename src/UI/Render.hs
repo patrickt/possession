@@ -31,14 +31,18 @@ import Game.Info (Info)
 
 data RTree
   = Leaf Widget
-  | HSplit RTree !RTree
-  | VSplit RTree !RTree
-  | Modal (Maybe RTree) !RTree
+  | HSplit RTree RTree
+  | VSplit RTree RTree
+  | Modal (Maybe RTree) RTree
 
 makeBaseFunctor ''RTree
 
 type RenderM = ((->) Info)
 
+-- | The top level rendering class. You can specify it in terms of layout or in terms of rendering.
+--
+-- If you omit 'layout', 'draw' will be called and the result will be placed inside a 'Leaf'.
+-- If you omit 'draw', 'layout' will be called and the result will be drawn.
 class Renderable a where
   {-# MINIMAL layout | draw #-}
   layout :: a -> RenderM RTree

@@ -66,7 +66,7 @@ instance HasInfo a => Responder (Canvas a) where
     where
       --
       look = overState (keypress (Vty.KChar '*')) (\s -> s & #hud ?~ Hud.initial s)
-      esc = ensuring (has (#state % #hud %_Just)) >>> overState (keypress Vty.KEsc) (set #hud Nothing)
+      esc = ensuring (has (#state % #hud % _Just)) >>> overState (keypress Vty.KEsc) (set #hud Nothing)
       quit = whenMatches (keypress (Vty.KChar 'q')) Terminate
       move k amt = whenMatches (keypress k) (Move amt)
 

@@ -14,7 +14,6 @@ module Data.Message
     fromText,
     mergeable,
     contents,
-    lazyContents,
     Urgency (..),
     youSee,
     debug,
@@ -26,7 +25,6 @@ import Data.Monoid qualified
 import Data.Name (Name)
 import Data.Name qualified as Name
 import Data.Semigroup
-import Data.Text.Lazy qualified as Lazy
 import Data.String
 import Data.Text (Text)
 import GHC.Generics (Generic, Generically(..))
@@ -43,22 +41,18 @@ data Message = Message
   deriving stock (Generic)
   deriving (Semigroup, Monoid) via Generically Message
 
-instance IsString Message where
-  fromString s = Message (pure (fromString s)) (pure Info) 1
-
 makeFieldLabels ''Message
 
 contents :: Message -> Text
 contents m = m ^. #contents % coerced % non ""
-
-lazyContents :: Message -> Lazy.Text
-lazyContents = Lazy.fromStrict . contents
 
 mergeable :: Message -> Message -> Bool
 mergeable = (==) `on` view #contents
 
 fromText :: Text -> Message
 fromText t = Message (pure t) (pure Info) 1
+
+instance IsString Message where fromString = fromText . fromString
 
 debug :: String -> Message
 debug s = Message (pure (fromString s)) (pure Debug) 1

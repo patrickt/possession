@@ -1,9 +1,8 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -- An effect that provides bidirectional communication between the
 -- game and its Brick UI. Brick itself reads @Action 'UI@ values from
@@ -11,13 +10,15 @@
 -- little more work, but it works on the same principle.
 module Control.Effect.Broker
   ( Broker,
+    runBroker,
     pushAction,
     popAction,
-    sendCommand,
-    runBroker,
+    pushToUI,
     notify,
-    Brokerage,
+    -- * Types
+    Brokerage(..),
     newBrokerage,
+    -- * Internal
     enqueueGameAction,
   )
 where
@@ -28,48 +29,56 @@ import Control.Carrier.Lift
 import Control.Carrier.Reader
 import Control.Concurrent.Chan.Unagi.Bounded
 import Control.Monad.IO.Class
+import Data.Coerce
 import Data.Kind (Type)
 import Data.Message (Message)
 import Game.Action (Action, Dest (..))
 import Game.Action qualified as Game
-import Optics.TH
+import Optics
 
+-- | Mediates channels between UI, Brick backend, and ECS. Created with 'newBrokerage'.
 data Brokerage = Brokerage
-  { _brokerageBrickQueue :: BChan (Action 'UI),
-    _brokerageGameWrite :: InChan (Action 'Game),
-    _brokerageGameRead :: OutChan (Action 'Game)
+  { brickQueue :: BChan (Action 'UI),
+    gameWrite :: InChan (Action 'Game),
+    gameRead :: OutChan (Action 'Game)
   }
 
-makeFieldLabels ''Brokerage
+makeFieldLabelsNoPrefix ''Brokerage
 
 newBrokerage :: IO Brokerage
 newBrokerage = do
-  b <- newBChan 1
-  (w, r) <- newChan 100
-  pure (Brokerage b w r)
+  brickQueue <- newBChan 1
+  (gameWrite, gameRead) <- newChan 100
+  pure Brokerage{..}
 
+-- | A backdoor for when you need to send a message out-of-band.
 enqueueGameAction :: Brokerage -> Action 'Game -> IO ()
-enqueueGameAction (Brokerage _ q _) = writeChan q
+enqueueGameAction b = writeChan (b ^. #gameWrite)
 
+-- | Effect that lets you send 'Action' values down the appropriate pipes.
+-- All effects block if their associated queue is full.
 data Broker (m :: Type -> Type) k where
   Push :: Action 'Game -> Broker m ()
-  Pop :: Broker m (Action 'Game)
+  Pop :: Broker m (Action 'Game) -- not used for now
   Cmd :: Action 'UI -> Broker m ()
 
--- | Blocks if the queue is full
+-- Enqueue a 'GameAction' within the ECS.
 pushAction :: Has Broker sig m => Action 'Game -> m ()
 pushAction a = send (Push a)
 
+-- Read an enqueued 'GameAction'.
 popAction :: Has Broker sig m => m (Action 'Game)
 popAction = send Pop
 
-sendCommand :: Has Broker sig m => Action 'UI -> m ()
-sendCommand a = send (Cmd a)
+-- Send a 'UIAction' to the
+pushToUI :: Has Broker sig m => Action 'UI -> m ()
+pushToUI a = send (Cmd a)
 
+-- Helper to send a 'Game.Notify' message.
 notify :: Has Broker sig m => Message -> m ()
-notify a = sendCommand (Game.Notify a)
+notify a = pushToUI (Game.Notify a)
 
-newtype BrokerC m a = BrokerC {runBrokerC :: ReaderC Brokerage m a}
+newtype BrokerC m a = BrokerC (ReaderC Brokerage m a)
   deriving newtype (Functor, Applicative, Monad, MonadIO)
 
 runBroker :: Brokerage -> BrokerC m a -> m a
@@ -78,9 +87,9 @@ runBroker b (BrokerC r) = runReader b r
 
 instance Has (Lift IO) sig m => Algebra (Broker :+: sig) (BrokerC m) where
   alg hdl sig ctx = do
-    Brokerage to writer reader <- BrokerC ask
+    Brokerage brick writer reader <- BrokerC ask
     case sig of
       L (Push a) -> ctx <$ (sendM . writeChan writer $ a)
-      L (Cmd a) -> ctx <$ (sendM . writeBChan to $ a)
+      L (Cmd a) -> ctx <$ (sendM . writeBChan brick $ a)
       L Pop -> (<$ ctx) <$> (sendM . readChan $ reader)
-      R other -> BrokerC (alg (runBrokerC . hdl) (R other) ctx)
+      R other -> BrokerC (alg (coerce . hdl) (R other) ctx)
